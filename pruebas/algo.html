@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameS - Biblioteca</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #2c2c2c;
+      font-family: sans-serif;
+    }
+    .sidebar {
+      background-color: #3b3b3b;
+      color: white;
+    }
+    .header, .footer {
+      background-color: #1f1f1f;
+    }
+    .game-card {
+      background-color: #444;
+    }
+  </style>
+</head>
+<body class="text-white">
+  <!-- HEADER -->
+  <div class="flex items-center justify-between p-4 header">
+    <h1 class="text-xl font-bold">Juegos</h1>
+    <button class="text-white">☰</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="flex justify-around border-b border-gray-600 text-sm">
+    <button class="py-2 px-4 border-b-2 border-white">Biblioteca</button>
+    <button class="py-2 px-4">Colecciones</button>
+  </div>
+
+  <!-- GAME GRID -->
+  <div class="grid grid-cols-2 gap-2 p-4">
+    <div class="game-card p-2 rounded"><img src="/mnt/data/431953d5-acef-4a49-b86f-53b8a457de52.png" alt="Nyan Cat" /></div>
+    <div class="game-card p-2 rounded"><img src="https://via.placeholder.com/150x80?text=Minecraft" alt="Minecraft"></div>
+    <div class="game-card p-2 rounded"><img src="https://via.placeholder.com/150x80?text=Disco+Elysium" alt="Disco Elysium"></div>
+    <div class="game-card p-2 rounded"><img src="https://via.placeholder.com/150x80?text=Hylics" alt="Hylics"></div>
+    <div class="game-card p-2 rounded"><img src="https://via.placeholder.com/150x80?text=Balatro" alt="Balatro"></div>
+    <div class="game-card p-2 rounded"><img src="https://via.placeholder.com/150x80?text=Terraria" alt="Terraria"></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar fixed inset-y-0 left-0 w-64 transform -translate-x-full transition-transform duration-300 ease-in-out" id="menu">
+    <div class="p-4">
+      <button class="text-right w-full" onclick="toggleMenu()">✖</button>
+      <ul class="mt-4 space-y-2">
+        <li class="font-bold">Juegos</li>
+        <li class="ml-4">Mi Biblioteca</li>
+        <li class="ml-4">Buscador</li>
+        <li class="font-bold mt-4">Social</li>
+        <li class="ml-4">Amigos</li>
+        <li class="ml-4">Actividad</li>
+        <li class="ml-4">Panel</li>
+        <li class="font-bold mt-4">YO</li>
+        <li class="ml-4">Perfil</li>
+        <li class="ml-4">Me gusta</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- DIARIO -->
+  <div class="p-4">
+    <h2 class="text-lg font-bold mb-2">Diario</h2>
+    <div class="space-y-2">
+      <div class="bg-gray-700 p-2 rounded flex justify-between items-center">
+        <span>Hoy - 20 min</span>
+        <span>Nyan Cat</span>
+      </div>
+      <div class="bg-gray-700 p-2 rounded flex justify-between items-center">
+        <span>Ayer - 16 horas</span>
+        <span>Disco Elysium</span>
+      </div>
+      <div class="bg-gray-700 p-2 rounded flex justify-between items-center">
+        <span>19/10/2030 - 3 horas</span>
+        <span>Balatro</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer text-center p-2 text-sm mt-4">GameS</div>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('menu');
+      menu.classList.toggle('-translate-x-full');
+    }
+  </script>
+</body>
+</html>

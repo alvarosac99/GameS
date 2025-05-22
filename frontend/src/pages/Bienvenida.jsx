@@ -6,7 +6,7 @@ export default function Bienvenida() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://10.42.0.1:8000/api/usuarios/session", {
+    fetch("/api/usuarios/session", {
       credentials: "include",
     })
       .then(res => res.json())

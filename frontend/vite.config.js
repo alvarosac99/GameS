@@ -1,18 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: "0.0.0.0",  // Permite acceso desde otras máquinas
+    host: "0.0.0.0",
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://10.42.0.1:8000', // Django backend sigue local
+        target: 'http://172.16.2.206:8000',
         changeOrigin: true,
         secure: false,
       }
     }
-  }
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
 });

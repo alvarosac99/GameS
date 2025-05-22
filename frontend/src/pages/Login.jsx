@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-
+ 
 export default function Login() {
   const navigate = useNavigate();
   const [csrfToken, setCsrfToken] = useState("");
@@ -9,7 +9,7 @@ export default function Login() {
   const [mensaje, setMensaje] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/usuarios/session/", {
+    fetch('/api/usuarios/session/', {
       credentials: "include",
     }).then(res => {
       function getCookie(name) {
@@ -28,7 +28,7 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const res = await fetch("http://10.42.0.1:8000/api/usuarios/login/", {
+    const res = await fetch("/api/usuarios/login/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -11,9 +11,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,7 +29,7 @@ SECRET_KEY = "django-insecure-g%j5z$3ww3)o!=lzmb6#01k-==k)9l7rs02-abxn)d%fma#y(-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["10.42.0.1", "localhost"]
+ALLOWED_HOSTS = ["10.42.0.1", "localhost", "172.16.2.206"]
 
 
 # Application definition
@@ -55,16 +59,22 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://10.42.0.1:5173",  # Vite global
-    "http://localhost:5173",  # Vite
+    "http://localhost:5173",
+    "http://172.16.2.206:5173",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = ["http://10.42.0.1:5173", "http://localhost:5173"]  # Vite
+CSRF_TRUSTED_ORIGINS = [
+    "http://10.42.0.1:5173",
+    "http://localhost:5173", # Vite
+    "http://172.16.2.206:5173",
+]  
 
 # Rest framework settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     )
 }
 

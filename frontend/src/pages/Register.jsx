@@ -11,20 +11,20 @@ export default function Register() {
   const [mensaje, setMensaje] = useState("");
 
   useEffect(() => {
-    fetch("/api/usuarios/session/", {
-      credentials: "include",
-    }).then(res => {
-      function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(";").shift();
-      }
-      const token = getCookie("csrftoken");
-      if (token) setCsrfToken(token);
-      return res.json();
-    }).then(data => {
-      if (data.authenticated) navigate("/bienvenida");
-    });
+    fetch("/api/usuarios/session/", { credentials: "include" })
+      .then(res => {
+        function getCookie(name) {
+          const value = `; ${document.cookie}`;
+          const parts = value.split(`; ${name}=`);
+          if (parts.length === 2) return parts.pop().split(";").shift();
+        }
+        const token = getCookie("csrftoken");
+        if (token) setCsrfToken(token);
+        return res.json();
+      })
+      .then(data => {
+        if (data.authenticated) navigate("/bienvenida");
+      });
   }, []);
 
   const handleRegister = async (e) => {
@@ -54,46 +54,51 @@ export default function Register() {
   };
 
   return (
-    <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl bg-gray-800 p-6 rounded-lg shadow-lg">
+    <div className="max-w-sm mx-auto mt-12 p-6 bg-metal shadow-lg rounded text-claro">
       <h2 className="text-2xl font-bold mb-4 text-center">Crear Cuenta</h2>
       <form onSubmit={handleRegister}>
         <input
           type="text"
           placeholder="Usuario"
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded"
+          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          required
         />
         <input
           type="email"
           placeholder="Correo electrónico"
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded"
+          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
         <input
           type="password"
           placeholder="Contraseña"
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded"
+          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
         <input
           type="password"
           placeholder="Confirmar contraseña"
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded"
+          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={confirmarPassword}
           onChange={(e) => setConfirmarPassword(e.target.value)}
+          required
         />
-        <button className="bg-green-500 hover:bg-green-600 p-2 rounded w-full" type="submit">
+        <button type="submit" className="bg-naranja hover:bg-naranjaHover text-white p-2 rounded w-full font-medium">
           Registrarse
         </button>
       </form>
       {mensaje && <p className="mt-3 text-sm text-red-400 text-center">{mensaje}</p>}
       <p className="mt-4 text-sm text-center">
         ¿Ya tienes cuenta?{" "}
-        <Link to="/" className="text-green-400 hover:underline">Inicia sesión aquí</Link>
+        <Link to="/login" className="text-naranja hover:underline">Inicia sesión aquí</Link>
       </p>
     </div>
   );
 }
+

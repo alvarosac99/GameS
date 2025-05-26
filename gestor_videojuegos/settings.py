@@ -31,6 +31,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["10.42.0.1", "localhost", "172.16.2.206"]
 
+# IGDB / Twitch API
+IGDB_CLIENT_ID = "uo2hohcxtk9lyb311wo4ei9xdhn9sz"
+IGDB_CLIENT_SECRET = "3gd1ptwiarar4379v6rvll8zmnixq0"
+IGDB_BASE_URL = "https://api.igdb.com/v4"
 
 # Application definition
 
@@ -43,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "usuarios",
+    "juegos",
     "corsheaders",
 ]
 
@@ -66,9 +71,9 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "http://10.42.0.1:5173",
-    "http://localhost:5173", # Vite
+    "http://localhost:5173",  # Vite
     "http://172.16.2.206:5173",
-]  
+]
 
 # Rest framework settings
 REST_FRAMEWORK = {

@@ -1,6 +1,10 @@
 import './index.css';
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useAuth } from "./context/AuthContext";
+
+import { FiSearch } from "react-icons/fi";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -10,45 +14,47 @@ import Biblioteca from "./pages/Biblioteca";
 import Diario from "./pages/Diario";
 import Perfil from "./pages/Perfil";
 import PaginaPrincipal from "./pages/PaginaPrincipal";
+import JuegoUnico from "./pages/JuegoUnico";
 
 export default function App() {
+  const [mostrarBuscador, setMostrarBuscador] = useState(false);
+  const { autenticado, usuario, logout, cargando } = useAuth();
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const [autenticado, setAutenticado] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/usuarios/session/", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => setAutenticado(data.authenticated))
-      .catch(() => setAutenticado(false));
-  }, []);
 
   return (
     <Router>
       <div className="flex flex-col min-h-screen bg-fondo text-claro">
         {/* HEADER */}
-        <header className="bg-metal py-4 px-4 flex items-center justify-between shadow-md border-b border-borde">
-          {autenticado ?
-            (
+        <header className="bg-metal py-4 px-6 flex items-center justify-between shadow-md border-b border-borde">
+          {/* Izquierda: botón o link a juegos */}
+          <div className="flex items-center gap-4">
+            {autenticado ? (
               <button
                 className="text-claro focus:outline-none"
                 onClick={() => setMenuAbierto(!menuAbierto)}
               >
                 ☰
               </button>
-            ) :
-            (
+            ) : (
               <Link
                 to="/juegos"
-                className="text-claro hover:text-claroHover font-medium underline"
+                className="text-naranja hover:text-naranjaHover font-medium underline"
               >
                 Juegos
               </Link>
-            )
-          }
-          <h1 className="text-xl font-bold">Gestor de Videojuegos</h1>
+            )}
+          </div>
 
+          {/* Centro: logo */}
+          <div className="flex-grow text-center">
+            <Link to="/" className="text-claro text-2xl font-bold tracking-wide">
+              GameS
+            </Link>
+          </div>
+
+          {/* Derecha: login / register */}
           {!autenticado && (
-            <div className="flex gap-4 ml-auto">
+            <div className="flex items-center gap-4">
               <Link
                 to="/login"
                 className="text-naranja hover:text-naranjaHover font-medium underline"
@@ -63,7 +69,66 @@ export default function App() {
               </Link>
             </div>
           )}
+
+          {/* busqueda global y perfiles si está autenticado */}
+          {autenticado && (
+            <div className="ml-auto flex items-center gap-2">
+              {/* Modo escritorio: input siempre visible */}
+              <form
+                action="/juegos"
+                method="GET"
+                className="hidden sm:flex gap-2 items-center"
+              >
+                <input
+                  type="text"
+                  name="q"
+                  placeholder="Buscar juego..."
+                  className="px-3 py-1 rounded bg-metal text-claro border border-borde placeholder:text-gray-400 w-48 sm:w-64"
+                />
+                <button
+                  type="submit"
+                  className="bg-naranja hover:bg-naranjaHover text-black font-semibold px-3 py-1 rounded"
+                >
+                  Buscar
+                </button>
+              </form>
+
+              {/* Modo móvil: icono de lupa */}
+              <button
+                onClick={() => setMostrarBuscador(!mostrarBuscador)}
+                className="sm:hidden text-claro text-xl"
+                title="Buscar"
+              >
+                <FiSearch />
+              </button>
+            </div>
+          )}
+
         </header>
+        <div
+          className={`sm:hidden overflow-hidden transition-all duration-300 bg-metal border-b border-borde ${mostrarBuscador ? "max-h-32 py-2 px-4" : "max-h-0 py-0 px-4"
+            }`}
+        >
+          <form
+            action="/juegos"
+            method="GET"
+            className="flex gap-2 items-center"
+          >
+            <input
+              type="text"
+              name="q"
+              placeholder="Buscar juego..."
+              autoFocus={mostrarBuscador}
+              className="flex-1 px-3 py-1 rounded bg-metal text-claro border border-borde placeholder:text-gray-400"
+            />
+            <button
+              type="submit"
+              className="bg-naranja hover:bg-naranjaHover text-black font-semibold px-3 py-1 rounded"
+            >
+              Buscar
+            </button>
+          </form>
+        </div>
 
         {/* Overlay */}
         {menuAbierto && (
@@ -106,7 +171,10 @@ export default function App() {
             <Link to="/diario" className="hover:text-naranja transition-colors duration-200">
               📓 Diario
             </Link>
-            <Link to="/perfil" className="hover:text-naranja transition-colors duration-200">
+            <Link
+              to={`/perfil/${usuario?.username}`}
+              className="hover:text-naranja transition-colors duration-200"
+            >
               👤 Perfil
             </Link>
             <button
@@ -140,9 +208,11 @@ export default function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/bienvenida" element={<Bienvenida />} />
               <Route path="/juegos" element={<Juegos />} />
+              <Route path="/juego/:id" element={<JuegoUnico />} />
               <Route path="/biblioteca" element={<Biblioteca />} />
               <Route path="/diario" element={<Diario />} />
               <Route path="/perfil" element={<Perfil />} />
+              <Route path="/perfil/:nombre" element={<Perfil />} />
               <Route path="*" element={<h2 className="text-2xl text-center">Página no encontrada</h2>} />
             </Routes>
           </div>

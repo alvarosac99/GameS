@@ -1,9 +1,29 @@
 import requests
+import time
+from collections import defaultdict
 from django.core.cache import cache
 from django.conf import settings
 
-def recopilar_juegos_igdb():
+def safe_post(url, headers, data, max_retries=10):
+    retries = 0
+    while retries < max_retries:
+        resp = requests.post(url, headers=headers, data=data)
+        if resp.status_code == 429:
+            wait = int(resp.headers.get("Retry-After", 30))
+            print(f"[IGDB] 429 Too Many Requests. Esperando {wait} segundos antes de reintentar...")
+            time.sleep(wait)
+            retries += 1
+            continue
+        resp.raise_for_status()
+        return resp
+    raise Exception(f"Demasiados intentos fallidos ({max_retries}) con error 429.")
+
+def recopilar_juegos_igdb(popularity_type=1):
+    """
+    Descarga todos los juegos de IGDB, guarda popularidad, controla rate limit y es reanudable.
+    """
     try:
+        # 1. Autenticación IGDB
         token = cache.get("igdb_token")
         if not token:
             auth = requests.post(
@@ -24,54 +44,107 @@ def recopilar_juegos_igdb():
             "Authorization": f"Bearer {token}",
         }
 
-        all_details = []
-        for offset in range(0, 500000, 500):
-            estado = cache.get("progreso_cache_juegos", {}).get("estado", "en progreso")
-            if estado == "detenido":
-                print("Proceso detenido manualmente en offset", offset)
-                break
+        batch = 500
+        juegos = []
+        seen_ids = set()
+        popularidad_por_juego = defaultdict(dict)
 
-            print(f"Descargando juegos desde offset {offset}")
-            query = f"""
-            fields id, name, cover.url, first_release_date, genres.name;
-            limit 500;
-            offset {offset};
+        # --- FASE 1: Popularidad (puede tener muchos más de 100k registros)
+        offset_pop = cache.get("progreso_popularidad_offset", 0)
+        print(f"Descargando popularidad desde offset {offset_pop} (reanuda si se cortó)...")
+        while True:
+            cache.set("progreso_cache_juegos", {
+                "estado": "en progreso",
+                "fase": "Descargando popularidad de todos los juegos",
+                "offset": offset_pop,
+                "total": len(popularidad_por_juego)
+            }, timeout=86400)
+
+            cuerpo = f"""
+                fields game_id,value,popularity_type;
+                sort game_id asc;
+                limit {batch};
+                offset {offset_pop};
             """
-            res = requests.post("https://api.igdb.com/v4/games", headers=headers, data=query.strip())
-            if res.status_code != 200:
-                print("Error IGDB:", res.status_code, res.text)
+            r = safe_post("https://api.igdb.com/v4/popularity_primitives", headers, cuerpo.strip())
+            bloque = r.json()
+            if not bloque:
+                print(f"Fin de popularidad en offset {offset_pop}")
+                break
+            for pop in bloque:
+                gid = pop["game_id"]
+                tipo = pop["popularity_type"]
+                valor = pop["value"]
+                popularidad_por_juego[gid][tipo] = valor
+            offset_pop += batch
+            print(f"Popularidad: extraídos hasta offset {offset_pop} (juegos con popularidad: {len(popularidad_por_juego)})")
+            cache.set("progreso_popularidad_offset", offset_pop, timeout=86400)
+            if len(bloque) < batch:
                 break
 
-            chunk = res.json()
-            if not chunk or any(j["id"] in {g["id"] for g in all_details} for j in chunk):
-                print("Fin detectado: chunk vacío o repetido")
+        # Guarda popularidad en caché por si reanudas
+        cache.set("popularidad_por_juego", dict(popularidad_por_juego), timeout=86400)
+
+        # --- FASE 2: Todos los juegos
+        juegos = cache.get("todos_los_juegos_igdb", [])
+        seen_ids = set(j["id"] for j in juegos)
+        offset_juegos = cache.get("progreso_juegos_offset", 0)
+        print(f"Descargando detalles desde offset {offset_juegos} (reanuda si se cortó)...")
+        while True:
+            cache.set("progreso_cache_juegos", {
+                "estado": "en progreso",
+                "fase": "Descargando detalles y uniendo popularidad",
+                "offset": offset_juegos,
+                "total": len(juegos)
+            }, timeout=86400)
+
+            query = f"""
+                fields id,name,cover.url,first_release_date,genres.name;
+                where cover.url != null
+                  & first_release_date != null;
+                sort id asc;
+                limit {batch};
+                offset {offset_juegos};
+            """
+            resp = safe_post("https://api.igdb.com/v4/games", headers, query.strip())
+            chunk = resp.json()
+            if not chunk:
+                print(f"Fin de todos los juegos en offset {offset_juegos}")
                 break
 
-            ids_existentes = {j["id"] for j in all_details}
-            nuevos = [j for j in chunk if j["id"] not in ids_existentes]
-            all_details.extend(nuevos)
+            nuevos = 0
+            for juego in chunk:
+                if juego["id"] not in seen_ids:
+                    seen_ids.add(juego["id"])
+                    juego["popularidad"] = popularidad_por_juego.get(juego["id"], {})
+                    juegos.append(juego)
+                    nuevos += 1
 
-            # actualizar estado en cache
-            cache.set("progreso_cache_juegos", {
-            "estado": "en progreso",
-            "offset": offset + 500,
-            "total": len(all_details)
-            })
+            offset_juegos += batch
+            print(f"Juegos: Procesados hasta offset {offset_juegos} (total: {len(juegos)})")
+            cache.set("progreso_juegos_offset", offset_juegos, timeout=86400)
+            cache.set("todos_los_juegos_igdb", juegos, timeout=86400)
 
-        # finalizar si no fue detenido
-        if cache.get("progreso_cache_juegos", {}).get("estado") != "detenido":
-            cache.set("todos_los_juegos_igdb", all_details, timeout=86400)
-            cache.set("progreso_cache_juegos", {
-                "estado": "completado",
-                "offset": offset,
-                "total": len(all_details)
-            })
-            print("Recopilación completada: juegos guardados:", len(all_details))
+            if len(chunk) < batch:
+                break
+
+        # Fase final: completado y limpiar offsets de reanudación
+        cache.set("todos_los_juegos_igdb", juegos, timeout=86400)
+        cache.set("progreso_cache_juegos", {
+            "estado": "completado",
+            "fase": "Completado",
+            "offset": offset_juegos,
+            "total": len(juegos)
+        }, timeout=86400)
+        cache.delete("progreso_popularidad_offset")
+        cache.delete("progreso_juegos_offset")
+        print(f"Recopilación completada: {len(juegos)} juegos (con popularidad guardada)")
 
     except Exception as e:
-        print("Error crítico en recopilación:", e)
+        print("Error en recopilación por popularidad:", e)
         cache.set("progreso_cache_juegos", {
-            "estado": f"error: {str(e)}",
+            "estado": f"error: {e}",
+            "fase": "error",
             "offset": 0,
             "total": 0
-        })
+        }, timeout=86400)

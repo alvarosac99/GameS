@@ -19,8 +19,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from . import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/admin/forzar_cache/", views.forzar_cache_juegos, name="forzar_cache"), # URL para forzar el cache
     path("api/usuarios/", include("usuarios.urls")),  # URL para la app de usuarios
+    path("api/juegos/", include("juegos.urls")),  # URL para la app de juegos
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

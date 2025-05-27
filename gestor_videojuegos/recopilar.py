@@ -99,7 +99,7 @@ def recopilar_juegos_igdb(popularity_type=1):
             }, timeout=86400)
 
             query = f"""
-                fields id,name,cover.url,first_release_date,genres.name;
+                fields id,name,cover.url,first_release_date,genres.name, themes.name;
                 where cover.url != null
                   & first_release_date != null;
                 sort id asc;

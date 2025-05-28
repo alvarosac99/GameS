@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Pencil, X } from "lucide-react"
+// <-- ¡NO IMPORTES SWITCH!
 
 function getCookie(name) {
   const cookieValue = document.cookie
@@ -23,13 +24,12 @@ export default function Perfil({ cerrar }) {
     confirmPassword: "",
     foto: null,
     fotoUrl: null,
+    filtro_adulto: true,
   })
 
   useEffect(() => {
-    // Cookie CSRF
     fetch("/api/usuarios/session/", { credentials: "include" })
 
-    //  Datos reales del usuario
     fetch("/api/usuarios/me/", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
@@ -39,6 +39,7 @@ export default function Perfil({ cerrar }) {
           email: data.email || "",
           bio: data.bio || "",
           fotoUrl: data.foto || null,
+          filtro_adulto: data.filtro_adulto !== undefined ? data.filtro_adulto : true,
         }))
       })
   }, [])
@@ -52,6 +53,17 @@ export default function Perfil({ cerrar }) {
     if (file) {
       setPerfil({ ...perfil, foto: file, fotoUrl: URL.createObjectURL(file) })
     }
+  }
+
+  // Usamos checked, no value
+  const handleFiltroAdultoChange = (e) => {
+    setPerfil((prev) => ({ ...prev, filtro_adulto: e.target.checked }))
+    fetch("/api/usuarios/me/filtro_adulto/", {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+      body: JSON.stringify({ filtro_adulto: e.target.checked }),
+    })
   }
 
   const handleSubmit = (e) => {
@@ -185,6 +197,20 @@ export default function Perfil({ cerrar }) {
               </div>
             </CardContent>
           </Card>
+
+          {/* CHECKBOX ADULTO */}
+          <CardContent className="p-6 flex items-center gap-4">
+            <input
+              type="checkbox"
+              id="filtro-adulto"
+              checked={perfil.filtro_adulto}
+              onChange={handleFiltroAdultoChange}
+              className="w-5 h-5 accent-naranja cursor-pointer border-borde"
+            />
+            <Label className="text-claro" htmlFor="filtro-adulto">
+              Ocultar juegos eróticos
+            </Label>
+          </CardContent>
 
           <div className="text-right">
             <Button

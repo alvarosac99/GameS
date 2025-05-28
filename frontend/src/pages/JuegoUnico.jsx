@@ -210,7 +210,7 @@ export default function JuegoUnico() {
           <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-b from-transparent to-fondo pointer-events-none" />
         </div>
       )}
-      <div className="max-w-7xl mx-auto -mt-32 px-4 md:px-8 relative z-20">
+      <div className={`max-w-7xl mx-auto ${juego.screenshots?.[0]?.url ? '-mt-32' : 'mt-8'} px-4 md:px-8 relative z-20`}>
         <div className="bg-metal/90 rounded-2xl shadow-xl p-8 mb-10 flex flex-col lg:flex-row gap-8">
           <div className="flex-shrink-0 flex flex-col items-center">
             <div className="flex-shrink-0 flex flex-col items-center">

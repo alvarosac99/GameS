@@ -60,6 +60,7 @@ def perfil_usuario(request):
                     if perfil.avatar
                     else None
                 ),
+                "filtro_adulto": perfil.filtro_adulto,
             }
         )
 
@@ -182,3 +183,25 @@ def logout_view(request):
     if request.method == "POST":
         logout(request)
         return JsonResponse({"success": True})
+
+
+# uyuyui
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def actualizar_filtro_adulto(request):
+    perfil, _ = Perfil.objects.get_or_create(user=request.user)
+    filtro_adulto = request.data.get("filtro_adulto")
+
+    if filtro_adulto is not None:
+        perfil.filtro_adulto = bool(filtro_adulto)
+        perfil.save()
+        return Response(
+            {
+                "filtro_adulto": perfil.filtro_adulto,
+                "message": "Filtro de contenido adulto actualizado correctamente",
+            }
+        )
+    else:
+        return Response(
+            {"error": "No se ha proporcionado el valor de filtro_adulto"}, status=400
+        )

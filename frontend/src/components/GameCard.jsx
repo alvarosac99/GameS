@@ -1,6 +1,3 @@
-import React from "react";
-import { Link } from "react-router-dom";
-
 export default function GameCard({ juego, onClick }) {
     const coverUrl = juego.cover?.url
         ? `https:${juego.cover.url.replace("t_thumb", "t_cover_big")}`

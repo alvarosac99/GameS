@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import TarjetaSkeleton from "@/components/TarjetaSkeleton";
 import GameCard from "@/components/GameCard";
+import LoaderCirculo from "@/components/LoaderCirculo";
 
 export default function Juegos() {
   const navigate = useNavigate();
@@ -216,9 +217,7 @@ export default function Juegos() {
       )}
 
       {descargando ? (
-        <div className="text-center text-naranja font-bold py-10">
-          Estamos recopilando todos los datos de IGDB. Espera unos segundos.
-        </div>
+        <LoaderCirculo texto="Estamos recopilando todos los datos de IGDB. Espera unos segundos." />
       ) : cargando ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
           {Array(porPagina).fill().map((_, i) => (

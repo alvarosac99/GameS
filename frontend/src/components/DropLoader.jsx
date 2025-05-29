@@ -1,6 +1,3 @@
-// src/components/DropLoader.jsx
-import React from "react";
-
 export default function DropLoader() {
   return (
     <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">

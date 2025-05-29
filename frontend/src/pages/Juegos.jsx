@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import TarjetaSkeleton from "@/components/TarjetaSkeleton";
-import { FaSortAlphaDown, FaSortAmountDown, FaStar, FaBuilding } from "react-icons/fa";
+import GameCard from "@/components/GameCard";
 
 export default function Juegos() {
   const navigate = useNavigate();
@@ -22,6 +22,7 @@ export default function Juegos() {
   const [totalResultados, setTotalResultados] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [orden, setOrden] = useState(initOrden);
+  const [ascendente, setAscendente] = useState(false);
   const [generoSel, setGeneroSel] = useState(initGenero);
   const [plataformaSel, setPlataformaSel] = useState(initPlataforma);
   const [publisherSel, setPublisherSel] = useState(initPublisher);
@@ -31,7 +32,10 @@ export default function Juegos() {
   const [publishers, setPublishers] = useState([]);
   const [mensajeCargaLenta, setMensajeCargaLenta] = useState(false);
   const [descargando, setDescargando] = useState(false);
+  const [ordenAbierto, setOrdenAbierto] = useState(false);
   const porPagina = 60;
+
+  const dropdownRef = useRef();
 
   useEffect(() => {
     fetch("/api/juegos/filtros/")
@@ -60,13 +64,23 @@ export default function Juegos() {
     }
   }, [descargando]);
 
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOrdenAbierto(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const obtenerJuegos = () => {
     setCargando(true);
     setDescargando(false);
     const params = new URLSearchParams();
     params.set("pagina", pagina);
     params.set("por_pagina", porPagina);
-    params.set("orden", orden);
+    params.set("orden", orden + (ascendente ? "_asc" : ""));
     if (terminoBusqueda) params.set("q", terminoBusqueda);
     if (generoSel) params.set("genero", generoSel);
     if (plataformaSel) params.set("plataforma", plataformaSel);
@@ -87,7 +101,8 @@ export default function Juegos() {
           setTotalResultados(0);
           return;
         }
-        setJuegos(data.juegos || []);
+        const unicos = Array.from(new Map(data.juegos.map(j => [j.id, j])).values());
+        setJuegos(unicos);
         setPagina(data.pagina_actual);
         setPaginasTotales(data.paginas_totales);
         setTotalResultados(data.total_resultados);
@@ -106,7 +121,7 @@ export default function Juegos() {
     const params = new URLSearchParams();
     params.set("pagina", pagina);
     params.set("por_pagina", porPagina);
-    params.set("orden", orden);
+    params.set("orden", orden + (ascendente ? "_asc" : ""));
     if (terminoBusqueda) params.set("q", terminoBusqueda);
     if (generoSel) params.set("genero", generoSel);
     if (plataformaSel) params.set("plataforma", plataformaSel);
@@ -115,7 +130,7 @@ export default function Juegos() {
       params.set("adult", usuario.filtro_adulto ? "1" : "0");
     }
     navigate(`?${params.toString()}`, { replace: true });
-  }, [pagina, orden, generoSel, plataformaSel, publisherSel, terminoBusqueda, filtersLoaded, autenticado, usuario?.filtro_adulto]);
+  }, [pagina, orden, ascendente, generoSel, plataformaSel, publisherSel, terminoBusqueda, filtersLoaded, autenticado, usuario?.filtro_adulto]);
 
   const generarPaginas = () => {
     const delta = 2;
@@ -134,18 +149,50 @@ export default function Juegos() {
     return res;
   };
 
+  const toggleOrden = (nuevoOrden) => {
+    if (orden === nuevoOrden) {
+      setAscendente(!ascendente);
+    } else {
+      setOrden(nuevoOrden);
+      setAscendente(false);
+    }
+    setOrdenAbierto(false);
+  };
+
   return (
     <div className="min-h-screen bg-fondo text-claro p-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
         <h1 className="text-3xl font-bold flex-1">
           {terminoBusqueda ? `Resultados para "${terminoBusqueda}"` : "🎮 Juegos"}
         </h1>
-        <div className="flex flex-wrap gap-4 w-full lg:w-auto">
-          <select value={orden} onChange={(e) => setOrden(e.target.value)} className="bg-metal text-claro border border-borde rounded px-3 py-1">
-            <option value="popular">📈 Más populares</option>
-            <option value="nombre">🔤 Nombre (A-Z)</option>
-            <option value="fecha">🕒 Más recientes</option>
-          </select>
+        <div className="flex flex-wrap gap-4 w-full lg:w-auto items-center">
+          {/* Dropdown Orden */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setOrdenAbierto(!ordenAbierto)}
+              className="bg-metal border border-borde text-claro px-3 py-1 rounded"
+            >
+              Orden: {orden} {ascendente ? "↑" : "↓"}
+            </button>
+            {ordenAbierto && (
+              <div className="absolute right-0 mt-2 w-48 bg-metal border border-borde rounded shadow-lg z-50">
+                {["popular", "nombre", "fecha"].map((o) => (
+                  <button
+                    key={o}
+                    onClick={() => toggleOrden(o)}
+                    className={`w-full text-left px-4 py-2 hover:bg-borde ${
+                      orden === o ? "font-bold text-naranja" : ""
+                    }`}
+                  >
+                    {o === "popular" && "📈 Popularidad"}
+                    {o === "nombre" && "🔤 Nombre"}
+                    {o === "fecha" && "🕒 Fecha de salida"}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <select value={generoSel} onChange={(e) => setGeneroSel(e.target.value)} className="bg-metal text-claro border border-borde rounded px-3 py-1">
             <option value="">🎭 Todos los géneros</option>
             {genres.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -161,117 +208,42 @@ export default function Juegos() {
         </div>
       </div>
 
-      {/* Total resultados */}
-      {
-        !cargando && (
-          <div className="mb-4 text-claro">
-            {totalResultados} resultado{totalResultados !== 1 && "s"}
-          </div>
-        )
-      }
+      {/* Resultado y grid */}
+      {!cargando && (
+        <div className="mb-4 text-claro">
+          {totalResultados} resultado{totalResultados !== 1 && "s"}
+        </div>
+      )}
 
-      {/* Sin resultados */}
-      {
-        !cargando && juegos.length === 0 && terminoBusqueda != "" && (
-          <div className="text-center text-xl text-claro py-10">
-            No hay resultados para "{terminoBusqueda}"
-          </div>
-        )
-      }
+      {descargando ? (
+        <div className="text-center text-naranja font-bold py-10">
+          Estamos recopilando todos los datos de IGDB. Espera unos segundos.
+        </div>
+      ) : cargando ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+          {Array(porPagina).fill().map((_, i) => (
+            <TarjetaSkeleton key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+          {juegos.map((j) => (
+            <GameCard key={j.id} juego={j} onClick={() => navigate(`/juego/${j.id}`)} />
+          ))}
+        </div>
+      )}
 
-      {/* Skeleton */}
-      {
-        descargando ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="text-naranja text-xl md:text-2xl font-bold mb-4">
-              <svg className="mx-auto mb-2 animate-spin h-10 w-10 text-naranja animate-pulse" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-              </svg>
-              Estamos recopilando todos los datos de IGDB.<br />
-              Por favor, espera unos segundos y vuelve a intentarlo.
-              <p>busquedas más pequeñas siguen estando disponible</p>
-            </div>
-
-          </div>
-        ) : cargando ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-            {Array(porPagina).fill().map((_, i) => (
-              <TarjetaSkeleton key={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-            {juegos.map((j) => (
-              <div
-                key={j.id}
-                className="relative group rounded-lg overflow-hidden shadow-lg transition-transform duration-50 transform-gpu cursor-pointer"
-                onMouseMove={(e) => {
-                  const card = e.currentTarget;
-                  const rect = card.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const y = e.clientY - rect.top;
-                  const rx = -(y - rect.height / 2) / 10;
-                  const ry = (x - rect.width / 2) / 10;
-                  card.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.1)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform =
-                    "perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)";
-                }}
-                onClick={() => navigate(`/juego/${j.id}`)}
-              >
-                {j.cover?.url ? (
-                  <img
-                    src={`https:${j.cover.url.replace("t_thumb", "t_cover_big")}`}
-                    alt={j.name}
-                    className="block w-full max-h-[340px] object-contain transition-transform duration-50 group-hover:scale-[1.05]"
-                  />
-                ) : (
-                  <div className="w-full max-h-[340px] flex items-center justify-center bg-metal text-gray-300 text-sm px-2">
-                    Sin portada
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-50" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-50">
-                  <h2 className="text-white text-lg font-semibold drop-shadow-md px-4 text-center">
-                    {j.name}
-                  </h2>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      }
-      {
-        cargando && mensajeCargaLenta && (
-          <div className="mt-8 text-center text-naranja text-lg font-bold animate-pulse">
-            La búsqueda puede tardar un poco.<br />
-            Estamos descargando muchos datos y optimizando tu consulta...
-          </div>
-        )
-      }
-
-
-      {/* Texto página */}
-      {
-        paginasTotales > 1 && !cargando && (
-          <div className="text-center text-claro mt-6">
-            Página {pagina} de {paginasTotales}
-          </div>
-        )
-      }
-
-      {/* Botones paginación */}
-      {
-        paginasTotales > 1 && !cargando && (
-          <div className="flex justify-center mt-4 flex-wrap gap-2">
+      {/* Paginación */}
+      {paginasTotales > 1 && !cargando && (
+        <div className="text-center mt-6">
+          Página {pagina} de {paginasTotales}
+          <div className="flex justify-center mt-2 flex-wrap gap-2">
             {generarPaginas().map((n, i) =>
               n === "..." ? (
-                <span key={i} className="px-2 text-gray-400">…</span>
+                <span key={`dots-${i}`} className="px-2 text-gray-400">…</span>
               ) : (
                 <button
-                  key={n}
+                  key={`pag-${n}`}
                   onClick={() => setPagina(n)}
                   className={`px-3 py-1 rounded ${pagina === n
                     ? "bg-naranja text-black font-bold"
@@ -283,8 +255,8 @@ export default function Juegos() {
               )
             )}
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+    </div>
   );
 }

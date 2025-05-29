@@ -89,17 +89,16 @@ def listar_juegos(request):
 
         clauses = []
         if genero:
-            clauses.append(f"genres = ({genero})")
+            clauses.append(lambda j: genero in map(str, j.get("genres", [])))
         if plataforma:
-            clauses.append(f"platforms = ({plataforma})")
+            clauses.append(lambda j: plataforma in map(str, j.get("platforms", [])))
         if publisher:
             clauses.append(
-                "involved_companies.publisher = true "
-                f"& involved_companies.company = ({publisher})"
+                lambda j: any(
+                    c.get("publisher") and str(c.get("company")) == publisher
+                    for c in j.get("involved_companies", [])
+                )
             )
-
-        where_part_base = f"where {' & '.join(clauses)};" if clauses else ""
-        search_part = f'search "{q.strip()}";' if q.strip() else ""
 
         token = obtener_token_igdb()
         headers = {
@@ -124,14 +123,12 @@ def listar_juegos(request):
             "themes",
         ]
 
-        # Consulta COUNT para paginación real
-        count_query = " ".join(p for p in (search_part, where_part_base, "count;") if p)
-        print(f"[IGDB] Count query: {count_query}")
-        res_count = safe_post(f"{IGDB_BASE_URL}/games/count", headers, count_query)
-        total = int(res_count.json().get("count", 0))
-        print(f"[IGDB] Total juegos estimado: {total}")
+        CACHE_KEY_JUEGOS_MASIVOS = "igdb_cache_juegos_masivos"
 
-        if orden == "popular" and total > 500:
+        juegos = cache.get(CACHE_KEY_JUEGOS_MASIVOS)
+        if juegos:
+            juegos = pickle.loads(juegos)
+        else:
             if cache.get(DESCARGANDO_KEY) and not cache.get(DESCARGANDO_COMPLETADO_KEY):
                 return Response(
                     {
@@ -147,118 +144,82 @@ def listar_juegos(request):
                 {"estado": True, "inicio": datetime.utcnow().isoformat()},
                 timeout=None,
             )
-            try:
-                cache_key = (
-                    "igdb_cache_"
-                    + hashlib.sha1(
-                        (search_part + where_part_base + orden).encode()
-                    ).hexdigest()
+
+            juegos, ids = [], []
+            offset_loop = 0
+            while True:
+                query = f"""
+                    fields {", ".join(fields)};
+                    sort popularity desc;
+                    limit 500;
+                    offset {offset_loop};
+                """
+                res = safe_post(f"{IGDB_BASE_URL}/games", headers, query)
+                chunk = res.json()
+                if not chunk:
+                    break
+                juegos.extend(chunk)
+                ids.extend([j["id"] for j in chunk])
+                offset_loop += 500
+                if len(chunk) < 500:
+                    break
+
+            # Popularidad (relevancia) separada
+            popularidad_map = {}
+            for i in range(0, len(ids), 500):
+                pop_query = f"fields game_id,value; where game_id = ({','.join(str(x) for x in ids[i:i+500])}) & popularity_type = 1;"
+                pop_res = safe_post(
+                    f"{IGDB_BASE_URL}/popularity_primitives", headers, pop_query
                 )
-                juegos_cache = cache.get(cache_key)
-                if juegos_cache:
-                    juegos = pickle.loads(juegos_cache)
-                else:
-                    juegos, ids = [], []
-                    offset_loop = 0
-                    while True:
-                        partes = [
-                            f"fields {', '.join(fields)};",
-                            "sort popularity desc;",
-                            f"limit 500;",
-                            f"offset {offset_loop};",
-                        ]
-                        games_query = " ".join(partes)
-                        res = safe_post(f"{IGDB_BASE_URL}/games", headers, games_query)
-                        chunk = res.json()
-                        if not chunk:
-                            break
-                        juegos.extend(chunk)
-                        ids.extend([j["id"] for j in chunk])
-                        offset_loop += 500
-                        if len(chunk) < 500:
-                            break
+                if pop_res.status_code == 200:
+                    pop_data = pop_res.json()
+                    popularidad_map.update({p["game_id"]: p["value"] for p in pop_data})
+            for juego in juegos:
+                juego["popularidad"] = popularidad_map.get(juego["id"], None)
 
-                    popularidad_map = {}
-                    for i in range(0, len(ids), 500):
-                        pop_query = f"fields game_id,value; where game_id = ({','.join(str(x) for x in ids[i:i+500])}) & popularity_type = 1;"
-                        pop_res = safe_post(
-                            f"{IGDB_BASE_URL}/popularity_primitives", headers, pop_query
-                        )
-                        if pop_res.status_code == 200:
-                            pop_data = pop_res.json()
-                            popularidad_map.update(
-                                {p["game_id"]: p["value"] for p in pop_data}
-                            )
+            juegos = sorted(
+                juegos,
+                key=lambda j: (
+                    j.get("popularidad") is None,
+                    -(j.get("popularidad") or 0),
+                ),
+            )
+            cache.set(CACHE_KEY_JUEGOS_MASIVOS, pickle.dumps(juegos), timeout=24 * 3600)
+            cache.set(DESCARGANDO_COMPLETADO_KEY, True, timeout=24 * 3600)
+            cache.delete(DESCARGANDO_KEY)
 
-                    for juego in juegos:
-                        juego["popularidad"] = popularidad_map.get(juego["id"], None)
-                    juegos = sorted(
-                        juegos,
-                        key=lambda j: (
-                            j["popularidad"] is None,
-                            -(j["popularidad"] or 0),
-                        ),
-                    )
+        total_sin_filtrar = len(juegos)
 
-                    cache.set(cache_key, pickle.dumps(juegos), timeout=24 * 3600)
-
-                cache.set(DESCARGANDO_COMPLETADO_KEY, True, timeout=24 * 3600)
-                cache.delete(DESCARGANDO_KEY)
-
-                if filtro_adulto:
-                    juegos = [j for j in juegos if 42 not in j.get("themes", [])]
-
-                offset = (pagina - 1) * por_pagina
-                juegos_pagina = juegos[offset : offset + por_pagina]
-                return Response(
-                    {
-                        "juegos": juegos_pagina,
-                        "total_resultados": len(juegos),
-                        "pagina_actual": pagina,
-                        "paginas_totales": math.ceil(len(juegos) / por_pagina),
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            except Exception as e:
-                cache.delete(DESCARGANDO_KEY)
-                cache.delete(DESCARGANDO_COMPLETADO_KEY)
-                return Response(
-                    {"error": "descarga_masiva", "message": str(e)},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
-        sort_part = ""
-        if not search_part:
-            if orden == "nombre":
-                sort_part = "sort name asc;"
-            elif orden == "fecha":
-                sort_part = "sort first_release_date desc;"
-            else:
-                sort_part = "sort popularity desc;"
-
-        offset = (pagina - 1) * por_pagina
-        partes = [
-            search_part,
-            where_part_base,
-            f"fields {', '.join(fields)};",
-            sort_part,
-            f"limit {por_pagina};",
-            f"offset {offset};",
-        ]
-        games_query = " ".join(p for p in partes if p)
-        res = safe_post(f"{IGDB_BASE_URL}/games", headers, games_query)
-        juegos = res.json()
-
+        # FILTRADO
+        if q.strip():
+            juegos = [j for j in juegos if q.lower() in j.get("name", "").lower()]
+        for c in clauses:
+            juegos = [j for j in juegos if c(j)]
         if filtro_adulto:
             juegos = [j for j in juegos if 42 not in j.get("themes", [])]
 
+        # ORDENACIÓN
+        if orden == "nombre":
+            juegos = sorted(juegos, key=lambda j: j.get("name", "").lower())
+        elif orden == "fecha":
+            juegos = sorted(juegos, key=lambda j: -(j.get("first_release_date") or 0))
+        else:  # popularidad ya aplicada durante la carga
+            pass
+
+        # PAGINACIÓN
+        total_filtrado = len(juegos)
+        ocultos = total_sin_filtrar - total_filtrado
+        offset = (pagina - 1) * por_pagina
+        juegos_pagina = juegos[offset : offset + por_pagina]
+
         return Response(
             {
-                "juegos": juegos,
-                "total_resultados": total,
+                "juegos": juegos_pagina,
+                "total_resultados": total_filtrado,
+                "total_sin_filtrar": total_sin_filtrar,
+                "ocultos": ocultos,
                 "pagina_actual": pagina,
-                "paginas_totales": math.ceil(total / por_pagina),
+                "paginas_totales": math.ceil(total_filtrado / por_pagina),
             },
             status=status.HTTP_200_OK,
         )
@@ -366,14 +327,44 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def list(self, request, *args, **kwargs):
-        if request.query_params.get("game_id"):
-            serializer = self.get_serializer(self.get_queryset(), many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
         qs = self.get_queryset()
-        game_ids = [b.game_id for b in qs]
+        total = qs.count()
+
+        game_id = request.query_params.get("game_id")
+        if game_id:
+            # Si estás buscando por game_id, responde con un array plano
+            serializer = self.get_serializer(qs, many=True)
+            return Response(serializer.data)
+
+        # Paginar normalmente si no hay filtro game_id
+        try:
+            pagina = max(int(request.GET.get("pagina", 1)), 1)
+            por_pagina = max(int(request.GET.get("por_pagina", 60)), 1)
+            print(
+                f"[BIBLIO][DEBUG] GET params => pagina={pagina}, por_pagina={por_pagina}"
+            )
+
+        except Exception:
+            pagina, por_pagina = 1, 60
+
+        offset = (pagina - 1) * por_pagina
+        paginados = qs[offset : offset + por_pagina]
+
+        print(
+            f"[BIBLIO] total={total} pagina={pagina} por_pagina={por_pagina} offset={offset}"
+        )
+        print(f"[BIBLIO] juegos en esta página: {[b.game_id for b in paginados]}")
+
+        game_ids = [b.game_id for b in paginados]
         if not game_ids:
-            return Response({"juegos": []}, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "juegos": [],
+                    "pagina_actual": pagina,
+                    "paginas_totales": 1,
+                    "total_resultados": 0,
+                }
+            )
 
         token = obtener_token_igdb()
         headers = {
@@ -391,12 +382,23 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
         )
         for batch in chunked(game_ids, 500):
             ids_str = ",".join(str(i) for i in batch)
-            q_str = f"fields {campos}; where id = ({ids_str});"
+            q_str = f"fields {campos}; where id = ({ids_str}); limit {len(batch)};"
             res = requests.post(f"{IGDB_BASE_URL}/games", headers=headers, data=q_str)
             if res.status_code == 200:
                 todos_juegos.extend(res.json())
+            else:
+                print(f"[IGDB] Error al obtener datos de juegos: {res.text}")
 
-        return Response({"juegos": todos_juegos}, status=status.HTTP_200_OK)
+        print(f"[BIBLIO] juegos devueltos: {len(todos_juegos)}")
+
+        return Response(
+            {
+                "juegos": todos_juegos,
+                "pagina_actual": pagina,
+                "paginas_totales": math.ceil(total / por_pagina),
+                "total_resultados": total,
+            }
+        )
 
 
 @api_view(["GET"])

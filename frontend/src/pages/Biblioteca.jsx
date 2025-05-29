@@ -28,9 +28,7 @@ export default function Biblioteca() {
 
       {cargando ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-          {Array(porPagina).fill().map((_, i) => (
-            <TarjetaSkeleton key={i} />
-          ))}
+          cargando
         </div>
       ) : juegos.length === 0 ? (
         <p>No tienes juegos en tu biblioteca.</p>

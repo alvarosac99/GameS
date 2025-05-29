@@ -10,37 +10,45 @@ from rest_framework.response import Response
 
 from .models import Biblioteca
 from .serializers import BibliotecaSerializer
+from datetime import datetime
 
 import hashlib
 import pickle
 import time
 
+from requests.exceptions import SSLError
 
-# ------------------- SAFE POST -------------------
+
+# Función segura para peticiones POST con manejo de errores y reintentos
 def safe_post(url, headers, data, max_retries=10):
     retries = 0
     while retries < max_retries:
-        resp = requests.post(url, headers=headers, data=data)
-        if resp.status_code == 429:
-            wait = int(resp.headers.get("Retry-After", 30))
-            print(
-                f"[IGDB] 429 Too Many Requests. Esperando {wait} segundos antes de reintentar..."
-            )
-            time.sleep(wait)
-            retries += 1
-            continue
         try:
+            print(f"[IGDB] POST {url}\n{data}")
+            resp = requests.post(url, headers=headers, data=data)
+            if resp.status_code == 429:
+                wait = int(resp.headers.get("Retry-After", 30))
+                print(f"[IGDB] 429 Too Many Requests. Esperando {wait} segundos...")
+                time.sleep(wait)
+                retries += 1
+                continue
             resp.raise_for_status()
             return resp
+        except SSLError as ssl_err:
+            print(f"[IGDB] Error SSL: {ssl_err} - Reintentando...")
+            time.sleep(3 * (retries + 1))
+            retries += 1
         except requests.HTTPError as e:
-            print(f"[IGDB] Error: {e} - Intento {retries + 1}/{max_retries}")
+            print(f"[IGDB] Error HTTP: {e} - Intento {retries + 1}/{max_retries}")
+            print(f"[IGDB] Body: {resp.text}")
             time.sleep(3 * (retries + 1))
             retries += 1
     raise Exception(f"Demasiados intentos fallidos ({max_retries}) con IGDB.")
 
 
-DESCARGANDO_KEY = "igdb_descargando_todo"
 IGDB_BASE_URL = "https://api.igdb.com/v4"
+DESCARGANDO_KEY = "igdb_descargando_todo"
+DESCARGANDO_COMPLETADO_KEY = "igdb_descarga_completa"
 
 
 def obtener_token_igdb():
@@ -64,26 +72,21 @@ def obtener_token_igdb():
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def listar_juegos(request):
-    """
-    Lista juegos de IGDB con filtro adulto opcional:
-    """
     try:
         pagina = max(int(request.GET.get("pagina", 1)), 1)
         por_pagina = max(int(request.GET.get("por_pagina", 60)), 1)
+
         orden = request.GET.get("orden", "popular")
         q = request.GET.get("q", "")
         genero = request.GET.get("genero")
         plataforma = request.GET.get("plataforma")
         publisher = request.GET.get("publisher")
 
-        # --------------------- FILTRO ADULTO ---------------------
-        filtro_adulto_param = request.GET.get("filtro_adulto")
-        filtro_adulto = True  # Por defecto, siempre filtra para anónimos
+        filtro_adulto_param = request.GET.get("adult")
+        filtro_adulto = True
         if request.user.is_authenticated and filtro_adulto_param is not None:
             filtro_adulto = filtro_adulto_param in ["1", "true", "True", True]
-        # ---------------------------------------------------------
 
-        # Construcción de cláusulas
         clauses = []
         if genero:
             clauses.append(f"genres = ({genero})")
@@ -94,10 +97,8 @@ def listar_juegos(request):
                 "involved_companies.publisher = true "
                 f"& involved_companies.company = ({publisher})"
             )
-        if filtro_adulto:
-            clauses.append("themes != (42)")
 
-        where_part = f"where {' & '.join(clauses)};" if clauses else ""
+        where_part_base = f"where {' & '.join(clauses)};" if clauses else ""
         search_part = f'search "{q.strip()}";' if q.strip() else ""
 
         token = obtener_token_igdb()
@@ -107,6 +108,7 @@ def listar_juegos(request):
             "Accept": "application/json",
             "Content-Type": "text/plain",
         }
+
         fields = [
             "id",
             "name",
@@ -119,17 +121,18 @@ def listar_juegos(request):
             "platforms",
             "involved_companies.publisher",
             "involved_companies.company",
+            "themes",
         ]
 
-        cache_key = (
-            "igdb_cache_"
-            + hashlib.sha1((search_part + where_part + orden).encode()).hexdigest()
-        )
+        # Consulta COUNT para paginación real
+        count_query = " ".join(p for p in (search_part, where_part_base, "count;") if p)
+        print(f"[IGDB] Count query: {count_query}")
+        res_count = safe_post(f"{IGDB_BASE_URL}/games/count", headers, count_query)
+        total = int(res_count.json().get("count", 0))
+        print(f"[IGDB] Total juegos estimado: {total}")
 
-        descargar_todo = not q or q.strip() == ""
-
-        if orden == "popular" and descargar_todo:
-            if cache.get(DESCARGANDO_KEY):
+        if orden == "popular" and total > 500:
+            if cache.get(DESCARGANDO_KEY) and not cache.get(DESCARGANDO_COMPLETADO_KEY):
                 return Response(
                     {
                         "error": "descargando",
@@ -138,28 +141,33 @@ def listar_juegos(request):
                     },
                     status=status.HTTP_202_ACCEPTED,
                 )
-            cache.set(DESCARGANDO_KEY, True, timeout=300)  # 5 min
 
+            cache.set(
+                DESCARGANDO_KEY,
+                {"estado": True, "inicio": datetime.utcnow().isoformat()},
+                timeout=None,
+            )
             try:
+                cache_key = (
+                    "igdb_cache_"
+                    + hashlib.sha1(
+                        (search_part + where_part_base + orden).encode()
+                    ).hexdigest()
+                )
                 juegos_cache = cache.get(cache_key)
                 if juegos_cache:
-                    print(f"\n-- Cargando datos masivos de la caché: {cache_key} --")
                     juegos = pickle.loads(juegos_cache)
-                    cache.delete(DESCARGANDO_KEY)
                 else:
-                    print("\n-- Cache miss, descargando TODO IGDB, paciencia! --")
                     juegos, ids = [], []
                     offset_loop = 0
                     while True:
                         partes = [
-                            where_part,
                             f"fields {', '.join(fields)};",
                             "sort popularity desc;",
                             f"limit 500;",
                             f"offset {offset_loop};",
                         ]
-                        games_query = " ".join(p for p in partes if p)
-                        # -------- SAFE_POST aquí ----------
+                        games_query = " ".join(partes)
                         res = safe_post(f"{IGDB_BASE_URL}/games", headers, games_query)
                         chunk = res.json()
                         if not chunk:
@@ -167,12 +175,9 @@ def listar_juegos(request):
                         juegos.extend(chunk)
                         ids.extend([j["id"] for j in chunk])
                         offset_loop += 500
-                        print(f"Recopilados: {len(juegos)}")
                         if len(chunk) < 500:
                             break
 
-                    print(f"Total juegos recogidos: {len(juegos)}")
-                    # Cruzar con popularidad real
                     popularidad_map = {}
                     for i in range(0, len(ids), 500):
                         pop_query = f"fields game_id,value; where game_id = ({','.join(str(x) for x in ids[i:i+500])}) & popularity_type = 1;"
@@ -194,8 +199,14 @@ def listar_juegos(request):
                             -(j["popularidad"] or 0),
                         ),
                     )
-                    cache.set(cache_key, pickle.dumps(juegos), timeout=12 * 3600)
-                    cache.delete(DESCARGANDO_KEY)
+
+                    cache.set(cache_key, pickle.dumps(juegos), timeout=24 * 3600)
+
+                cache.set(DESCARGANDO_COMPLETADO_KEY, True, timeout=24 * 3600)
+                cache.delete(DESCARGANDO_KEY)
+
+                if filtro_adulto:
+                    juegos = [j for j in juegos if 42 not in j.get("themes", [])]
 
                 offset = (pagina - 1) * por_pagina
                 juegos_pagina = juegos[offset : offset + por_pagina]
@@ -208,94 +219,28 @@ def listar_juegos(request):
                     },
                     status=status.HTTP_200_OK,
                 )
+
             except Exception as e:
                 cache.delete(DESCARGANDO_KEY)
-                print("Error en descarga masiva IGDB:", e)
+                cache.delete(DESCARGANDO_COMPLETADO_KEY)
                 return Response(
-                    {
-                        "error": "descarga_masiva",
-                        "message": str(e),
-                    },
+                    {"error": "descarga_masiva", "message": str(e)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        # Caso normal: búsqueda con texto o filtro + popularidad
-        if orden == "popular" and (q or genero or plataforma or publisher):
-            juegos_cache = cache.get(cache_key)
-            if juegos_cache:
-                juegos = pickle.loads(juegos_cache)
-            else:
-                juegos, ids = [], []
-                offset_loop = 0
-                while True:
-                    partes = [
-                        search_part,
-                        where_part,
-                        f"fields {', '.join(fields)};",
-                        f"limit 500;",
-                        f"offset {offset_loop};",
-                    ]
-                    games_query = " ".join(p for p in partes if p)
-                    res = safe_post(f"{IGDB_BASE_URL}/games", headers, games_query)
-                    chunk = res.json()
-                    if not chunk:
-                        break
-                    juegos.extend(chunk)
-                    ids.extend([j["id"] for j in chunk])
-                    offset_loop += 500
-                    if len(chunk) < 500:
-                        break
-
-                popularidad_map = {}
-                for i in range(0, len(ids), 500):
-                    pop_query = f"fields game_id,value; where game_id = ({','.join(str(x) for x in ids[i:i+500])}) & popularity_type = 1;"
-                    pop_res = safe_post(
-                        f"{IGDB_BASE_URL}/popularity_primitives", headers, pop_query
-                    )
-                    if pop_res.status_code == 200:
-                        pop_data = pop_res.json()
-                        popularidad_map.update(
-                            {p["game_id"]: p["value"] for p in pop_data}
-                        )
-                for juego in juegos:
-                    juego["popularidad"] = popularidad_map.get(juego["id"], None)
-                juegos = sorted(
-                    juegos,
-                    key=lambda j: (j["popularidad"] is None, -(j["popularidad"] or 0)),
-                )
-                cache.set(cache_key, pickle.dumps(juegos), timeout=12 * 3600)
-
-            offset = (pagina - 1) * por_pagina
-            juegos_pagina = juegos[offset : offset + por_pagina]
-            return Response(
-                {
-                    "juegos": juegos_pagina,
-                    "total_resultados": len(juegos),
-                    "pagina_actual": pagina,
-                    "paginas_totales": math.ceil(len(juegos) / por_pagina),
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        # Orden "normal" o texto/filtros normales (paginar IGDB)
-        count_query = " ".join(p for p in (search_part, where_part, "count;") if p)
-        res_count = safe_post(f"{IGDB_BASE_URL}/games/count", headers, count_query)
-        total = int(res_count.json().get("count", 0))
-        paginas_totales = math.ceil(total / por_pagina) if total else 0
-
-        # Orden IGDB (solo en queries filtradas, no por texto)
         sort_part = ""
-        if orden == "nombre":
-            sort_part = "sort name asc;"
-        elif orden == "fecha":
-            sort_part = "sort first_release_date desc;"
-        else:
-            sort_part = "sort popularity desc;"
+        if not search_part:
+            if orden == "nombre":
+                sort_part = "sort name asc;"
+            elif orden == "fecha":
+                sort_part = "sort first_release_date desc;"
+            else:
+                sort_part = "sort popularity desc;"
 
         offset = (pagina - 1) * por_pagina
         partes = [
             search_part,
-            where_part,
+            where_part_base,
             f"fields {', '.join(fields)};",
             sort_part,
             f"limit {por_pagina};",
@@ -304,31 +249,21 @@ def listar_juegos(request):
         games_query = " ".join(p for p in partes if p)
         res = safe_post(f"{IGDB_BASE_URL}/games", headers, games_query)
         juegos = res.json()
-        juegos_ids = [str(j["id"]) for j in juegos]
-        popularidad_map = {}
-        if juegos_ids:
-            pop_query = f"fields game_id,value; where game_id = ({','.join(juegos_ids)}) & popularity_type = 1;"
-            pop_res = safe_post(
-                f"{IGDB_BASE_URL}/popularity_primitives", headers, pop_query
-            )
-            if pop_res.status_code == 200:
-                pop_data = pop_res.json()
-                popularidad_map = {p["game_id"]: p["value"] for p in pop_data}
-        for juego in juegos:
-            juego["popularidad"] = popularidad_map.get(juego["id"], None)
+
+        if filtro_adulto:
+            juegos = [j for j in juegos if 42 not in j.get("themes", [])]
 
         return Response(
             {
                 "juegos": juegos,
                 "total_resultados": total,
                 "pagina_actual": pagina,
-                "paginas_totales": paginas_totales,
+                "paginas_totales": math.ceil(total / por_pagina),
             },
             status=status.HTTP_200_OK,
         )
 
     except requests.exceptions.HTTPError:
-        print("HTTPError al consultar IGDB")
         return Response(
             {
                 "juegos": [],
@@ -339,7 +274,6 @@ def listar_juegos(request):
             status=status.HTTP_200_OK,
         )
     except Exception as e:
-        print("Excepción en listar_juegos:", e)
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

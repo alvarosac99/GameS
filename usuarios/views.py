@@ -32,14 +32,9 @@ def perfil_publico_view(request, nombre_usuario):
             "juegos": getattr(perfil, "juegos", 0),
             "amigos": getattr(perfil, "amigos", 0),
             "seguidores": getattr(perfil, "seguidores", 0),
-            "favoritos": (
-                perfil.favoritos_json() if hasattr(perfil, "favoritos_json") else []
-            ),
         }
     )
 
-
-# PERFIL PERSONAL (/me/)
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def perfil_usuario(request):
@@ -205,3 +200,18 @@ def actualizar_filtro_adulto(request):
         return Response(
             {"error": "No se ha proporcionado el valor de filtro_adulto"}, status=400
         )
+
+#favs
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def actualizar_favoritos(request):
+    favoritos = request.data.get('favoritos', [])
+    if not isinstance(favoritos, list) or len(favoritos) > 5:
+        return Response({'error': 'Solo puedes tener hasta 5 juegos favoritos.'}, status=400)
+
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil:
+        perfil, _ = Perfil.objects.get_or_create(user=request.user)
+    perfil.favoritos = favoritos
+    perfil.save()
+    return Response({'ok': True})

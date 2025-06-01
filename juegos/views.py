@@ -12,6 +12,9 @@ from .models import Biblioteca
 from .serializers import BibliotecaSerializer
 from datetime import datetime
 
+from django.contrib.auth import get_user_model
+import random
+
 import hashlib
 import pickle
 import time
@@ -455,3 +458,54 @@ def filtros_juegos(request):
             {"error": "No se pudieron cargar los filtros."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+        
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def stats_bienvenida(request):
+    # Contadores globales
+    total_usuarios = get_user_model().objects.count()
+    total_bibliotecas = Biblioteca.objects.count()
+
+    # Juegos en caché (todos)
+    CACHE_KEY_JUEGOS_MASIVOS = "igdb_cache_juegos_masivos"
+    juegos = cache.get(CACHE_KEY_JUEGOS_MASIVOS)
+    if juegos:
+        juegos = pickle.loads(juegos)
+    else:
+        juegos = []
+
+    total_juegos = len(juegos)  # TODOS los juegos en caché
+
+    # FILTRO: Solo juegos con cover y sin temática erótica (id=42)
+    juegos_filtrados = [
+        j for j in juegos
+        if j.get("cover") and 42 not in (j.get("themes") or [])
+    ]
+    total_juegos_mostrados = len(juegos_filtrados)
+
+    # Top 10 populares
+    juegos_populares = sorted(
+        [j for j in juegos_filtrados if j.get("popularidad") is not None],
+        key=lambda j: -j["popularidad"]
+    )[:10]
+
+    # 10 aleatorios
+    juegos_random = random.sample(juegos_filtrados, min(10, total_juegos_mostrados)) if juegos_filtrados else []
+
+    def serializar(juego):
+        return {
+            "id": juego["id"],
+            "name": juego["name"],
+            "cover": juego.get("cover", {}),
+            "summary": juego.get("summary", ""),
+            "first_release_date": juego.get("first_release_date", None),
+        }
+
+    return Response({
+        "totalJuegos": total_juegos,  # TODOS
+        "totalJuegosMostrados": total_juegos_mostrados,  # SOLO portada (con cover y sin tema 42)
+        "totalUsuarios": total_usuarios,
+        "totalBibliotecas": total_bibliotecas,
+        "juegosPopulares": [serializar(j) for j in juegos_populares],
+        "juegosRandom": [serializar(j) for j in juegos_random],
+    })

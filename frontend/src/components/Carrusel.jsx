@@ -4,25 +4,44 @@ import GameCard from "./GameCard";
 
 export default function Carrusel({ juegos = [], onSelect = () => {} }) {
   const [index, setIndex] = useState(0);
-  const visible = juegos.slice(index, index + 5);
-  const puedeRetroceder = index > 0;
-  const puedeAvanzar = index + 5 < juegos.length;
+
+  // Repite los juegos hasta tener 5 si la lista es menor, siempre que haya al menos uno
+  const juegosDisplay =
+    juegos.length === 0
+      ? []
+      : juegos.length >= 5
+      ? juegos
+      : Array.from({ length: 5 }, (_, i) => juegos[i % juegos.length]);
 
   function retroceder() {
-    if (puedeRetroceder) setIndex((prev) => prev - 1);
+    setIndex((prev) =>
+      (prev - 1 + juegosDisplay.length) % juegosDisplay.length
+    );
   }
 
   function avanzar() {
-    if (puedeAvanzar) setIndex((prev) => prev + 1);
+    setIndex((prev) => (prev + 1) % juegosDisplay.length);
   }
+
+  // Prepara el array visible de 5 juegos de manera circular
+  const visible = [];
+  for (let i = 0; i < 5; i++) {
+    visible.push(juegosDisplay[(index + i) % juegosDisplay.length]);
+  }
+
+  // Si no hay juegos, no se muestra nada
+  if (juegosDisplay.length === 0) return null;
 
   return (
     <div className="relative w-full overflow-hidden py-8">
       {/* Flecha Izquierda */}
       <button
         onClick={retroceder}
-        disabled={!puedeRetroceder}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 p-3 text-xl text-claro hover:text-naranja disabled:opacity-30"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 text-xl text-claro hover:text-naranja
+        outline-none focus:outline-none ring-0 border-none active:outline-none active:ring-0"
+        tabIndex={0}
+        aria-label="Retroceder carrusel"
+        style={{ boxShadow: "none" }}
       >
         <FaChevronLeft />
       </button>
@@ -34,6 +53,7 @@ export default function Carrusel({ juegos = [], onSelect = () => {} }) {
       >
         {visible.map((juego, i) => {
           const isCenter = i === Math.floor(visible.length / 2);
+          if (!juego?.id) return <div key={i} style={{ width: 220 }} />;
           return (
             <div
               key={juego.id}
@@ -54,8 +74,11 @@ export default function Carrusel({ juegos = [], onSelect = () => {} }) {
       {/* Flecha Derecha */}
       <button
         onClick={avanzar}
-        disabled={!puedeAvanzar}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 p-3 text-xl text-claro hover:text-naranja disabled:opacity-30"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 text-xl text-claro hover:text-naranja
+        outline-none focus:outline-none ring-0 border-none active:outline-none active:ring-0"
+        tabIndex={0}
+        aria-label="Avanzar carrusel"
+        style={{ boxShadow: "none" }}
       >
         <FaChevronRight />
       </button>

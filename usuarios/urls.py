@@ -8,5 +8,6 @@ urlpatterns = [
     path("register/", views.register_view, name="register"),
     path('me/', views.perfil_usuario, name='perfil_usuario'),
     path('me/filtro_adulto/', views.actualizar_filtro_adulto, name='actualizar_filtro_adulto'),  # <--- Añadido
+    path('favoritos/', views.actualizar_favoritos, name='actualizar_favoritos'),  # <--- Mueve esto ARRIBA
     path("<str:nombre_usuario>/", views.perfil_publico_view, name='perfil_publico'),
 ]

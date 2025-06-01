@@ -41,7 +41,7 @@ SECRET_KEY = "django-insecure-g%j5z$3ww3)o!=lzmb6#01k-==k)9l7rs02-abxn)d%fma#y(-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["10.42.0.1", "localhost", "172.16.2.206", "192.168.1.37"]
+ALLOWED_HOSTS = ["10.42.0.1", "localhost", "172.16.2.206", "192.168.1.37", "192.168.1.39", "gamesopa.duckdns.org", "192.168.56.1"]
 
 # IGDB / Twitch API
 IGDB_CLIENT_ID = "uo2hohcxtk9lyb311wo4ei9xdhn9sz"
@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "usuarios",
     "juegos",
+    "comentarios",
     "corsheaders",
 ]
 
@@ -79,14 +80,19 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://172.16.2.206:5173",
     "http://192.168.1.37:5173",
+    "http://192.168.1.39:5173",
+    "http://192.168.56.1:5173",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
+    
     "http://10.42.0.1:5173",
     "http://localhost:5173",  # Vite
     "http://172.16.2.206:5173",
     "http://192.168.1.37:5173",
+    "http://192.168.1.39:5173",
+    "http://192.168.56.1:5173",
 ]
 
 # Rest framework settings

@@ -1,5 +1,21 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
+// Utilidad para obtener la cookie del CSRF token
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -11,13 +27,27 @@ export default function AuthProvider({ children }) {
   const [autenticado, setAutenticado] = useState(false);
   const [cargando, setCargando] = useState(true);
 
+  // Fetch seguro con CSRF y sesión incluida
+  const fetchAuth = (url, options = {}) => {
+    const headers = options.headers || {};
+    if (["POST", "PUT", "PATCH", "DELETE"].includes((options.method || "GET").toUpperCase())) {
+      headers["X-CSRFToken"] = getCookie("csrftoken");
+      headers["Content-Type"] = "application/json";
+    }
+    return fetch(url, {
+      ...options,
+      credentials: "include",
+      headers,
+    });
+  };
+
   // Carga el usuario y su filtro_adulto
   useEffect(() => {
+    // Esto asegura que la cookie CSRF esté presente
     fetch("/api/usuarios/session/", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) {
-          // Ahora obtenemos también el filtro_adulto
           fetch("/api/usuarios/me/", { credentials: "include" })
             .then(r => r.json())
             .then(userdata => {
@@ -39,7 +69,6 @@ export default function AuthProvider({ children }) {
   }, []);
 
   const login = (token, datos) => {
-    // Cuando se loguea, vuelve a cargar el usuario completo
     fetch("/api/usuarios/me/", { credentials: "include" })
       .then(r => r.json())
       .then(userdata => {
@@ -57,7 +86,14 @@ export default function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, autenticado, login, logout, cargando }}>
+    <AuthContext.Provider value={{
+      usuario,
+      autenticado,
+      login,
+      logout,
+      cargando,
+      fetchAuth, 
+    }}>
       {children}
     </AuthContext.Provider>
   );

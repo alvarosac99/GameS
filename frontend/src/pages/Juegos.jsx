@@ -163,9 +163,13 @@ export default function Juegos() {
   return (
     <div className="min-h-screen bg-fondo text-claro p-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
-        <h1 className="text-3xl font-bold flex-1">
-          {terminoBusqueda ? `Resultados para "${terminoBusqueda}"` : "🎮 Juegos"}
-        </h1>
+        <div className="mb-3">
+          <h1 className="text-4xl font-black mb-1">
+            {terminoBusqueda
+              ? `Resultados para ${terminoBusqueda.charAt(0).toUpperCase() + terminoBusqueda.slice(1)}`
+              : "🎮 Juegos"}
+          </h1>
+        </div>
         <div className="flex flex-wrap gap-4 w-full lg:w-auto items-center">
           {/* Dropdown Orden */}
           <div className="relative" ref={dropdownRef}>
@@ -181,9 +185,8 @@ export default function Juegos() {
                   <button
                     key={o}
                     onClick={() => toggleOrden(o)}
-                    className={`w-full text-left px-4 py-2 hover:bg-borde ${
-                      orden === o ? "font-bold text-naranja" : ""
-                    }`}
+                    className={`w-full text-left px-4 py-2 hover:bg-borde ${orden === o ? "font-bold text-naranja" : ""
+                      }`}
                   >
                     {o === "popular" && "📈 Popularidad"}
                     {o === "nombre" && "🔤 Nombre"}
@@ -201,10 +204,6 @@ export default function Juegos() {
           <select value={plataformaSel} onChange={(e) => setPlataformaSel(e.target.value)} className="bg-metal text-claro border border-borde rounded px-3 py-1">
             <option value="">🖥️ Todas las plataformas</option>
             {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          <select value={publisherSel} onChange={(e) => setPublisherSel(e.target.value)} className="bg-metal text-claro border border-borde rounded px-3 py-1">
-            <option value="">🏢 Todos los publishers</option>
-            {publishers.map((pub) => <option key={pub.id} value={pub.id}>{pub.name}</option>)}
           </select>
         </div>
       </div>

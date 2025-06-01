@@ -8,6 +8,7 @@ router = DefaultRouter()
 router.register(r"biblioteca", views.BibliotecaViewSet, basename="biblioteca")
 
 urlpatterns = [
+    path("stats_bienvenida/", views.stats_bienvenida, name="stats_bienvenida"),
     path("filtros/", views.filtros_juegos, name="filtros_juegos"),
     # Listado de juegos (alias populares/)
     path("populares/", views.listar_juegos, name="listar_juegos"),

@@ -1,32 +1,23 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import "react-loading-skeleton/dist/skeleton.css";
 import DropLoader from "@/components/DropLoader";
 import Carrusel from "@/components/Carrusel";
+import Comentarios from "@/components/Comentarios";
+import { useAuth } from "@/context/AuthContext";
+
 import {
   SiSteam,
   SiEpicgames,
   SiGogdotcom,
   SiNintendoswitch,
   SiUbisoft,
-  SiItchdotio,
   SiAppstore,
   SiGoogleplay,
   SiYoutube,
   SiTwitch,
 } from "react-icons/si";
 import { FaPlaystation, FaXbox, FaStar, FaThumbsUp } from "react-icons/fa";
-
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    document.cookie.split(";").forEach((c) => {
-      const [key, val] = c.trim().split("=");
-      if (key === name) cookieValue = decodeURIComponent(val);
-    });
-  }
-  return cookieValue;
-}
 
 const SHOP_ICONS = {
   steam: { key: "steam", Icon: SiSteam, name: "Steam" },
@@ -81,16 +72,12 @@ export default function JuegoUnico() {
   const navigate = useNavigate();
   const [juego, setJuego] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const [isAuth, setIsAuth] = useState(false);
   const [inLibrary, setInLibrary] = useState(false);
   const [entryId, setEntryId] = useState(null);
 
-  useEffect(() => {
-    fetch("/api/usuarios/me/", { credentials: "include" })
-      .then((res) => { if (res.ok) setIsAuth(true); })
-      .catch(() => { });
-  }, []);
+  const { autenticado, fetchAuth } = useAuth();
 
+  // Cargar juego
   useEffect(() => {
     setJuego(null);
     setInLibrary(false);
@@ -106,8 +93,9 @@ export default function JuegoUnico() {
       .catch(() => setCargando(false));
   }, [id]);
 
+  // Comprobar si está en la biblioteca
   useEffect(() => {
-    if (!juego || !isAuth) return;
+    if (!juego || !autenticado) return;
 
     fetch(`/api/juegos/biblioteca/?game_id=${juego.id}`, {
       credentials: "include",
@@ -126,16 +114,11 @@ export default function JuegoUnico() {
         setInLibrary(false);
         setEntryId(null);
       });
-  }, [juego?.id, isAuth]);
+  }, [juego?.id, autenticado]);
 
   function handleAdd() {
-    fetch("/api/juegos/biblioteca/", {
+    fetchAuth("/api/juegos/biblioteca/", {
       method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
       body: JSON.stringify({ game_id: juego.id }),
     })
       .then((res) => {
@@ -151,10 +134,8 @@ export default function JuegoUnico() {
 
   function handleRemove() {
     if (!entryId) return;
-    fetch(`/api/juegos/biblioteca/${entryId}/`, {
+    fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
       method: "DELETE",
-      credentials: "include",
-      headers: { "X-CSRFToken": getCookie("csrftoken") },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Error al eliminar");
@@ -191,6 +172,7 @@ export default function JuegoUnico() {
 
   return (
     <div className="relative w-full min-h-screen bg-fondo text-claro">
+      {/* Banner */}
       {juego.screenshots?.[0]?.url && (
         <div className="relative w-full overflow-hidden z-0">
           <img
@@ -201,8 +183,10 @@ export default function JuegoUnico() {
           <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-b from-transparent to-fondo pointer-events-none" />
         </div>
       )}
+
       <div className={`max-w-7xl mx-auto ${juego.screenshots?.[0]?.url ? '-mt-32' : 'mt-8'} px-4 md:px-8 relative z-20`}>
         <div className="bg-metal/90 rounded-2xl shadow-xl p-8 mb-10 flex flex-col lg:flex-row gap-8">
+          {/* Columna Izquierda */}
           <div className="flex-shrink-0 flex flex-col items-center">
             {juego.cover?.url && (
               <img
@@ -211,7 +195,7 @@ export default function JuegoUnico() {
                 className="w-64 rounded-lg shadow-lg"
               />
             )}
-            {isAuth ? (
+            {autenticado ? (
               <div className="mt-6 w-full flex justify-between gap-4">
                 {inLibrary ? (
                   <button className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded" onClick={handleRemove}>
@@ -260,6 +244,7 @@ export default function JuegoUnico() {
               </div>
             )}
           </div>
+          {/* Columna Derecha */}
           <div className="flex-1 flex flex-col gap-6">
             <h1 className="text-4xl md:text-5xl font-extrabold">{juego.name}</h1>
             <p className="text-gray-300">
@@ -341,6 +326,13 @@ export default function JuegoUnico() {
                 />
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Comentarios en una tarjeta bonita */}
+        <div className="max-w-3xl mx-auto my-10">
+          <div className="bg-metal rounded-2xl shadow-xl p-8 border-2 border-borde/40">
+            <Comentarios juegoId={juego.id} isAuth={autenticado}/>
           </div>
         </div>
       </div>

@@ -25,6 +25,7 @@ class Perfil(models.Model):
     avatar = models.ImageField(upload_to=avatar_path(), null=True, blank=True)
     biografia = models.TextField(blank=True)
     filtro_adulto = models.BooleanField(default=True)
+    favoritos = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.rol}"

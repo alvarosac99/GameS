@@ -23,6 +23,7 @@ from . import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('api/comentarios/', include('comentarios.urls'), name="comentarios"), # Comentarios
     path("api/admin/forzar_cache/", views.forzar_cache_juegos, name="forzar_cache"), # URL para forzar el cache
     path("api/usuarios/", include("usuarios.urls")),  # URL para la app de usuarios
     path("api/juegos/", include("juegos.urls")),  # URL para la app de juegos

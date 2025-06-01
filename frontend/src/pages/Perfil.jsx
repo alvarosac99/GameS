@@ -4,15 +4,19 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Pencil } from "lucide-react"
 import EditarPerfil from "@/components/EditarPerfil"
+import EditarFavoritos from "@/components/EditarFavoritos";
 import { useAuth } from "@/context/AuthContext"
+import GameCard from "@/components/GameCard"
 
 export default function Perfil() {
   const { nombre } = useParams()
   const navigate = useNavigate()
-  const { usuario, cargando } = useAuth()
+  const { usuario, cargando, fetchAuth } = useAuth()  // <--- fetchAuth aquí
 
   const [perfil, setPerfil] = useState(null)
+  const [favoritosDatos, setFavoritosDatos] = useState([]) // objetos de juegos favoritos
   const [modoEdicion, setModoEdicion] = useState(false)
+  const [modoFavoritos, setModoFavoritos] = useState(false)
   const [animacion, setAnimacion] = useState("onda")
 
   const esMiPerfil = perfil?.es_mi_perfil
@@ -45,6 +49,7 @@ export default function Perfil() {
       </motion.span>
     ))
 
+  // Carga el perfil y favoritos (IDs)
   useEffect(() => {
     if (cargando) return;
 
@@ -77,6 +82,23 @@ export default function Perfil() {
         });
     }
   }, [nombre, usuario, cargando, navigate])
+
+  // Cuando cambian los favoritos (IDs), busca los datos de los juegos (solo si hay alguno)
+  useEffect(() => {
+    const ids = perfil?.favoritos?.filter(Boolean) || [];
+    if (ids.length === 0) {
+      setFavoritosDatos([]);
+      return;
+    }
+    // Llama solo si hay IDs válidos
+    fetch(`/api/juegos/populares/?por_pagina=5&ids=${ids.join(",")}`)
+      .then(res => res.json())
+      .then(data => setFavoritosDatos(
+        // Ordena igual que los IDs guardados
+        ids.map(id => data.juegos.find(j => j.id === id)).filter(Boolean)
+      ))
+      .catch(() => setFavoritosDatos([]));
+  }, [perfil?.favoritos]);
 
   if (cargando || !perfil) return <p className="text-center text-claro mt-10">Cargando perfil...</p>
 
@@ -144,17 +166,45 @@ export default function Perfil() {
           </div>
 
           <div className="bg-metal p-4 rounded shadow border border-borde">
-            <h2 className="text-lg font-semibold text-naranja mb-2">🎮 Juegos favoritos</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {perfil.favoritos.map((juego, i) => (
-                <img key={i} src={juego} className="w-full rounded" alt={`juego-${i}`} />
-              ))}
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-semibold text-naranja">🎮 Juegos favoritos</h2>
+              {esMiPerfil && (
+                <button
+                  onClick={() => setModoFavoritos(true)}
+                  className="ml-2 text-xs bg-naranja text-black px-2 py-1 rounded font-bold"
+                >Editar</button>
+              )}
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {favoritosDatos.length === 0
+                ? <div className="text-claro/50 italic">No tienes juegos favoritos</div>
+                : favoritosDatos.map((juego, i) => (
+                  <div key={juego.id || i} className="w-24">
+                    <GameCard juego={juego} onClick={() => navigate(`/juego/${juego.id}`)} />
+                  </div>
+                ))}
             </div>
           </div>
         </div>
       </div>
 
       {modoEdicion && <EditarPerfil cerrar={() => setModoEdicion(false)} />}
+
+      {/* Modal para editar favoritos */}
+      {modoFavoritos && (
+        <EditarFavoritos
+          favoritos={favoritosDatos}
+          onGuardar={async (nuevos) => {
+            await fetchAuth('/api/usuarios/favoritos/', {
+              method: 'POST',
+              body: JSON.stringify({ favoritos: nuevos.map(j => j.id) }),
+            });
+            setPerfil(prev => ({ ...prev, favoritos: nuevos.map(j => j.id) }));
+            setModoFavoritos(false);
+          }}
+          onCerrar={() => setModoFavoritos(false)}
+        />
+      )}
     </div>
   )
 }

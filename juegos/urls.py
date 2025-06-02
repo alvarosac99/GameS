@@ -16,4 +16,7 @@ urlpatterns = [
     path("detalle/<int:id>/", views.detalle_juego, name="detalle_juego"),
     # Rutas de BibliotecaViewSet: list, create, retrieve, update, destroy...
     path("", include(router.urls)),
+    # Juegos por ID
+    path("buscar_id/", views.buscar_juego_por_id, name="buscar_juego_por_id"),
+    path("valoracion/<int:juego_id>/", views.valorar_juego, name="valorar_juego"),
 ]

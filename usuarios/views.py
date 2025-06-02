@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from usuarios.models import Perfil
 from django.shortcuts import get_object_or_404
@@ -11,13 +11,16 @@ import json
 User = get_user_model()
 
 
-# PERFIL PÚBLICO (para /perfil/:username)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def perfil_publico_view(request, nombre_usuario):
     user = get_object_or_404(User, username=nombre_usuario)
     perfil, _ = Perfil.objects.get_or_create(user=user)
-    print(f"Perfil de {user.username} obtenido: {perfil}")
+    favoritos = perfil.favoritos if perfil.favoritos else []
+    # Forzar longitud 5 con None para los vacíos
+    favoritos = list(favoritos) + [None] * (5 - len(favoritos))
+    favoritos = favoritos[:5]  # Nunca más de 5
+
     return Response(
         {
             "id": user.id,
@@ -26,14 +29,19 @@ def perfil_publico_view(request, nombre_usuario):
             "email": user.email,
             "es_mi_perfil": request.user.username == user.username,
             "foto": (
-                request.build_absolute_uri(perfil.avatar.url) if perfil.avatar else None
+                request.build_absolute_uri(perfil.avatar.url)
+                if perfil.avatar
+                else request.build_absolute_uri("/media/avatares/default.png")
             ),
             "horas": getattr(perfil, "horas", 0),
             "juegos": getattr(perfil, "juegos", 0),
             "amigos": getattr(perfil, "amigos", 0),
             "seguidores": getattr(perfil, "seguidores", 0),
+            "favoritos": favoritos,
+            "bio": perfil.biografia or "",
         }
     )
+
 
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
@@ -201,17 +209,62 @@ def actualizar_filtro_adulto(request):
             {"error": "No se ha proporcionado el valor de filtro_adulto"}, status=400
         )
 
-#favs
-@api_view(['POST'])
+
+# favs
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def actualizar_favoritos(request):
-    favoritos = request.data.get('favoritos', [])
+    favoritos = request.data.get("favoritos", [])
     if not isinstance(favoritos, list) or len(favoritos) > 5:
-        return Response({'error': 'Solo puedes tener hasta 5 juegos favoritos.'}, status=400)
+        return Response(
+            {"error": "Solo puedes tener hasta 5 juegos favoritos."}, status=400
+        )
 
-    perfil = getattr(request.user, 'perfil', None)
+    perfil = getattr(request.user, "perfil", None)
     if not perfil:
         perfil, _ = Perfil.objects.get_or_create(user=request.user)
     perfil.favoritos = favoritos
     perfil.save()
-    return Response({'ok': True})
+    return Response({"ok": True})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def buscar_usuarios(request):
+    q = request.GET.get("q", "").strip().lower()
+    print(">>> Recibida búsqueda:", q)
+    usuarios = User.objects.filter(username__icontains=q) | User.objects.filter(
+        first_name__icontains=q
+    )
+    print(">>> Resultados:", usuarios)
+    if not q or len(q) < 2:
+        return Response({"resultados": []})
+
+    # Busca por username o nombre
+    usuarios = User.objects.filter(username__icontains=q) | User.objects.filter(
+        first_name__icontains=q
+    )
+
+    # Solo devuelve los 10 primeros resultados únicos (sin duplicados)
+    encontrados = []
+    ids_vistos = set()
+    for user in usuarios.distinct()[:10]:
+        if user.id in ids_vistos:
+            continue
+        ids_vistos.add(user.id)
+        perfil = getattr(user, "perfil", None)
+        if not perfil:
+            perfil = Perfil.objects.filter(user=user).first()
+        encontrados.append(
+            {
+                "username": user.username,
+                "nombre": user.first_name or user.username,
+                "foto": (
+                    request.build_absolute_uri(perfil.avatar.url)
+                    if perfil and perfil.avatar
+                    else request.build_absolute_uri("/media/avatares/default.png")
+                ),
+            }
+        )
+
+    return Response({"resultados": encontrados})

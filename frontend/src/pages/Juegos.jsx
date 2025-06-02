@@ -5,6 +5,8 @@ import TarjetaSkeleton from "@/components/TarjetaSkeleton";
 import GameCard from "@/components/GameCard";
 import LoaderCirculo from "@/components/LoaderCirculo";
 
+const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
+
 export default function Juegos() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -15,6 +17,8 @@ export default function Juegos() {
   const initGenero = searchParams.get("genero") || "";
   const initPlataforma = searchParams.get("plataforma") || "";
   const initPublisher = searchParams.get("publisher") || "";
+  const initPorPagina = parseInt(searchParams.get("por_pagina") || "30", 10);
+
   const terminoBusqueda = searchParams.get("q")?.trim() || "";
 
   const [juegos, setJuegos] = useState([]);
@@ -27,6 +31,7 @@ export default function Juegos() {
   const [generoSel, setGeneroSel] = useState(initGenero);
   const [plataformaSel, setPlataformaSel] = useState(initPlataforma);
   const [publisherSel, setPublisherSel] = useState(initPublisher);
+  const [porPagina, setPorPagina] = useState(initPorPagina);
   const [filtersLoaded, setFiltersLoaded] = useState(false);
   const [genres, setGenres] = useState([]);
   const [platforms, setPlatforms] = useState([]);
@@ -34,8 +39,6 @@ export default function Juegos() {
   const [mensajeCargaLenta, setMensajeCargaLenta] = useState(false);
   const [descargando, setDescargando] = useState(false);
   const [ordenAbierto, setOrdenAbierto] = useState(false);
-  const porPagina = 60;
-
   const dropdownRef = useRef();
 
   useEffect(() => {
@@ -131,7 +134,7 @@ export default function Juegos() {
       params.set("adult", usuario.filtro_adulto ? "1" : "0");
     }
     navigate(`?${params.toString()}`, { replace: true });
-  }, [pagina, orden, ascendente, generoSel, plataformaSel, publisherSel, terminoBusqueda, filtersLoaded, autenticado, usuario?.filtro_adulto]);
+  }, [pagina, orden, ascendente, generoSel, plataformaSel, publisherSel, terminoBusqueda, porPagina, filtersLoaded, autenticado, usuario?.filtro_adulto]);
 
   const generarPaginas = () => {
     const delta = 2;
@@ -160,8 +163,17 @@ export default function Juegos() {
     setOrdenAbierto(false);
   };
 
+  // Cambia porPagina desde el select rápido
+  const cambiarPorPagina = (e) => {
+    const valor = parseInt(e.target.value, 10);
+    if (valor) {
+      setPorPagina(valor);
+      setPagina(1);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-fondo text-claro p-6">
+    <div className="min-h-screen bg-fondo text-claro p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
         <div className="mb-3">
           <h1 className="text-4xl font-black mb-1">
@@ -196,7 +208,6 @@ export default function Juegos() {
               </div>
             )}
           </div>
-
           <select value={generoSel} onChange={(e) => setGeneroSel(e.target.value)} className="bg-metal text-claro border border-borde rounded px-3 py-1">
             <option value="">🎭 Todos los géneros</option>
             {genres.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -205,6 +216,37 @@ export default function Juegos() {
             <option value="">🖥️ Todas las plataformas</option>
             {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
+          {/* Selector personalizado para juegos por página */}
+          <div className="flex items-center gap-2">
+            <select
+              value={OPCIONES_POR_PAGINA.includes(porPagina) ? porPagina : ""}
+              onChange={cambiarPorPagina}
+              className="bg-metal text-claro border border-borde rounded px-3 py-1"
+            >
+              <option value="">Otro…</option>
+              {OPCIONES_POR_PAGINA.map((n) => (
+                <option key={n} value={n}>
+                  Mostrar {n}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              min={1}
+              max={500}
+              value={porPagina}
+              onChange={e => {
+                let val = parseInt(e.target.value, 10) || 1;
+                if (val > 500) val = 500;
+                if (val < 1) val = 1;
+                setPorPagina(val);
+                setPagina(1);
+              }}
+              className="w-20 bg-metal text-claro border border-borde rounded px-2 py-1 text-center"
+              title="Cantidad personalizada"
+            />
+            <span className="text-xs text-borde">/página</span>
+          </div>
         </div>
       </div>
 
@@ -218,13 +260,13 @@ export default function Juegos() {
       {descargando ? (
         <LoaderCirculo texto="Estamos recopilando todos los datos de IGDB. Espera unos segundos." />
       ) : cargando ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
           {Array(porPagina).fill().map((_, i) => (
             <TarjetaSkeleton key={i} />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
           {juegos.map((j) => (
             <GameCard key={j.id} juego={j} onClick={() => navigate(`/juego/${j.id}`)} />
           ))}

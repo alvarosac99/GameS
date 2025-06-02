@@ -80,7 +80,7 @@ export default function EditarFavoritos({ favoritos, onGuardar, onCerrar }) {
         </div>
         <button
           className="bg-naranja text-black font-bold px-5 py-2 rounded mt-4"
-          onClick={() => onGuardar(seleccionados.filter(Boolean))}
+          onClick={() => onGuardar(seleccionados)}
         >
           Guardar cambios
         </button>
@@ -113,7 +113,7 @@ export default function EditarFavoritos({ favoritos, onGuardar, onCerrar }) {
                         onClick={() => seleccionarJuego(j, buscando)}
                       >
                         <img src={j.cover?.url ? `https:${j.cover.url.replace("t_thumb", "t_cover_big")}` : "/sin_portada.png"}
-                             alt="" className="w-10 h-14 object-contain rounded" />
+                          alt="" className="w-10 h-14 object-contain rounded" />
                         <span className="text-claro text-base">{j.name}</span>
                       </div>
                     ))

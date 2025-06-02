@@ -5,7 +5,7 @@ import DropLoader from "@/components/DropLoader";
 import Carrusel from "@/components/Carrusel";
 import Comentarios from "@/components/Comentarios";
 import { useAuth } from "@/context/AuthContext";
-
+import ValoracionEstrellas from "@/components/ValoracionEstrellas";
 import {
   SiSteam,
   SiEpicgames,
@@ -17,7 +17,7 @@ import {
   SiYoutube,
   SiTwitch,
 } from "react-icons/si";
-import { FaPlaystation, FaXbox, FaStar, FaThumbsUp } from "react-icons/fa";
+import { FaPlaystation, FaXbox, FaPlus, FaMinus, FaRegBookmark, FaBookmark } from "react-icons/fa";
 
 const SHOP_ICONS = {
   steam: { key: "steam", Icon: SiSteam, name: "Steam" },
@@ -33,38 +33,18 @@ const SHOP_ICONS = {
   youtube: { key: "youtube", Icon: SiYoutube, name: "YouTube" },
 };
 
+// Devuelve la información de la tienda a partir de la URL
 function getShopInfo(url) {
   const domain = url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0].toLowerCase();
   return Object.values(SHOP_ICONS).find((s) => domain.includes(s.key)) || null;
 }
 
+// Devuelve la URL embebida de YouTube si existe
 function getYoutubeEmbedUrl(url) {
   const m =
     url.match(/youtube\.com\/watch\?v=([\w-]{11})/) ||
     url.match(/youtu\.be\/([\w-]{11})/);
   return m ? `https://www.youtube.com/embed/${m[1]}` : null;
-}
-
-function StarRating({ onRate }) {
-  const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(0);
-  return (
-    <div className="flex space-x-1 mt-3">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <FaStar
-          key={i}
-          className={`cursor-pointer ${i <= (hover || rating) ? "text-yellow-400" : "text-gray-600"}`}
-          size={24}
-          onMouseEnter={() => setHover(i)}
-          onMouseLeave={() => setHover(0)}
-          onClick={() => {
-            setRating(i);
-            onRate?.(i);
-          }}
-        />
-      ))}
-    </div>
-  );
 }
 
 export default function JuegoUnico() {
@@ -75,9 +55,12 @@ export default function JuegoUnico() {
   const [inLibrary, setInLibrary] = useState(false);
   const [entryId, setEntryId] = useState(null);
 
+  // Wishlist (solo visual aquí, no implementa lógica backend aún)
+  const [inWishlist, setInWishlist] = useState(false);
+
   const { autenticado, fetchAuth } = useAuth();
 
-  // Cargar juego
+  // Carga la información del juego al cambiar el ID
   useEffect(() => {
     setJuego(null);
     setInLibrary(false);
@@ -93,7 +76,7 @@ export default function JuegoUnico() {
       .catch(() => setCargando(false));
   }, [id]);
 
-  // Comprobar si está en la biblioteca
+  // Comprueba si el juego está en la biblioteca del usuario autenticado
   useEffect(() => {
     if (!juego || !autenticado) return;
 
@@ -116,6 +99,7 @@ export default function JuegoUnico() {
       });
   }, [juego?.id, autenticado]);
 
+  // Añade el juego a la biblioteca
   function handleAdd() {
     fetchAuth("/api/juegos/biblioteca/", {
       method: "POST",
@@ -132,6 +116,7 @@ export default function JuegoUnico() {
       .catch(console.error);
   }
 
+  // Quita el juego de la biblioteca
   function handleRemove() {
     if (!entryId) return;
     fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
@@ -143,6 +128,12 @@ export default function JuegoUnico() {
         setEntryId(null);
       })
       .catch(console.error);
+  }
+
+  // Wishlist visual, cambia icono y texto
+  function handleWishlist() {
+    setInWishlist((prev) => !prev);
+    // Aquí iría la lógica real para backend si la tienes implementada
   }
 
   if (cargando) return <DropLoader />;
@@ -172,7 +163,6 @@ export default function JuegoUnico() {
 
   return (
     <div className="relative w-full min-h-screen bg-fondo text-claro">
-      {/* Banner */}
       {juego.screenshots?.[0]?.url && (
         <div className="relative w-full overflow-hidden z-0">
           <img
@@ -186,7 +176,7 @@ export default function JuegoUnico() {
 
       <div className={`max-w-7xl mx-auto ${juego.screenshots?.[0]?.url ? '-mt-32' : 'mt-8'} px-4 md:px-8 relative z-20`}>
         <div className="bg-metal/90 rounded-2xl shadow-xl p-8 mb-10 flex flex-col lg:flex-row gap-8">
-          {/* Columna Izquierda */}
+          {/* Columna izquierda: portada, acciones, valoración y wishlist */}
           <div className="flex-shrink-0 flex flex-col items-center">
             {juego.cover?.url && (
               <img
@@ -195,33 +185,60 @@ export default function JuegoUnico() {
                 className="w-64 rounded-lg shadow-lg"
               />
             )}
+
             {autenticado ? (
-              <div className="mt-6 w-full flex justify-between gap-4">
-                {inLibrary ? (
-                  <button className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded" onClick={handleRemove}>
-                    ❌ Quitar de mi biblioteca
+              <div className="mt-6 w-full flex flex-col gap-3 items-center">
+                <div className="w-full flex gap-3">
+                  {inLibrary ? (
+                    <button
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded flex items-center justify-center gap-2"
+                      onClick={handleRemove}
+                    >
+                      <FaMinus /> Quitar de mi biblioteca
+                    </button>
+                  ) : (
+                    <button
+                      className="flex-1 bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded flex items-center justify-center gap-2"
+                      onClick={handleAdd}
+                    >
+                      <FaPlus /> Añadir a mi biblioteca
+                    </button>
+                  )}
+                </div>
+                {/* Valoración debajo de los botones */}
+                <div className="w-full flex justify-center">
+                  <ValoracionEstrellas juegoId={juego.id} />
+                </div>
+                {/* Wishlist visual */}
+                <div className="w-full flex gap-3">
+                  <button
+                    className="flex-1 bg-metal hover:bg-borde text-naranja font-bold py-2 rounded flex items-center justify-center gap-2 border"
+                    onClick={handleWishlist}
+                  >
+                    {inWishlist ? <FaBookmark /> : <FaRegBookmark />}
+                    {inWishlist ? "En wishlist" : "Añadir a wishlist"}
                   </button>
-                ) : (
-                  <button className="flex-1 bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded" onClick={handleAdd}>
-                    ➕ Añadir a mi biblioteca
-                  </button>
-                )}
-                <button className="flex-1 bg-borde hover:bg-metal text-claro font-bold py-2 rounded flex items-center justify-center gap-1">
-                  <FaThumbsUp /> Me gusta
-                </button>
+                </div>
               </div>
             ) : (
-              <Link to="/login" className="mt-6 text-sm text-naranja hover:underline">
-                Inicia sesión para gestionar tu biblioteca
-              </Link>
+              <>
+                <Link to="/login" className="mt-6 text-sm text-naranja hover:underline">
+                  Inicia sesión para gestionar tu biblioteca
+                </Link>
+                {/* Mostrar valoración aunque no esté logueado */}
+                <div className="w-full flex justify-center mt-2">
+                  <ValoracionEstrellas juegoId={juego.id} />
+                </div>
+              </>
             )}
-            <StarRating onRate={(v) => console.log("Puntuaste:", v)} />
+
+            {/* Enlaces tiendas */}
             {enlacesTiendas.length > 0 && (
               <div className="mt-6 w-full">
                 <h2 className="text-lg font-semibold mb-2">Dónde comprar</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {enlacesTiendas.map((ti, i) => (
-                    <a key={i} href={ti.url} target="_blank" rel="noreferrer" className="flex flex-col items-center bg-gray-800 hover:bg-naranja px-4 py-3 rounded-lg">
+                  {enlacesTiendas.map((ti) => (
+                    <a key={ti.url} href={ti.url} target="_blank" rel="noreferrer" className="flex flex-col items-center bg-gray-800 hover:bg-naranja px-4 py-3 rounded-lg">
                       <ti.Icon size={28} />
                       <span className="mt-1 text-sm font-bold">{ti.name}</span>
                     </a>
@@ -233,8 +250,8 @@ export default function JuegoUnico() {
               <div>
                 <h2 className="text-xl font-semibold mt-3">Enlaces útiles</h2>
                 <ul className="list-disc ml-6 text-sm text-gray-300">
-                  {otrosEnlaces.map((u, i) => (
-                    <li key={i} className="break-words">
+                  {otrosEnlaces.map((u) => (
+                    <li key={u} className="break-words">
                       <a href={u} className="text-naranja hover:underline break-all" target="_blank" rel="noreferrer">
                         {u}
                       </a>
@@ -244,7 +261,7 @@ export default function JuegoUnico() {
               </div>
             )}
           </div>
-          {/* Columna Derecha */}
+          {/* Columna derecha: info de juego */}
           <div className="flex-1 flex flex-col gap-6">
             <h1 className="text-4xl md:text-5xl font-extrabold">{juego.name}</h1>
             <p className="text-gray-300">
@@ -268,11 +285,11 @@ export default function JuegoUnico() {
                   <strong>Desarrolladoras:</strong>{" "}
                   {desarrolladoras.length > 0
                     ? desarrolladoras.map((d, i) => (
-                      <Link key={d.id} to={`/juegos?desarrolladora=${d.id}`} className="text-naranja hover:underline mr-2">
-                        {d.name}
-                        {i < desarrolladoras.length - 1 && ","}
-                      </Link>
-                    ))
+                        <Link key={d.id} to={`/juegos?desarrolladora=${d.id}`} className="text-naranja hover:underline mr-2">
+                          {d.name}
+                          {i < desarrolladoras.length - 1 && ","}
+                        </Link>
+                      ))
                     : "Desconocida"}
                 </p>
                 <p>
@@ -291,10 +308,10 @@ export default function JuegoUnico() {
                   <strong>Modos de juego:</strong>{" "}
                   {modos.length > 0
                     ? modos.map((m) => (
-                      <Link key={m.id} to={`/juegos?modo=${m.id}`} className="text-naranja hover:underline mr-2">
-                        {m.name}
-                      </Link>
-                    ))
+                        <Link key={m.id} to={`/juegos?modo=${m.id}`} className="text-naranja hover:underline mr-2">
+                          {m.name}
+                        </Link>
+                      ))
                     : "N/A"}
                 </p>
                 <p>
@@ -328,11 +345,10 @@ export default function JuegoUnico() {
             )}
           </div>
         </div>
-
-        {/* Comentarios en una tarjeta bonita */}
+        {/* Comentarios en tarjeta */}
         <div className="max-w-3xl mx-auto my-10">
           <div className="bg-metal rounded-2xl shadow-xl p-8 border-2 border-borde/40">
-            <Comentarios juegoId={juego.id} isAuth={autenticado}/>
+            <Comentarios juegoId={juego.id} isAuth={autenticado} />
           </div>
         </div>
       </div>

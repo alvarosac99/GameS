@@ -28,7 +28,7 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
-        }
+        },
     }
 }
 
@@ -41,7 +41,15 @@ SECRET_KEY = "django-insecure-g%j5z$3ww3)o!=lzmb6#01k-==k)9l7rs02-abxn)d%fma#y(-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["10.42.0.1", "localhost", "172.16.2.206", "192.168.1.37", "192.168.1.39", "gamesopa.duckdns.org", "192.168.56.1"]
+ALLOWED_HOSTS = [
+    "10.42.0.1",
+    "localhost",
+    "172.16.2.206",
+    "192.168.1.37",
+    "192.168.1.39",
+    "gamesopa.duckdns.org",
+    "192.168.56.1",
+]
 
 # IGDB / Twitch API
 IGDB_CLIENT_ID = "uo2hohcxtk9lyb311wo4ei9xdhn9sz"
@@ -86,7 +94,6 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
-    
     "http://10.42.0.1:5173",
     "http://localhost:5173",  # Vite
     "http://172.16.2.206:5173",
@@ -123,30 +130,27 @@ TEMPLATES = [
 WSGI_APPLICATION = "gestor_videojuegos.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "gestor_db",
+        "USER": "sopa",
+        "PASSWORD": "Sopita@sopa",
+        "HOST": "localhost",
+        "PORT": "3306",
+    }
+}
 
 # DATABASES = {
 #     "default": {
 #         "ENGINE": "django.db.backends.mysql",
 #         "NAME": "gestor_db",
-#         "USER": "sopa",
-#         "PASSWORD": "Sopita@sopa",
+#         "USER": "sebas",
+#         "PASSWORD": "sopa@sopa",
 #         "HOST": "localhost",
 #         "PORT": "3306",
 #     }
 # }
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "gestor_db",
-        "USER": "sebas",
-        "PASSWORD": "sopa@sopa",
-        "HOST": "localhost",
-        "PORT": "3306",
-    }
-}
 
 
 # Password validation

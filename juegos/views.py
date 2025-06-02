@@ -7,10 +7,13 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 from .models import Biblioteca
 from .serializers import BibliotecaSerializer
 from datetime import datetime
+from .models import Juego, Valoracion
+from django.db.models import Avg, Count
 
 from django.contrib.auth import get_user_model
 import random
@@ -458,7 +461,8 @@ def filtros_juegos(request):
             {"error": "No se pudieron cargar los filtros."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-        
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def stats_bienvenida(request):
@@ -478,19 +482,22 @@ def stats_bienvenida(request):
 
     # FILTRO: Solo juegos con cover y sin temática erótica (id=42)
     juegos_filtrados = [
-        j for j in juegos
-        if j.get("cover") and 42 not in (j.get("themes") or [])
+        j for j in juegos if j.get("cover") and 42 not in (j.get("themes") or [])
     ]
     total_juegos_mostrados = len(juegos_filtrados)
 
     # Top 10 populares
     juegos_populares = sorted(
         [j for j in juegos_filtrados if j.get("popularidad") is not None],
-        key=lambda j: -j["popularidad"]
+        key=lambda j: -j["popularidad"],
     )[:10]
 
     # 10 aleatorios
-    juegos_random = random.sample(juegos_filtrados, min(10, total_juegos_mostrados)) if juegos_filtrados else []
+    juegos_random = (
+        random.sample(juegos_filtrados, min(10, total_juegos_mostrados))
+        if juegos_filtrados
+        else []
+    )
 
     def serializar(juego):
         return {
@@ -501,11 +508,102 @@ def stats_bienvenida(request):
             "first_release_date": juego.get("first_release_date", None),
         }
 
-    return Response({
-        "totalJuegos": total_juegos,  # TODOS
-        "totalJuegosMostrados": total_juegos_mostrados,  # SOLO portada (con cover y sin tema 42)
-        "totalUsuarios": total_usuarios,
-        "totalBibliotecas": total_bibliotecas,
-        "juegosPopulares": [serializar(j) for j in juegos_populares],
-        "juegosRandom": [serializar(j) for j in juegos_random],
-    })
+    return Response(
+        {
+            "totalJuegos": total_juegos,  # TODOS
+            "totalJuegosMostrados": total_juegos_mostrados,  # SOLO portada (con cover y sin tema 42)
+            "totalUsuarios": total_usuarios,
+            "totalBibliotecas": total_bibliotecas,
+            "juegosPopulares": [serializar(j) for j in juegos_populares],
+            "juegosRandom": [serializar(j) for j in juegos_random],
+        }
+    )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def buscar_juego_por_id(request):
+    """
+    Busca un juego en IGDB por su ID exacto y lo devuelve en formato estándar.
+    """
+    game_id = request.GET.get("id")
+    if not game_id or not str(game_id).isdigit():
+        return Response(
+            {"error": "Parámetro 'id' requerido y debe ser numérico."}, status=400
+        )
+
+    try:
+        token = obtener_token_igdb()
+        headers = {
+            "Client-ID": settings.IGDB_CLIENT_ID,
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+            "Content-Type": "text/plain",
+        }
+        fields = (
+            "id, name, summary, cover.url, first_release_date, "
+            "aggregated_rating, rating_count, genres, platforms, involved_companies.publisher, "
+            "involved_companies.company, themes"
+        )
+        query = f"fields {fields}; where id = {game_id}; limit 1;"
+
+        resp = requests.post(f"{IGDB_BASE_URL}/games", headers=headers, data=query)
+        if resp.status_code != 200:
+            return Response({"error": "Error al consultar IGDB"}, status=500)
+        juegos = resp.json()
+        if not juegos:
+            return Response({"error": "No encontrado en IGDB"}, status=404)
+
+        return Response(juegos[0], status=200)
+
+    except Exception as e:
+        print("Error buscar_juego_por_id:", e)
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def valorar_juego(request, juego_id):
+    juego, _ = Juego.objects.get_or_create(id=juego_id)
+    usuario = request.user
+
+    # GET: Devuelve la valoración del usuario y la media global
+    if request.method == "GET":
+        valoracion = Valoracion.objects.filter(juego=juego, usuario=usuario).first()
+        media = Valoracion.objects.filter(juego=juego).aggregate(
+            media=Avg("valor"), total=Count("id")
+        )
+        return Response(
+            {
+                "mi_valoracion": valoracion.valor if valoracion else None,
+                "media_valoracion": media["media"] or 0,
+                "total_valoraciones": media["total"],
+            }
+        )
+
+    # POST: Crea o actualiza la valoración del usuario (¡ahora admite medias!)
+    elif request.method == "POST":
+        valor = request.data.get("valor")
+        try:
+            valor = float(valor)
+        except (TypeError, ValueError):
+            return Response({"error": "Valor inválido."}, status=400)
+        if valor < 0.5 or valor > 5 or (valor * 2) % 1 != 0:
+            return Response(
+                {"error": "Valor debe estar entre 1 y 5, en incrementos de 0.5."},
+                status=400,
+            )
+        obj, created = Valoracion.objects.update_or_create(
+            usuario=usuario, juego=juego, defaults={"valor": valor}
+        )
+        media = Valoracion.objects.filter(juego=juego).aggregate(
+            media=Avg("valor"), total=Count("id")
+        )
+        return Response(
+            {
+                "ok": True,
+                "mi_valoracion": obj.valor,
+                "media_valoracion": media["media"] or 0,
+                "total_valoraciones": media["total"],
+            }
+        )

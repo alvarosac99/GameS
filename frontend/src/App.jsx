@@ -8,7 +8,6 @@ import {
   Link,
   useLocation,
 } from "react-router-dom";
-import { FiSearch } from "react-icons/fi";
 import { useAuth } from "./context/AuthContext";
 
 import Login from "./pages/Login";
@@ -20,6 +19,8 @@ import Diario from "./pages/Diario";
 import Perfil from "./pages/Perfil";
 import PaginaPrincipal from "./pages/PaginaPrincipal";
 import JuegoUnico from "./pages/JuegoUnico";
+import BuscadorGlobal from "./components/BuscadorGlobal";
+import ListaUsuarios from "./pages/ListaUsuarios";
 
 function AppContent() {
   const { autenticado, usuario } = useAuth();
@@ -27,17 +28,18 @@ function AppContent() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const { pathname } = useLocation();
 
-  // Detecta si estamos en detalle de juego
   const esDetalle = /^\/juego\/\d+/.test(pathname);
+  const esPerfil = /^\/perfil(\/|$)/.test(pathname);
 
   return (
     <div className="flex flex-col min-h-screen bg-fondo text-claro">
-      {/* HEADER - ahora sticky */}
-      <header className="sticky top-0 z-50 bg-metal py-4 px-6 flex items-center justify-between shadow-md border-b border-borde">
-        <div className="flex items-center gap-4">
+      {/* HEADER centrado con grid */}
+      <header className="sticky top-0 z-50 bg-metal px-6 py-3 shadow-md border-b border-borde min-h-[100px] grid grid-cols-3 items-center">
+        {/* Menú o botón Juegos */}
+        <div className="flex items-center">
           {autenticado ? (
             <button
-              className="text-claro focus:outline-none"
+              className="text-claro focus:outline-none text-2xl"
               onClick={() => setMenuAbierto(!menuAbierto)}
             >
               ☰
@@ -52,86 +54,57 @@ function AppContent() {
           )}
         </div>
 
-        <div className="flex-grow text-center">
-          <Link to="/" className="text-claro text-2xl font-bold tracking-wide">
-            GameS
+        {/* Logo centrado */}
+        <div className="flex justify-center items-center">
+          <Link to="/" className="pointer-events-auto">
+            <img
+              src="/logo.png"
+              alt="GameS"
+              className="h-24 sm:h-28 drop-shadow-xl transition-transform hover:scale-105"
+            />
           </Link>
         </div>
 
-        {!autenticado && (
-          <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="text-naranja hover:text-naranjaHover font-medium underline"
-            >
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="text-naranja hover:text-naranjaHover font-medium underline"
-            >
-              Register
-            </Link>
-          </div>
-        )}
-
-        {autenticado && (
-          <div className="ml-auto flex items-center gap-2">
-            {/* Escritorio */}
-            <form
-              action="/juegos"
-              method="GET"
-              className="hidden sm:flex gap-2 items-center"
-            >
-              <input
-                type="text"
-                name="q"
-                placeholder="Buscar juego..."
-                className="px-3 py-1 rounded bg-metal text-claro border border-borde placeholder:text-gray-400 w-48 sm:w-64"
-              />
-              <button
-                type="submit"
-                className="bg-naranja hover:bg-naranjaHover text-black font-semibold px-3 py-1 rounded"
+        {/* Login/Buscador */}
+        <div className="flex justify-end items-center gap-2">
+          {!autenticado ? (
+            <>
+              <Link
+                to="/login"
+                className="text-naranja hover:text-naranjaHover font-medium underline"
               >
-                Buscar
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="text-naranja hover:text-naranjaHover font-medium underline"
+              >
+                Register
+              </Link>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setMostrarBuscador(!mostrarBuscador)}
+                className="sm:hidden text-naranja text-xl"
+                title="Buscar"
+              >
+                🔍
               </button>
-            </form>
-            {/* Móvil */}
-            <button
-              onClick={() => setMostrarBuscador(!mostrarBuscador)}
-              className="sm:hidden text-claro text-xl"
-              title="Buscar"
-            >
-              <FiSearch />
-            </button>
-          </div>
-        )}
+              <BuscadorGlobal className="hidden sm:flex" />
+            </>
+          )}
+        </div>
       </header>
 
-      {/* Buscador móvil */}
-      <div
-        className={`sm:hidden overflow-hidden transition-all duration-300 bg-metal border-b border-borde ${
-          mostrarBuscador ? "max-h-32 py-2 px-4" : "max-h-0 py-0 px-4"
-        }`}
-      >
-        <form action="/juegos" method="GET" className="flex gap-2 items-center">
-          <input
-            type="text"
-            name="q"
-            placeholder="Buscar juego..."
-            autoFocus={mostrarBuscador}
-            className="flex-1 px-3 py-1 rounded bg-metal text-claro border border-borde placeholder:text-gray-400"
-          />
-          <button
-            type="submit"
-            className="bg-naranja hover:bg-naranjaHover text-black font-semibold px-3 py-1 rounded"
-          >
-            Buscar
-          </button>
-        </form>
-      </div>
+      {/* Buscador móvil justo debajo del header */}
+      {mostrarBuscador && (
+        <div className="sm:hidden fixed top-[100px] left-0 w-full px-4 py-2 bg-metal border-b border-borde z-40 shadow-md">
+          <BuscadorGlobal />
+        </div>
+      )}
 
-      {/* Overlay */}
+      {/* Overlay oscuro del menú lateral */}
       {menuAbierto && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-40"
@@ -198,28 +171,36 @@ function AppContent() {
 
       {/* CONTENIDO CENTRAL */}
       <main
-        className={`flex-1 flex items-center justify-center w-full ${
-          esDetalle ? "px-0 py-0" : "px-4 py-6"
-        }`}
+        className={`flex-1 flex items-center justify-center w-full ${esDetalle ? "px-0 py-0" : "px-4 py-6"
+          }`}
       >
-        <div className={`w-full ${esDetalle ? "max-w-full" : "max-w-4xl"}`}>
+        {esPerfil || esDetalle ? (
           <Routes>
-            <Route path="/" element={<PaginaPrincipal />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/bienvenida" element={<Bienvenida />} />
-            <Route path="/juegos" element={<Juegos />} />
-            <Route path="/juego/:id" element={<JuegoUnico />} />
-            <Route path="/biblioteca" element={<Biblioteca />} />
-            <Route path="/diario" element={<Diario />} />
             <Route path="/perfil" element={<Perfil />} />
             <Route path="/perfil/:nombre" element={<Perfil />} />
-            <Route
-              path="*"
-              element={<h2 className="text-2xl text-center">Página no encontrada</h2>}
-            />
+            <Route path="/juego/:id" element={<JuegoUnico />} />
           </Routes>
-        </div>
+        ) : (
+          <div className="w-full max-w-4xl mx-auto">
+            <Routes>
+              <Route path="/" element={<PaginaPrincipal />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/bienvenida" element={<Bienvenida />} />
+              <Route path="/juegos" element={<Juegos />} />
+              <Route path="/juego/:id" element={<JuegoUnico />} />
+              <Route path="/biblioteca" element={<Biblioteca />} />
+              <Route path="/diario" element={<Diario />} />
+              <Route path="/perfil" element={<Perfil />} />
+              <Route path="/perfil/:nombre" element={<Perfil />} />
+              <Route path="/perfiles" element={<ListaUsuarios />} />
+              <Route
+                path="*"
+                element={<h2 className="text-2xl text-center">Página no encontrada</h2>}
+              />
+            </Routes>
+          </div>
+        )}
       </main>
 
       <footer className="bg-metal py-2 text-center text-sm text-gray-400 border-t border-borde">

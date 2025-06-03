@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from usuarios.models import Perfil
 from django.shortcuts import get_object_or_404
+from actividad.utils import registrar_actividad
 import json
 
 User = get_user_model()
@@ -15,11 +16,18 @@ User = get_user_model()
 @permission_classes([IsAuthenticated])
 def perfil_publico_view(request, nombre_usuario):
     user = get_object_or_404(User, username=nombre_usuario)
+
+    # Si el usuario ha sido bloqueado por el objetivo, se rechaza
+    if request.user in user.perfil.bloqueados.all():
+        return Response({"detail": "Has sido bloqueado por este usuario."}, status=403)
+
     perfil, _ = Perfil.objects.get_or_create(user=user)
     favoritos = perfil.favoritos if perfil.favoritos else []
-    # Forzar longitud 5 con None para los vacíos
     favoritos = list(favoritos) + [None] * (5 - len(favoritos))
-    favoritos = favoritos[:5]  # Nunca más de 5
+    favoritos = favoritos[:5]
+
+    yo_sigo = perfil.seguidores.filter(id=request.user.id).exists()
+    yo_lo_bloquee = request.user.perfil.bloqueados.filter(id=user.id).exists()
 
     return Response(
         {
@@ -36,9 +44,12 @@ def perfil_publico_view(request, nombre_usuario):
             "horas": getattr(perfil, "horas", 0),
             "juegos": getattr(perfil, "juegos", 0),
             "amigos": getattr(perfil, "amigos", 0),
-            "seguidores": getattr(perfil, "seguidores", 0),
+            "seguidores": perfil.seguidores.count(),
             "favoritos": favoritos,
             "bio": perfil.biografia or "",
+            "yo_sigo": yo_sigo,
+            "yo_lo_bloquee": yo_lo_bloquee,
+            "tu_lo_bloqueaste": yo_lo_bloquee,  # <-- ESTE ES EL NUEVO CAMPO
         }
     )
 
@@ -85,10 +96,11 @@ def perfil_usuario(request):
             perfil.avatar = avatar
         perfil.save()
 
+        registrar_actividad(usuario, "logro", "Actualizó su perfil")  # NUEVO
+
         return Response({"message": "Perfil actualizado correctamente"})
 
 
-# REGISTRO
 @csrf_exempt
 def register_view(request):
     if request.method == "POST":
@@ -120,6 +132,9 @@ def register_view(request):
                 username=username, email=email, password=password
             )
             login(request, user)
+
+            registrar_actividad(user, "logro", "Se unió a la comunidad 🎉")  # NUEVO
+
             return JsonResponse(
                 {
                     "message": "Usuario creado y sesión iniciada",
@@ -135,7 +150,6 @@ def register_view(request):
             return JsonResponse({"error": str(e)}, status=500)
 
 
-# SESIÓN
 @ensure_csrf_cookie
 def session_view(request):
     if request.user.is_authenticated:
@@ -151,7 +165,6 @@ def session_view(request):
     return JsonResponse({"authenticated": False})
 
 
-# LOGIN
 @csrf_exempt
 def login_view(request):
     data = json.loads(request.body)
@@ -180,7 +193,6 @@ def login_view(request):
     )
 
 
-# LOGOUT
 @csrf_exempt
 def logout_view(request):
     if request.method == "POST":
@@ -188,7 +200,6 @@ def logout_view(request):
         return JsonResponse({"success": True})
 
 
-# uyuyui
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def actualizar_filtro_adulto(request):
@@ -210,7 +221,6 @@ def actualizar_filtro_adulto(request):
         )
 
 
-# favs
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def actualizar_favoritos(request):
@@ -225,6 +235,11 @@ def actualizar_favoritos(request):
         perfil, _ = Perfil.objects.get_or_create(user=request.user)
     perfil.favoritos = favoritos
     perfil.save()
+
+    registrar_actividad(
+        request.user, "juego_agregado", "Actualizó sus juegos favoritos"
+    )  # NUEVO
+
     return Response({"ok": True})
 
 
@@ -240,12 +255,10 @@ def buscar_usuarios(request):
     if not q or len(q) < 2:
         return Response({"resultados": []})
 
-    # Busca por username o nombre
     usuarios = User.objects.filter(username__icontains=q) | User.objects.filter(
         first_name__icontains=q
     )
 
-    # Solo devuelve los 10 primeros resultados únicos (sin duplicados)
     encontrados = []
     ids_vistos = set()
     for user in usuarios.distinct()[:10]:
@@ -268,3 +281,70 @@ def buscar_usuarios(request):
         )
 
     return Response({"resultados": encontrados})
+
+
+# SEGUIR Y BLOQUEAR
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def seguir_usuario(request, username):
+    objetivo = get_object_or_404(User, username=username)
+    perfil_objetivo = getattr(objetivo, "perfil", None)
+    perfil_actual = request.user.perfil
+
+    if objetivo == request.user:
+        return Response({"error": "No puedes seguirte a ti mismo."}, status=400)
+
+    if perfil_objetivo in perfil_actual.bloqueados.all():
+        return Response(
+            {"error": "Debes desbloquear al usuario para seguirlo."}, status=400
+        )
+
+    perfil_objetivo.seguidores.add(request.user)
+
+    if not perfil_objetivo.seguidores.filter(id=request.user.id).exists():
+        registrar_actividad(
+            request.user, "seguimiento", f"Siguió a {objetivo.username}"
+        )
+
+    return Response({"ok": True, "mensaje": f"Ahora sigues a {objetivo.username}."})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def dejar_de_seguir(request, username):
+    objetivo = get_object_or_404(User, username=username)
+    perfil_objetivo = getattr(objetivo, "perfil", None)
+
+    perfil_objetivo.seguidores.remove(request.user)
+    return Response(
+        {"ok": True, "mensaje": f"Has dejado de seguir a {objetivo.username}."}
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def bloquear_usuario(request, username):
+    objetivo = get_object_or_404(User, username=username)
+    perfil_actual = request.user.perfil
+
+    if objetivo == request.user:
+        return Response({"error": "No puedes bloquearte a ti mismo."}, status=400)
+
+    perfil_actual.bloqueados.add(objetivo)
+    # Deja de seguir automáticamente
+    objetivo.perfil.seguidores.remove(request.user)
+    perfil_actual.seguidores.remove(objetivo)
+
+    return Response({"ok": True, "mensaje": f"Has bloqueado a {objetivo.username}."})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def desbloquear_usuario(request, username):
+    objetivo = get_object_or_404(User, username=username)
+    perfil_actual = request.user.perfil
+
+    perfil_actual.bloqueados.remove(objetivo)
+    return Response({"ok": True, "mensaje": f"Has desbloqueado a {objetivo.username}."})

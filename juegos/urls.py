@@ -19,4 +19,5 @@ urlpatterns = [
     # Juegos por ID
     path("buscar_id/", views.buscar_juego_por_id, name="buscar_juego_por_id"),
     path("valoracion/<int:juego_id>/", views.valorar_juego, name="valorar_juego"),
+    path("buscar_en_biblioteca/", views.buscar_en_biblioteca),
 ]

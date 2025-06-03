@@ -173,7 +173,8 @@ export default function Juegos() {
   };
 
   return (
-    <div className="min-h-screen bg-fondo text-claro p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto">
+    <div className="min-h-screen text-claro p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto bg-transparent">
+
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
         <div className="mb-3">
           <h1 className="text-4xl font-black mb-1">

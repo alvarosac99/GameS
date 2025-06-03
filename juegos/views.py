@@ -15,6 +15,9 @@ from datetime import datetime
 from .models import Juego, Valoracion
 from django.db.models import Avg, Count
 
+from actividad.utils import registrar_actividad, otorgar_logro
+
+
 from django.contrib.auth import get_user_model
 import random
 
@@ -330,7 +333,14 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        instancia = serializer.save(user=self.request.user)
+        registrar_actividad(
+            self.request.user,
+            "juego_agregado",
+            f"Añadió *{instancia.game_id}* a su biblioteca",
+        )
+        if Biblioteca.objects.filter(user=self.request.user).count() == 1:
+            otorgar_logro(self.request.user, "primer_juego")
 
     def list(self, request, *args, **kwargs):
         qs = self.get_queryset()
@@ -599,6 +609,9 @@ def valorar_juego(request, juego_id):
         media = Valoracion.objects.filter(juego=juego).aggregate(
             media=Avg("valor"), total=Count("id")
         )
+        registrar_actividad(
+            usuario, "juego_valorado", f"Valoró *{juego_id}* con {valor} estrellas"
+        )
         return Response(
             {
                 "ok": True,
@@ -607,3 +620,40 @@ def valorar_juego(request, juego_id):
                 "total_valoraciones": media["total"],
             }
         )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def buscar_en_biblioteca(request):
+    """
+    Devuelve una lista de juegos de la biblioteca del usuario que coincidan parcialmente con el nombre.
+    """
+    q = request.GET.get("q", "").strip().lower()
+    if not q:
+        return Response([])
+
+    qs = Biblioteca.objects.filter(user=request.user)
+    game_ids = qs.values_list("game_id", flat=True)
+
+    token = obtener_token_igdb()
+    headers = {
+        "Client-ID": settings.IGDB_CLIENT_ID,
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json",
+        "Content-Type": "text/plain",
+    }
+
+    # Hacer búsqueda desde IGDB solo sobre esos juegos
+    todos_juegos = []
+    for batch in chunked(game_ids, 500):
+        ids_str = ",".join(str(i) for i in batch)
+        query = f"""
+            fields id, name, cover.url;
+            where id = ({ids_str}) & name ~ *"{q}"*;
+            limit 100;
+        """
+        res = requests.post(f"{IGDB_BASE_URL}/games", headers=headers, data=query)
+        if res.status_code == 200:
+            todos_juegos.extend(res.json())
+
+    return Response(todos_juegos)

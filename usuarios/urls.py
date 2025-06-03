@@ -11,6 +11,9 @@ urlpatterns = [
     path('buscar/', views.buscar_usuarios, name='buscar_usuarios'),
     path('me/filtro_adulto/', views.actualizar_filtro_adulto, name='actualizar_filtro_adulto'),
     path('favoritos/', views.actualizar_favoritos, name='actualizar_favoritos'),
+    path("seguir/<str:username>/", views.seguir_usuario),
+    path("dejar_seguir/<str:username>/", views.dejar_de_seguir),
+    path("bloquear/<str:username>/", views.bloquear_usuario),
+    path("desbloquear/<str:username>/", views.desbloquear_usuario),
     path("<str:nombre_usuario>/", views.perfil_publico_view, name='perfil_publico'),
-    
 ]

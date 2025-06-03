@@ -69,7 +69,9 @@ INSTALLED_APPS = [
     "usuarios",
     "juegos",
     "comentarios",
+    "actividad",
     "corsheaders",
+    "diario",
 ]
 
 MIDDLEWARE = [

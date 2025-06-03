@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { FaStar, FaRegStar, FaStarHalfAlt, FaTimes } from "react-icons/fa";
 
 // Formato de fecha
@@ -50,8 +50,19 @@ export default function Comentarios({ juegoId }) {
 
   const POR_PAGINA = 10;
 
-  useEffect(() => { cargarComentarios(); }, [juegoId]);
-  useEffect(() => { setPaginas(Math.max(1, Math.ceil(comentarios.length / POR_PAGINA))); }, [comentarios]);
+  // Solo carga comentarios si está autenticado
+  useEffect(() => {
+    if (autenticado) {
+      cargarComentarios();
+    } else {
+      setComentarios([]);
+      setCargando(false);
+    }
+  }, [juegoId, autenticado]);
+
+  useEffect(() => {
+    setPaginas(Math.max(1, Math.ceil(comentarios.length / POR_PAGINA)));
+  }, [comentarios]);
 
   function ordenarLista(lista) {
     switch (orden) {
@@ -114,7 +125,7 @@ export default function Comentarios({ juegoId }) {
       method: "POST",
       body: JSON.stringify({ texto }),
     })
-      .then(async res => {
+      .then(async (res) => {
         setPublicando(false);
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -129,13 +140,14 @@ export default function Comentarios({ juegoId }) {
           textareaRef.current?.focus();
         }, 100);
       })
-      .catch(err => setError(err.message));
+      .catch((err) => setError(err.message));
   }
 
   function borrarComentario(id) {
     if (!window.confirm("¿Eliminar este comentario?")) return;
-    fetchAuth(`/api/comentarios/borrar/${id}/`, { method: "DELETE" })
-      .then(() => cargarComentarios());
+    fetchAuth(`/api/comentarios/borrar/${id}/`, { method: "DELETE" }).then(() =>
+      cargarComentarios()
+    );
   }
 
   function ComentarioBloque({ c }) {
@@ -183,6 +195,22 @@ export default function Comentarios({ juegoId }) {
   const fin = inicio + POR_PAGINA;
   const paginaActual = comentarios.slice(inicio, fin);
 
+  if (!autenticado) {
+    return (
+      <div className="mt-8 text-center text-white">
+        <p>
+          <strong>Inicia sesión</strong> para ver y publicar comentarios.
+        </p>
+        <Link
+          to="/login"
+          className="inline-block mt-2 px-4 py-2 bg-naranja text-black rounded-xl font-semibold hover:bg-naranja/90"
+        >
+          Ir a Login
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-8" ref={comentariosRef}>
       <h2 className="text-xl font-bold mb-4 text-white">Comentarios</h2>
@@ -192,73 +220,79 @@ export default function Comentarios({ juegoId }) {
         <select
           className="bg-metal border-borde rounded-xl px-2 py-1 text-naranja font-bold"
           value={orden}
-          onChange={e => {
+          onChange={(e) => {
             setOrden(e.target.value);
-            setComentarios(prev => ordenarLista(prev));
+            setComentarios((prev) => ordenarLista(prev));
           }}
         >
-          {ORDENES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {ORDENES.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
         </select>
       </div>
 
-      {autenticado && (
-        <form onSubmit={enviarComentario} className="mb-4 flex flex-col gap-2">
-          <textarea
-            ref={textareaRef}
-            id="comentario-nuevo"
-            className="rounded-xl border border-naranja px-3 py-2 bg-metal text-white resize-none transition focus:outline-none focus:border-naranja"
-            value={nuevo}
-            onChange={e => setNuevo(e.target.value)}
-            maxLength={1000}
-            rows={3}
-            placeholder="Escribe tu comentario..."
-            required
-            disabled={publicando}
-          />
-          <div className="flex gap-2 items-center">
-            <button
-              type="submit"
-              className={`bg-naranja px-4 py-2 rounded-xl text-black font-semibold transition ${publicando ? "opacity-60 cursor-not-allowed" : ""}`}
-              disabled={!nuevo.trim() || publicando}
-            >
-              {publicando ? "Publicando..." : "Publicar"}
-            </button>
-            <span className="text-xs text-gray-400 ml-2">{nuevo.length}/1000</span>
-          </div>
-        </form>
-      )}
+      <form onSubmit={enviarComentario} className="mb-4 flex flex-col gap-2">
+        <textarea
+          ref={textareaRef}
+          id="comentario-nuevo"
+          className="rounded-xl border border-naranja px-3 py-2 bg-metal text-white resize-none transition focus:outline-none focus:border-naranja"
+          value={nuevo}
+          onChange={(e) => setNuevo(e.target.value)}
+          maxLength={1000}
+          rows={3}
+          placeholder="Escribe tu comentario..."
+          required
+          disabled={publicando}
+        />
+        <div className="flex gap-2 items-center">
+          <button
+            type="submit"
+            className={`bg-naranja px-4 py-2 rounded-xl text-black font-semibold transition ${
+              publicando ? "opacity-60 cursor-not-allowed" : ""
+            }`}
+            disabled={!nuevo.trim() || publicando}
+          >
+            {publicando ? "Publicando..." : "Publicar"}
+          </button>
+          <span className="text-xs text-gray-400 ml-2">{nuevo.length}/1000</span>
+        </div>
+      </form>
 
       {error && <div className="text-red-500 mb-2">{error}</div>}
 
       {cargando ? (
         <div className="text-gray-400">Cargando comentarios...</div>
+      ) : comentarios.length === 0 ? (
+        <div className="text-gray-500">¡Sé el primero en comentar!</div>
       ) : (
         <>
-          {comentarios.length === 0 ? (
-            <div className="text-gray-500">¡Sé el primero en comentar!</div>
-          ) : (
-            <>
-              <div className="space-y-4">
-                {paginaActual.map((c) => (
-                  <ComentarioBloque key={c.id} c={c} />
-                ))}
-              </div>
-              {paginas > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-6">
-                  <button
-                    className="px-2 py-1 rounded bg-borde text-xs text-white/80"
-                    onClick={() => setPagina(p => Math.max(1, p - 1))}
-                    disabled={pagina === 1}
-                  >Anterior</button>
-                  <span className="font-mono text-xs text-white/70">Página {pagina} de {paginas}</span>
-                  <button
-                    className="px-2 py-1 rounded bg-borde text-xs text-white/80"
-                    onClick={() => setPagina(p => Math.min(paginas, p + 1))}
-                    disabled={pagina === paginas}
-                  >Siguiente</button>
-                </div>
-              )}
-            </>
+          <div className="space-y-4">
+            {paginaActual.map((c) => (
+              <ComentarioBloque key={c.id} c={c} />
+            ))}
+          </div>
+          {paginas > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <button
+                className="px-2 py-1 rounded bg-borde text-xs text-white/80"
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                disabled={pagina === 1}
+              >
+                Anterior
+              </button>
+              <span className="font-mono text-xs text-white/70">
+                Página {pagina} de {paginas}
+              </span>
+              <button
+                className="px-2 py-1 rounded bg-borde text-xs text-white/80"
+                onClick={() => setPagina((p) => Math.min(paginas, p + 1))}
+                disabled={pagina === paginas}
+              >
+                Siguiente
+              </button>
+            </div>
           )}
         </>
       )}

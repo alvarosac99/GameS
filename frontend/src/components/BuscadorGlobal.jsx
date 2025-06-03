@@ -1,7 +1,9 @@
-import React, { useState, useRef } from "react";
+// src/components/BuscadorGlobal.jsx
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiSearch, FiUsers } from "react-icons/fi";
 import { FaGamepad } from "react-icons/fa";
+import DropLoader from "@/components/DropLoader";
 
 export default function BuscadorGlobal({ className = "" }) {
   const [modo, setModo] = useState("juegos"); // juegos | personas
@@ -11,6 +13,17 @@ export default function BuscadorGlobal({ className = "" }) {
   const [showSug, setShowSug] = useState(false);
   const debounceRef = useRef();
   const navigate = useNavigate();
+  const contenedorRef = useRef();
+
+  useEffect(() => {
+    const manejarClickFuera = (e) => {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target)) {
+        setShowSug(false);
+      }
+    };
+    document.addEventListener("mousedown", manejarClickFuera);
+    return () => document.removeEventListener("mousedown", manejarClickFuera);
+  }, []);
 
   const buscar = (q) => {
     setQuery(q);
@@ -24,7 +37,6 @@ export default function BuscadorGlobal({ className = "" }) {
     }
     setCargando(true);
 
-    // Cambia la ruta según el modo
     let endpoint = modo === "juegos"
       ? `/api/juegos/populares/?q=${encodeURIComponent(q)}&por_pagina=5`
       : `/api/usuarios/buscar/?q=${encodeURIComponent(q)}`;
@@ -36,7 +48,7 @@ export default function BuscadorGlobal({ className = "" }) {
           if (modo === "juegos") {
             setSugerencias(data.juegos || []);
           } else {
-            setSugerencias(data.resultados || []); // resultados: lista de usuarios
+            setSugerencias(data.resultados || []);
           }
         })
         .catch(() => setSugerencias([]))
@@ -48,28 +60,33 @@ export default function BuscadorGlobal({ className = "" }) {
     e.preventDefault();
     setShowSug(false);
     if (!query.trim()) return;
-    if (modo === "juegos") {
-      navigate(`/juegos?q=${encodeURIComponent(query)}`);
-    } else {
-      navigate(`/perfiles?q=${encodeURIComponent(query)}`);
-    }
+    const destino = modo === "juegos" ? `/juegos?q=${encodeURIComponent(query)}` : `/perfiles?q=${encodeURIComponent(query)}`;
+    navigate(destino);
+  };
+
+  const cambiarModo = () => {
+    setModo((prev) => (prev === "juegos" ? "personas" : "juegos"));
+    setQuery("");
+    setSugerencias([]);
+    setShowSug(false);
   };
 
   return (
-    <div className={`relative flex items-center ${className}`}>
+    <div ref={contenedorRef} className={`relative flex items-center ${className}`}>
       <form onSubmit={submitBusqueda} className="flex gap-2 items-center w-full">
         <input
           type="text"
           placeholder={`Buscar ${modo === "juegos" ? "juegos" : "personas"}...`}
           value={query}
-          onChange={e => buscar(e.target.value)}
+          onChange={(e) => buscar(e.target.value)}
           onFocus={() => setShowSug(true)}
           className="px-3 py-1 rounded bg-metal text-claro border border-borde placeholder:text-gray-400 w-48 sm:w-64"
         />
-        <button type="button"
+        <button
+          type="button"
           className={`p-2 rounded-full border border-borde ${modo === "juegos" ? "text-naranja" : "text-blue-400"} bg-metal`}
           title={modo === "juegos" ? "Buscar en personas" : "Buscar en juegos"}
-          onClick={() => setModo(modo === "juegos" ? "personas" : "juegos")}
+          onClick={cambiarModo}
         >
           {modo === "juegos" ? <FiUsers /> : <FaGamepad />}
         </button>
@@ -83,19 +100,24 @@ export default function BuscadorGlobal({ className = "" }) {
 
       {/* Sugerencias */}
       {showSug && (query.length >= 2) && (
-        <div
-          className="absolute top-full left-0 w-full bg-metal border border-borde rounded-b-lg shadow-xl z-50 max-h-80 overflow-y-auto"
-          onMouseDown={e => e.preventDefault()}
-        >
+        <div className="absolute top-full left-0 w-full bg-metal border border-borde rounded-b-lg shadow-xl z-50 max-h-80 overflow-y-auto">
           {cargando && (
-            <div className="p-3 text-borde text-center">Cargando...</div>
+
+            <div className="p-3 text-borde text-center"><DropLoader /></div>
           )}
           {!cargando && sugerencias.length === 0 && (
             <div className="p-3 text-gray-500 text-center">
               No se han encontrado resultados.
               <div className="mt-1 text-sm">
                 ¿Quizás quisiste decir:&nbsp;
-                <span className="font-semibold underline cursor-pointer" onClick={() => buscar(query.slice(0, -1))}>
+                <span
+                  className="font-semibold underline cursor-pointer"
+                  onClick={() => {
+                    const nueva = query.slice(0, -1);
+                    setQuery(nueva);
+                    buscar(nueva);
+                  }}
+                >
                   {query.slice(0, -1)}
                 </span>?
               </div>
@@ -110,8 +132,11 @@ export default function BuscadorGlobal({ className = "" }) {
                     className="flex items-center gap-2 px-4 py-2 hover:bg-naranja/20 cursor-pointer"
                     onClick={() => navigate(`/juego/${item.id}`)}
                   >
-                    <img src={item.cover?.url ? `https:${item.cover.url.replace("t_thumb", "t_cover_small")}` : "/sin_portada.png"}
-                      alt="" className="w-8 h-8 object-cover rounded" />
+                    <img
+                      src={item.cover?.url ? `https:${item.cover.url.replace("t_thumb", "t_cover_small")}` : "/sin_portada.png"}
+                      alt=""
+                      className="w-8 h-8 object-cover rounded"
+                    />
                     <span>{item.name}</span>
                   </li>
                 ) : (
@@ -120,7 +145,11 @@ export default function BuscadorGlobal({ className = "" }) {
                     className="flex items-center gap-2 px-4 py-2 hover:bg-naranja/20 cursor-pointer"
                     onClick={() => navigate(`/perfil/${item.username}`)}
                   >
-                    <img src={item.foto || "/media/avatares/default.png"} alt="" className="w-8 h-8 object-cover rounded-full" />
+                    <img
+                      src={item.foto || "/media/avatares/default.png"}
+                      alt=""
+                      className="w-8 h-8 object-cover rounded-full"
+                    />
                     <span className="font-bold">{item.nombre || item.username}</span>
                     <span className="text-naranja">@{item.username}</span>
                   </li>

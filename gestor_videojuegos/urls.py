@@ -27,4 +27,6 @@ urlpatterns = [
     path("api/admin/forzar_cache/", views.forzar_cache_juegos, name="forzar_cache"), # URL para forzar el cache
     path("api/usuarios/", include("usuarios.urls")),  # URL para la app de usuarios
     path("api/juegos/", include("juegos.urls")),  # URL para la app de juegos
+    path('api/actividad/', include("actividad.urls")), # URL para la app de actividad
+    path('api/diario/', include('diario.urls')), # URL para la app de diario
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

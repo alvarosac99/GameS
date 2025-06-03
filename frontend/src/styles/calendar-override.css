@@ -1,0 +1,81 @@
+.react-calendar {
+  background-color: #1a1a1a !important;
+  color: #ccc;
+  border-radius: 1rem;
+  padding: 1rem;
+  width: 100% !important;
+  font-family: inherit;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+/* Navegación superior (meses/años) */
+.react-calendar__navigation {
+  background: transparent;
+  margin-bottom: 10px;
+}
+
+.react-calendar__navigation button {
+  background: none;
+  border: none;
+  color: #f97316; /* naranja vivo */
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* Encabezado de días (LU MA MI...) */
+.react-calendar__month-view__weekdays {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: #999;
+  background-color: #111;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+/* Día normal (hover incluido) */
+.react-calendar__tile {
+  padding: 0.5rem 0;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.tile-normal {
+  background-color: transparent;
+}
+
+.tile-normal:hover {
+  background-color: #2a2a2a !important;
+  color: #fff;
+}
+
+/* Día seleccionado */
+.tile-seleccionada {
+  background-color: rgba(192, 91, 24, 0.678) !important;
+  border: 1px solid #f97316;
+  border-radius: 8px;
+  color: #fff !important;
+}
+
+/* Día con entrada (marcado) */
+.tile-marcada {
+  background-color: rgba(249, 115, 22, 0.15);
+  border-radius: 8px;
+}
+
+/* Día actual (hoy) */
+.react-calendar__tile--now {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+  border-radius: 8px;
+}
+
+/* Puntos que marcan entrada */
+.dot {
+  width: 6px;
+  height: 6px;
+  background-color: #f97316; /* naranja */
+  border-radius: 50%;
+  margin: 2px auto 0;
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import TarjetaSkeleton from "../components/TarjetaSkeleton";
 import { FaSort, FaSortAmountUp, FaSortAmountDown } from "react-icons/fa";
@@ -7,38 +7,37 @@ import { FaSort, FaSortAmountUp, FaSortAmountDown } from "react-icons/fa";
 const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
 
 export default function Biblioteca() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [juegos, setJuegos] = useState([]);
+  const [juegosTotales, setJuegosTotales] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [pagina, setPagina] = useState(parseInt(searchParams.get("pagina") || "1", 10));
+  const [pagina, setPagina] = useState(1);
   const [paginasTotales, setPaginasTotales] = useState(1);
   const [totalResultados, setTotalResultados] = useState(0);
   const [busqueda, setBusqueda] = useState("");
   const [orden, setOrden] = useState("popularidad");
   const [ascendente, setAscendente] = useState(false);
   const [mostrarMenuOrden, setMostrarMenuOrden] = useState(false);
-  const [porPagina, setPorPagina] = useState(parseInt(searchParams.get("por_pagina") || "30", 10));
+  const [porPagina, setPorPagina] = useState(30);
   const navigate = useNavigate();
   const menuRef = useRef();
 
   useEffect(() => {
     setCargando(true);
-    fetch(`/api/juegos/biblioteca/?pagina=${pagina}&por_pagina=${porPagina}`, {
+    fetch(`/api/juegos/biblioteca/?pagina=1&por_pagina=1000`, {
       credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => {
-        setJuegos(data.juegos || []);
-        setPaginasTotales(data.paginas_totales);
-        setTotalResultados(data.total_resultados);
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("pagina", String(pagina));
-        newParams.set("por_pagina", String(porPagina));
-        setSearchParams(newParams);
+        setJuegosTotales(data.juegos || []);
+        setTotalResultados(data.juegos?.length || 0);
+        setPaginasTotales(Math.ceil((data.juegos?.length || 0) / porPagina));
       })
-      .catch(() => setJuegos([]))
+      .catch(() => setJuegosTotales([]))
       .finally(() => setCargando(false));
-  }, [pagina, porPagina]);
+  }, []);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [busqueda, porPagina]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -50,23 +49,14 @@ export default function Biblioteca() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const generarPaginas = () => {
-    const delta = 2;
-    const pages = new Set([1, paginasTotales]);
-    for (let i = pagina - delta; i <= pagina + delta; i++) {
-      if (i > 1 && i < paginasTotales) pages.add(i);
-    }
-    return [...pages].sort((a, b) => a - b);
-  };
-
   const ordenarJuegos = (a, b) => {
     const dir = ascendente ? 1 : -1;
     if (orden === "nombre") return dir * a.name.localeCompare(b.name);
-    if (orden === "fecha") return dir * ((a.first_release_date || 0) - (b.first_release_date || 0));
+    if (orden === "fecha")
+      return dir * ((a.first_release_date || 0) - (b.first_release_date || 0));
     return dir * ((a.aggregated_rating || 0) - (b.aggregated_rating || 0));
   };
 
-  // Cambia porPagina desde el select rápido
   const cambiarPorPagina = (e) => {
     const valor = parseInt(e.target.value, 10);
     if (valor) {
@@ -75,12 +65,30 @@ export default function Biblioteca() {
     }
   };
 
+  // 🔍 Filtrado local
+  const juegosFiltrados = juegosTotales.filter((j) =>
+    j.name?.toLowerCase().includes(busqueda.toLowerCase())
+  );
+
+  // 📦 Paginación local
+  const juegosOrdenados = [...juegosFiltrados].sort(ordenarJuegos);
+  const juegosPaginados = juegosOrdenados.slice(
+    (pagina - 1) * porPagina,
+    pagina * porPagina
+  );
+  const paginasCalculadas = Math.ceil(juegosFiltrados.length / porPagina);
+
   return (
-    <div className="min-h-screen bg-fondo text-claro p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+    <div className="min-h-screen bg-transparent text-claro p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto">
+
+      {/* Header y controles */}
+      <div
+        ref={menuRef}
+        className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4"
+      >
         <h1 className="text-3xl font-bold">Mi biblioteca</h1>
 
-        <div className="flex flex-wrap items-center gap-2 relative" ref={menuRef}>
+        <div className="flex flex-wrap items-center gap-2 relative">
           <input
             type="text"
             placeholder="Buscar en tu biblioteca..."
@@ -117,13 +125,17 @@ export default function Biblioteca() {
                   {tipo === "popularidad" && "📈 Popularidad"}
                   {tipo === "nombre" && "🔤 Nombre"}
                   {tipo === "fecha" && "🕒 Fecha de salida"}
-                  {orden === tipo && (ascendente ? <FaSortAmountUp className="inline ml-1" /> : <FaSortAmountDown className="inline ml-1" />)}
+                  {orden === tipo &&
+                    (ascendente ? (
+                      <FaSortAmountUp className="inline ml-1" />
+                    ) : (
+                      <FaSortAmountDown className="inline ml-1" />
+                    ))}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Selector de juegos por página */}
           <div className="flex items-center gap-2">
             <select
               value={OPCIONES_POR_PAGINA.includes(porPagina) ? porPagina : ""}
@@ -142,7 +154,7 @@ export default function Biblioteca() {
               min={1}
               max={500}
               value={porPagina}
-              onChange={e => {
+              onChange={(e) => {
                 let val = parseInt(e.target.value, 10) || 1;
                 if (val > 500) val = 500;
                 if (val < 1) val = 1;
@@ -157,49 +169,54 @@ export default function Biblioteca() {
         </div>
       </div>
 
-      {!cargando && totalResultados > 0 && (
+      {!cargando && juegosFiltrados.length > 0 && (
         <div className="mb-4 text-claro">
-          {totalResultados} juego{totalResultados !== 1 && "s"} en total
+          {juegosFiltrados.length} juego
+          {juegosFiltrados.length !== 1 && "s"} en total
         </div>
       )}
 
       {cargando ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
-          {Array(porPagina).fill().map((_, i) => <TarjetaSkeleton key={i} />)}
+          {Array(porPagina)
+            .fill()
+            .map((_, i) => (
+              <TarjetaSkeleton key={i} />
+            ))}
         </div>
-      ) : juegos.length === 0 ? (
-        <p>No tienes juegos en tu biblioteca.</p>
+      ) : juegosPaginados.length === 0 ? (
+        <p>No tienes juegos que coincidan.</p>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
-            {[...juegos]
-              .filter((j) => j.name?.toLowerCase().includes(busqueda.toLowerCase()))
-              .sort(ordenarJuegos)
-              .map((juego) => (
-                <GameCard
-                  key={juego.id}
-                  juego={juego}
-                  onClick={() => navigate(`/juego/${juego.id}`)}
-                />
-              ))}
+            {juegosPaginados.map((juego) => (
+              <GameCard
+                key={juego.id}
+                juego={juego}
+                onClick={() => navigate(`/juego/${juego.id}`)}
+              />
+            ))}
           </div>
 
-          {/* Paginación */}
-          {paginasTotales > 1 && (
+          {paginasCalculadas > 1 && (
             <div className="mt-6 text-center">
-              <p>Página {pagina} de {paginasTotales}</p>
+              <p>
+                Página {pagina} de {paginasCalculadas}
+              </p>
               <div className="flex justify-center gap-2 mt-2 flex-wrap">
-                {generarPaginas().map((n) =>
+                {Array.from({ length: paginasCalculadas }, (_, i) => i + 1).map((n) => (
                   <button
                     key={n}
                     onClick={() => setPagina(n)}
-                    className={`px-3 py-1 rounded ${pagina === n
-                      ? "bg-naranja text-black font-bold"
-                      : "bg-borde text-claro hover:bg-metal"}`}
+                    className={`px-3 py-1 rounded ${
+                      pagina === n
+                        ? "bg-naranja text-black font-bold"
+                        : "bg-borde text-claro hover:bg-metal"
+                    }`}
                   >
                     {n}
                   </button>
-                )}
+                ))}
               </div>
             </div>
           )}

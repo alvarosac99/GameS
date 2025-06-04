@@ -4,26 +4,7 @@ import pandas as pd
 
 
 def check_config(CONFIG: dict) -> dict:
-    """Validates the configuration file. If it's valid, parses it and returns it.
-
-    Args:
-        CONFIG (dict): Config parameters:
-            "backlog": int
-            "debug": bool
-            "host": str
-            "log_level": str
-            "port": int
-            "reload": bool
-            "timeout_keep_alive": int
-            "workers": int
-
-    Raises:
-        ValueError: If parameters are missing in the config file.
-        ValueError: If parameters doesn't have a valid type.
-
-    Returns:
-        dict: Config file parsed to match the expected format.
-    """
+    """Valida el archivo de configuración. Devuelve el diccionario ya parseado."""
     fields = {
         "backlog": int,
         "debug": bool,
@@ -40,30 +21,21 @@ def check_config(CONFIG: dict) -> dict:
             raise ValueError(f"{field} is missing in config file.")
 
     config = {}
-    for field_name, field_value in fields.items():
+    for field_name, field_type in fields.items():
         try:
-            config[field_name] = field_value(CONFIG[field_name])
+            config[field_name] = field_type(CONFIG[field_name])
         except ValueError as e:
-            raise ValueError(f"{field_name} is not a valid {field_value}") from e
+            raise ValueError(f"{field_name} is not a valid {field_type}") from e
     return config
 
 
-#######################################################################################################################
+################################################################################
+#######################################
 
 
 def extract_data(data: bs) -> dict:
-    """From a BeautifulSoup object, extracts the:
-    - Game
-    - Some information about the game
-    - Its tags
-    - The price with their respective merchants.
+    """Extrae datos de un juego desde el HTML parseado con BeautifulSoup."""
 
-    Args:
-        data (bs): BeautifulSoup object with the HTML data.
-
-    Returns:
-        dict: {"game": game, "information": info, "offers": offers}
-    """
     game_bs = data.find("span", {"data-itemprop": "name"})
     if game_bs is None:
         return JSONResponse(status_code=404, content={"message": "Game not found"})
@@ -82,56 +54,50 @@ def extract_data(data: bs) -> dict:
                 value = value.split()
             info[label] = value
 
-    regions = data.find_all("div", {"class": "offers-edition-region"})
-    if regions:
-        regions = [region.text.replace("\n", " ").replace("\t", " ").strip() for region in regions]
-        regions.pop(0)
-    merchants = data.find_all("span", {"class": "offers-merchant-name"})
-    if merchants:
-        merchants = [merchant.text.replace("\n", " ").replace("\t", " ").strip() for merchant in merchants]
-        merchants.pop(0)
-    editions = data.find_all("a", {"class": "x-offer-edition-name"})
-    if editions:
-        editions = [edition.text.replace("\n", " ").replace("\t", " ").strip() for edition in editions]
-        editions.pop(0)
-    prices = data.find_all("span", {"class": ["x-offer-buy-btn-in-stock text-left"]})
-    if prices:
-        prices = [price.text.replace("\n", " ").replace("\t", " ").strip() for price in prices]
-        prices.pop(0)
-
+    # Extraer todas las filas de oferta agrupadas
+    offer_rows = data.find_all("div", class_="offers-table-row")
     offers = {}
-    for index, _ in enumerate(prices):
-        try:
-            offers[index] = {"price": prices[index]}
-        except IndexError:
-            offers[index].update({"merchant": "Unknown"})
-        try:
-            offers[index].update({"merchant": regions[index]})
-        except IndexError:
-            offers[index].update({"merchant": "Unknown"})
 
-        try:
-            offers[index].update({"region": merchants[index]})
-        except IndexError:
-            offers[index].update({"merchant": "Unknown"})
+    for idx, row in enumerate(offer_rows):
+        price = row.find("a", class_="x-offer-buy-btn")
+        price_text = price.get_text(strip=True) if price else "Unknown"
+        link = price.get("href") if price else None
 
-        try:
-            offers[index].update({"edition": editions[index]})
-        except IndexError:
-            offers[index].update({"merchant": "Unknown"})
+        merchant = row.find("span", class_="offers-merchant-name")
+        merchant_text = merchant.get_text(strip=True) if merchant else "Unknown"
+
+        region = row.find("div", class_="offers-edition-region")
+        region_text = region.get_text(strip=True) if region else "Unknown"
+
+        edition = row.find("a", class_="x-offer-edition-name")
+        edition_text = edition.get_text(strip=True) if edition else "Unknown"
+
+        coupon = row.find("span", class_="x-offer-coupon-code")
+        coupon_code = coupon.get_text(strip=True) if coupon else None
+
+        offers[idx] = {
+            "price": price_text,
+            "merchant": merchant_text,
+            "region": region_text,
+            "edition": edition_text,
+            "link": link,
+            "coupon": coupon_code,
+        }
+
     return {"game": game, "information": info, "offers": offers}
 
 
-#######################################################################################################################
+################################################################################
+#######################################
 
 
 def save(word: str, data: dict) -> None:
-    """Saves the data in a CSV file.
-
-    Args:
-        word (str): File name.
-        data (dict): Data to save.
-    """
+    """Guarda las ofertas extraídas en un CSV."""
     pd.set_option("display.max_colwidth", 500)
-    data = pd.DataFrame(data)
-    data.to_csv(f"{word}.csv", index=False, encoding="utf-8")
+
+    offers = data.get("offers", {})
+    df = pd.DataFrame.from_dict(offers, orient="index")
+
+    df.insert(0, "game", data.get("game", "unknown"))
+
+    df.to_csv(f"{word}.csv", index=False, encoding="utf-8")

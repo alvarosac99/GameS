@@ -10,6 +10,7 @@ from diario.models import EntradaDiario
 from actividad.utils import registrar_actividad
 from usuarios.models import Perfil
 
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def sesion_activa(request):
@@ -23,15 +24,19 @@ def sesion_activa(request):
     }
     return Response(data)
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def iniciar_sesion(request):
     juego_id = request.data.get("juego")
     if not juego_id:
         return Response({"error": "juego requerido"}, status=400)
-    SesionJuego.objects.filter(usuario=request.user, fin__isnull=True).update(fin=timezone.now())
+    SesionJuego.objects.filter(usuario=request.user, fin__isnull=True).update(
+        fin=timezone.now()
+    )
     sesion = SesionJuego.objects.create(usuario=request.user, juego_id=juego_id)
     return Response({"id": sesion.id, "inicio": sesion.inicio.isoformat()})
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -46,7 +51,9 @@ def finalizar_sesion(request):
     sesion.save()
     duracion = sesion.fin - sesion.inicio
 
-    tiempo, _ = TiempoJuego.objects.get_or_create(usuario=request.user, juego_id=sesion.juego_id)
+    tiempo, _ = TiempoJuego.objects.get_or_create(
+        usuario=request.user, juego_id=sesion.juego_id
+    )
     tiempo.duracion_total += duracion
     tiempo.save()
 
@@ -65,6 +72,10 @@ def finalizar_sesion(request):
             estado="jugando",
             nota=nota,
         )
-        registrar_actividad(request.user, "entrada_diario", f"Jugó {sesion.juego_id}")
+        registrar_actividad(
+            request.user,
+            "entrada_diario",
+            f"Jugó *{sesion.juego_id}*",
+        )
 
     return Response({"duracion": duracion.total_seconds()})

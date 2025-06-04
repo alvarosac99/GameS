@@ -32,7 +32,12 @@ def listar_juegos(request):
         pagina = max(int(request.GET.get("pagina", 1)), 1)
         por_pagina = max(int(request.GET.get("por_pagina", 60)), 1)
 
-        orden = request.GET.get("orden", "popular")
+        orden_param = request.GET.get("orden", "popular").lower()
+        asc = False
+        if orden_param.endswith("_asc"):
+            asc = True
+            orden_param = orden_param[:-4]
+        orden = orden_param
         q = request.GET.get("q", "")
         genero = request.GET.get("genero")
         plataforma = request.GET.get("plataforma")
@@ -146,16 +151,43 @@ def listar_juegos(request):
         total_sin_filtrar = len(juegos)
 
         if q.strip():
-            juegos = [j for j in juegos if q.lower() in j.get("name", "").lower()]
+            terms = q.lower().split()
+            juegos = [
+                j
+                for j in juegos
+                if all(t in (j.get("name") or "").lower() for t in terms)
+            ]
         for c in clauses:
             juegos = [j for j in juegos if c(j)]
         if filtro_adulto:
             juegos = [j for j in juegos if 42 not in j.get("themes", [])]
 
         if orden == "nombre":
-            juegos = sorted(juegos, key=lambda j: j.get("name", "").lower())
+            juegos = sorted(
+                juegos,
+                key=lambda j: j.get("name", "").lower(),
+                reverse=not asc,
+            )
         elif orden == "fecha":
-            juegos = sorted(juegos, key=lambda j: -(j.get("first_release_date") or 0))
+            juegos = sorted(
+                juegos,
+                key=lambda j: j.get("first_release_date") or 0,
+                reverse=not asc,
+            )
+        else:  # popularidad
+            if asc:
+                juegos = sorted(
+                    juegos,
+                    key=lambda j: (j.get("popularidad") is None, j.get("popularidad") or 0),
+                )
+            else:
+                juegos = sorted(
+                    juegos,
+                    key=lambda j: (
+                        j.get("popularidad") is None,
+                        -(j.get("popularidad") or 0),
+                    ),
+                )
 
         total_filtrado = len(juegos)
         ocultos = total_sin_filtrar - total_filtrado
@@ -393,7 +425,7 @@ def buscar_juego_por_id(request):
         return Response({"error": str(e)}, status=500)
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def buscar_en_biblioteca(request):
     q = request.GET.get("q", "").strip().lower()

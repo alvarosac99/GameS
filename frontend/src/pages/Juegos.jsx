@@ -40,6 +40,7 @@ export default function Juegos() {
   const [descargando, setDescargando] = useState(false);
   const [ordenAbierto, setOrdenAbierto] = useState(false);
   const dropdownRef = useRef();
+  const busquedaRef = useRef(terminoBusqueda);
 
   useEffect(() => {
     fetch("/api/juegos/filtros/")
@@ -77,6 +78,13 @@ export default function Juegos() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (busquedaRef.current !== terminoBusqueda) {
+      busquedaRef.current = terminoBusqueda;
+      setPagina(1);
+    }
+  }, [terminoBusqueda]);
 
   const obtenerJuegos = () => {
     setCargando(true);
@@ -160,6 +168,7 @@ export default function Juegos() {
       setOrden(nuevoOrden);
       setAscendente(false);
     }
+    setPagina(1);
     setOrdenAbierto(false);
   };
 
@@ -209,11 +218,25 @@ export default function Juegos() {
               </div>
             )}
           </div>
-          <select value={generoSel} onChange={(e) => setGeneroSel(e.target.value)} className="bg-metal text-claro border border-borde rounded px-3 py-1">
+          <select
+            value={generoSel}
+            onChange={(e) => {
+              setGeneroSel(e.target.value);
+              setPagina(1);
+            }}
+            className="bg-metal text-claro border border-borde rounded px-3 py-1"
+          >
             <option value="">🎭 Todos los géneros</option>
             {genres.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
-          <select value={plataformaSel} onChange={(e) => setPlataformaSel(e.target.value)} className="bg-metal text-claro border border-borde rounded px-3 py-1">
+          <select
+            value={plataformaSel}
+            onChange={(e) => {
+              setPlataformaSel(e.target.value);
+              setPagina(1);
+            }}
+            className="bg-metal text-claro border border-borde rounded px-3 py-1"
+          >
             <option value="">🖥️ Todas las plataformas</option>
             {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>

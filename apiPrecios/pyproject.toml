@@ -1,8 +1,7 @@
 [tool.poetry]
-name = "Allkeyshop REST API"
+name = "GestorPrecios API"
 version = "0.1.0"
-description = "It allows to retrieve information from Allkeyshop."
-authors = ["n0nuser <gonzrubio.pablo@gmail.com>"]
+description = "API para obtener informaci\u00f3n de precios."
 
 [tool.poetry.dependencies]
 python = "^3.8"

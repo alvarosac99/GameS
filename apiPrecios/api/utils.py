@@ -3,8 +3,9 @@ from bs4 import BeautifulSoup as bs
 import pandas as pd
 
 
-def check_config(CONFIG: dict) -> dict:
-    """Valida el archivo de configuración. Devuelve el diccionario ya parseado."""
+def check_config(config: dict) -> dict:
+    """Valida el archivo de configuración y devuelve el diccionario parseado."""
+
     fields = {
         "backlog": int,
         "debug": bool,
@@ -16,17 +17,17 @@ def check_config(CONFIG: dict) -> dict:
         "workers": int,
     }
 
-    for field in fields:
-        if field not in CONFIG:
-            raise ValueError(f"{field} is missing in config file.")
+    missing = [field for field in fields if field not in config]
+    if missing:
+        raise ValueError(f"Faltan campos en la configuración: {', '.join(missing)}")
 
-    config = {}
+    parsed = {}
     for field_name, field_type in fields.items():
         try:
-            config[field_name] = field_type(CONFIG[field_name])
-        except ValueError as e:
-            raise ValueError(f"{field_name} is not a valid {field_type}") from e
-    return config
+            parsed[field_name] = field_type(config[field_name])
+        except (ValueError, TypeError) as exc:
+            raise ValueError(f"{field_name} no es un {field_type.__name__} válido") from exc
+    return parsed
 
 
 ################################################################################
@@ -42,15 +43,14 @@ def extract_data(data: bs) -> dict:
     game = game_bs.text.replace("\n", "").replace("\t", "").strip()
 
     info = {}
-    info_labels_bs = data.find_all("div", {"class": "game-info-table-label"})
-    info_values_bs = data.find_all("div", {"class": "game-info-table-value"})
-    if info_labels_bs and info_values_bs:
-        not_splitting = ["release date", "developer", "publisher"]
-        for label, value in zip(info_labels_bs, info_values_bs):
-            label = label.text.replace("\n", " ").replace("\t", " ").strip()
-            value = value.text.replace("/", "").replace("\n", " ").replace("\t", " ").strip()
-
-            if " " in value and label.lower() not in not_splitting:
+    labels = data.find_all("div", class_="game-info-table-label")
+    values = data.find_all("div", class_="game-info-table-value")
+    if labels and values:
+        no_split = {"release date", "developer", "publisher"}
+        for label, value in zip(labels, values):
+            label = label.get_text(" ", strip=True)
+            value = value.get_text(" ", strip=True).replace("/", "")
+            if " " in value and label.lower() not in no_split:
                 value = value.split()
             info[label] = value
 
@@ -58,30 +58,23 @@ def extract_data(data: bs) -> dict:
     offer_rows = data.find_all("div", class_="offers-table-row")
     offers = {}
 
+    def text_or_default(element, default="Unknown"):
+        return element.get_text(strip=True) if element else default
+
     for idx, row in enumerate(offer_rows):
         price = row.find("a", class_="x-offer-buy-btn")
-        price_text = price.get_text(strip=True) if price else "Unknown"
-        link = price.get("href") if price else None
-
         merchant = row.find("span", class_="offers-merchant-name")
-        merchant_text = merchant.get_text(strip=True) if merchant else "Unknown"
-
         region = row.find("div", class_="offers-edition-region")
-        region_text = region.get_text(strip=True) if region else "Unknown"
-
         edition = row.find("a", class_="x-offer-edition-name")
-        edition_text = edition.get_text(strip=True) if edition else "Unknown"
-
         coupon = row.find("span", class_="x-offer-coupon-code")
-        coupon_code = coupon.get_text(strip=True) if coupon else None
 
         offers[idx] = {
-            "price": price_text,
-            "merchant": merchant_text,
-            "region": region_text,
-            "edition": edition_text,
-            "link": link,
-            "coupon": coupon_code,
+            "price": text_or_default(price),
+            "merchant": text_or_default(merchant),
+            "region": text_or_default(region),
+            "edition": text_or_default(edition),
+            "link": price.get("href") if price else None,
+            "coupon": coupon.get_text(strip=True) if coupon else None,
         }
 
     return {"game": game, "information": info, "offers": offers}

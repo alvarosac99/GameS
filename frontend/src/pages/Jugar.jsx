@@ -1,25 +1,71 @@
 // src/pages/Jugar.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import GameCard from "@/components/GameCard";
 
 export default function Jugar() {
   const { fetchAuth } = useAuth();
   const navigate = useNavigate();
 
-  const [juegos, setJuegos] = useState([]);
-  const [juegoId, setJuegoId] = useState(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [sugerencias, setSugerencias] = useState([]);
+  const [seleccionado, setSeleccionado] = useState(null);
   const [inicio, setInicio] = useState(null);
-  const [duracion, setDuracion] = useState(null);
-  const [nota, setNota] = useState("");
+  const [sesionId, setSesionId] = useState(null);
   const [enCurso, setEnCurso] = useState(false);
   const [tiempoActual, setTiempoActual] = useState("00:00:00");
+  const [mostrarNota, setMostrarNota] = useState(false);
+  const notaRef = useRef("");
+
+  // Cargar sesión activa si existe
+  useEffect(() => {
+    fetchAuth("/api/sesiones/activa/")
+      .then((res) => (res.status === 200 ? res.json() : null))
+      .then((data) => {
+        if (data && data.id) {
+          setSesionId(data.id);
+          setInicio(new Date(data.inicio).getTime());
+          setEnCurso(true);
+          fetch(`/api/juegos/buscar_id/?id=${data.juego}`)
+            .then((r) => r.json())
+            .then((j) => setSeleccionado(j))
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
-    fetchAuth("/api/biblioteca/").then((res) => {
-      if (Array.isArray(res)) setJuegos(res.map(e => e.juego));
-    });
-  }, []);
+    if (enCurso) {
+      localStorage.setItem(
+        "sesionJuego",
+        JSON.stringify({ sesionId, inicio })
+      );
+    } else {
+      localStorage.removeItem("sesionJuego");
+    }
+  }, [enCurso, sesionId, inicio]);
+
+  // Buscar en la biblioteca del usuario
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (!busqueda || seleccionado) {
+        setSugerencias([]);
+        return;
+      }
+      fetchAuth(
+        `/api/juegos/buscar_en_biblioteca/?q=${encodeURIComponent(busqueda)}`
+      )
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) setSugerencias(data);
+          else setSugerencias([]);
+        })
+        .catch(() => setSugerencias([]));
+    }, 300);
+    return () => clearTimeout(delay);
+  }, [busqueda, seleccionado]);
 
   useEffect(() => {
     let intervalo = null;
@@ -38,49 +84,72 @@ export default function Jugar() {
   }, [enCurso, inicio]);
 
   const comenzar = () => {
-    if (!juegoId) return;
-    setInicio(Date.now());
-    setEnCurso(true);
+    if (!seleccionado) return;
+    fetchAuth("/api/sesiones/iniciar/", {
+      method: "POST",
+      body: JSON.stringify({ juego: seleccionado.id }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setSesionId(data.id);
+        setInicio(new Date(data.inicio).getTime());
+        setEnCurso(true);
+      });
   };
 
-  const terminar = async () => {
-    const fin = Date.now();
-    const segundos = Math.floor((fin - inicio) / 1000);
-    const duracionFormato = new Date(segundos * 1000).toISOString().substr(11, 8);
-
-    setDuracion(duracionFormato);
-    setEnCurso(false);
-
-    await fetchAuth("/api/diario/", {
-      method: "POST",
-      body: JSON.stringify({
-        juego: juegoId,
-        estado: "jugando",
-        nota,
-        duracion: duracionFormato,
-      }),
-    });
-
-    navigate("/diario");
+  const terminar = () => {
+    setMostrarNota(true);
   };
 
   return (
     <div className="p-4 space-y-6">
       <h1 className="text-3xl font-bold">🎮 JUGAR!</h1>
 
-      <select
-        value={juegoId || ""}
-        onChange={(e) => setJuegoId(e.target.value)}
-        className="w-full p-2 rounded bg-fondo border border-borde"
-        disabled={enCurso}
-      >
-        <option value="">Selecciona un juego...</option>
-        {juegos.map((j) => (
-          <option key={j.id} value={j.id}>
-            {j.nombre}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Buscar juego en tu biblioteca..."
+          value={busqueda}
+          onChange={(e) => {
+            setBusqueda(e.target.value);
+            setSeleccionado(null);
+          }}
+          disabled={enCurso}
+          className="w-full p-2 rounded bg-fondo border border-borde"
+        />
+        {busqueda.length >= 2 && sugerencias.length > 0 && !seleccionado && (
+          <ul className="absolute z-20 bg-metal border border-borde rounded w-full max-h-60 overflow-y-auto overscroll-contain mt-1 divide-y divide-borde">
+            {sugerencias.map((j) => (
+              <li
+                key={j.id}
+                className="p-2 hover:bg-borde cursor-pointer flex items-center gap-2"
+                onClick={() => {
+                  setSeleccionado(j);
+                  setBusqueda(j.name);
+                }}
+              >
+                {j.cover && (
+                  <img
+                    src={`https:${j.cover.url}`}
+                    alt=""
+                    className="w-6 h-6 object-cover rounded"
+                  />
+                )}
+                {j.name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {seleccionado && (
+        <div className="flex items-center gap-2 mt-4">
+          <div className="w-16" onClick={() => navigate(`/juego/${seleccionado.id}`)}>
+            <GameCard juego={seleccionado} />
+          </div>
+          {enCurso && <span className="text-green-400 font-semibold">JUGANDO</span>}
+        </div>
+      )}
 
       <div className="text-5xl text-center font-mono bg-metal p-4 rounded shadow">
         {tiempoActual}
@@ -89,26 +158,67 @@ export default function Jugar() {
       {!enCurso ? (
         <button
           onClick={comenzar}
-          disabled={!juegoId}
+          disabled={!seleccionado}
           className="w-full p-4 text-xl rounded bg-naranja text-white hover:bg-opacity-90"
         >
           Iniciar sesión
         </button>
       ) : (
-        <div className="space-y-4">
-          <textarea
-            rows={3}
-            placeholder="¿Qué hiciste en esta sesión?"
-            value={nota}
-            onChange={(e) => setNota(e.target.value)}
-            className="w-full p-2 rounded bg-fondo border border-borde"
-          />
-          <button
-            onClick={terminar}
-            className="w-full p-4 text-xl rounded bg-green-600 text-white hover:bg-opacity-90"
-          >
-            Terminar sesión y guardar
-          </button>
+        <button
+          onClick={terminar}
+          className="w-full p-4 text-xl rounded bg-green-600 text-white hover:bg-opacity-90"
+        >
+          Terminar sesión
+        </button>
+      )}
+
+      {mostrarNota && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-metal p-6 rounded-xl space-y-4 w-11/12 max-w-md">
+            <h2 className="text-xl font-semibold text-center">Añade una nota</h2>
+            <textarea
+              rows={3}
+              defaultValue="ME LO PASE GENIAL!"
+              ref={notaRef}
+              className="w-full p-2 rounded bg-fondo border border-borde"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={async () => {
+                  await fetchAuth("/api/sesiones/finalizar/", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      sesion: sesionId,
+                      guardar: true,
+                      nota: notaRef.current.value,
+                    }),
+                  });
+                  setEnCurso(false);
+                  setSesionId(null);
+                  setTiempoActual("00:00:00");
+                  navigate("/diario");
+                }}
+                className="px-4 py-2 rounded bg-naranja text-white hover:bg-opacity-90"
+              >
+                Guardar
+              </button>
+              <button
+                onClick={() => {
+                  fetchAuth("/api/sesiones/finalizar/", {
+                    method: "POST",
+                    body: JSON.stringify({ sesion: sesionId, guardar: false }),
+                  });
+                  setMostrarNota(false);
+                  setEnCurso(false);
+                  setSesionId(null);
+                  setTiempoActual("00:00:00");
+                }}
+                className="px-4 py-2 rounded bg-borde text-claro hover:bg-metal"
+              >
+                Descartar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

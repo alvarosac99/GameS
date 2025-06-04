@@ -29,4 +29,5 @@ urlpatterns = [
     path("api/juegos/", include("juegos.urls")),  # URL para la app de juegos
     path('api/actividad/', include("actividad.urls")), # URL para la app de actividad
     path('api/diario/', include('diario.urls')), # URL para la app de diario
+    path('api/sesiones/', include('sesiones.urls')), # URL para la app de sesiones
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

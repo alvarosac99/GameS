@@ -11,14 +11,45 @@ export default function Diario() {
   const [entradas, setEntradas] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  const cargarEntradas = () => {
+  const cargarEntradas = async () => {
     setCargando(true);
-    fetchAuth("/api/diario/")
-      .then((res) => {
-        if (Array.isArray(res)) setEntradas(res);
-        else setEntradas([]);
-      })
-      .finally(() => setCargando(false));
+    try {
+      const res = await fetchAuth("/api/diario/");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const ids = [...new Set(data.map((e) => e.juego))];
+        const detalles = await Promise.all(
+          ids.map((id) =>
+            fetch(`/api/juegos/buscar_id/?id=${id}`)
+              .then((r) => r.json())
+              .catch(() => null)
+          )
+        );
+        const mapaDetalles = {};
+        detalles.forEach((d) => {
+          if (d && d.id) {
+            mapaDetalles[d.id] = {
+              nombre: d.name,
+              cover: d.cover?.url
+                ? `https:${d.cover.url.replace("t_thumb", "t_cover_small")}`
+                : null,
+            };
+          }
+        });
+        const conDetalles = data.map((e) => ({
+          ...e,
+          juego_nombre: mapaDetalles[e.juego]?.nombre,
+          juego_cover: mapaDetalles[e.juego]?.cover,
+        }));
+        setEntradas(conDetalles);
+      } else {
+        setEntradas([]);
+      }
+    } catch (err) {
+      setEntradas([]);
+    } finally {
+      setCargando(false);
+    }
   };
 
   useEffect(() => {

@@ -23,7 +23,7 @@ if not CONFIG:
         "port": os.getenv("port", 8080),
         "reload": os.getenv("reload", True),
         "timeout_keep_alive": os.getenv("timeout_keep_alive", 5),
-        "workers": os.getenv("workers", 4)
+        "workers": os.getenv("workers", 4),
     }
 SAVE = False
 CONFIG = utils.check_config(CONFIG)
@@ -47,6 +47,9 @@ async def root():
 @api.get("/check-price", response_model=Game, responses=docs.check_price_responses)
 async def check_price(game: str, platform: str = "pc") -> dict:
     """Checks the price for a game on an specified platform."""
+    print("[check_price] Juego recibido:", game)
+    print("[check_price] Plataforma recibida:", platform)
+
     platform_enum = {
         "pc": "cd-key",
         "ps5": "ps5",
@@ -64,19 +67,28 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         return JSONResponse(
             status_code=400,
             content={
-                "message": f"Platform '{platform}' is not supported. \
-                These platforms are supported: {list(platform_enum.keys())}"
+                "message": (
+                    f"Platform '{platform}' is not supported. "
+                    f"These platforms are supported: {list(platform_enum.keys())}"
+                )
             },
         )
 
     game = "-".join(game.lower().split(" "))
-    url = f"https://www.allkeyshop.com/blog/buy-{game}-{platform_enum[platform]}-compare-prices/"
+    url = (
+        f"https://www.allkeyshop.com/blog/buy-{game}-"
+        f"{platform_enum[platform]}-compare-prices/"
+    )
+    print("[check_price] URL construida:", url)
 
     async with httpx.AsyncClient() as client:
+        print("[check_price] Solicitando página con httpx...")
         resp = await client.get(url, follow_redirects=True)
+        print("[check_price] Código de estado recibido:", resp.status_code)
         if resp.status_code != 200:
             status_code = resp.status_code
             detail = HTTPStatus(status_code).phrase
+            print("[check_price] Error al obtener la página:", detail)
             return JSONResponse(status_code=status_code, content={"message": detail})
 
     options = Options()

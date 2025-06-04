@@ -4,7 +4,9 @@ import "react-loading-skeleton/dist/skeleton.css";
 import DropLoader from "@/components/DropLoader";
 import Carrusel from "@/components/Carrusel";
 import Comentarios from "@/components/Comentarios";
+import Precios from "@/components/Precios";
 import { useAuth } from "@/context/AuthContext";
+
 import ValoracionEstrellas from "@/components/ValoracionEstrellas";
 import {
   SiSteam,
@@ -56,6 +58,7 @@ export default function JuegoUnico() {
   const [inLibrary, setInLibrary] = useState(false);
   const [entryId, setEntryId] = useState(null);
   const [inWishlist, setInWishlist] = useState(false);
+  const [mostrarCompra, setMostrarCompra] = useState(false);
 
   const { autenticado, fetchAuth } = useAuth();
 
@@ -154,6 +157,35 @@ export default function JuegoUnico() {
   const modos =
     juego.game_modes?.map((m) => ({ id: m.id, name: m.name })) || [];
   const descripcion = juego.summary_es || juego.summary || "No hay descripción disponible.";
+
+  // Plataformas soportadas por la API de precios
+  const mapaPlataformas = {
+    pc: "pc",
+    "playstation 5": "ps5",
+    "playstation 4": "ps4",
+    "playstation 3": "ps3",
+    "xbox series": "xbox series x",
+    "xbox one": "xbox one",
+    "xbox 360": "xbox 360",
+    "nintendo switch": "nintendo switch",
+    "wii u": "nintendo wii u",
+    "nintendo 3ds": "nintendo 3ds",
+  };
+
+  const plataformasPrecios = Array.from(
+    new Set(
+      plataformas
+        .map((p) => {
+          const nombre = p.name.toLowerCase();
+          for (const clave in mapaPlataformas) {
+            if (nombre.includes(clave)) return mapaPlataformas[clave];
+          }
+          return null;
+        })
+        .filter(Boolean)
+    )
+  );
+  if (plataformasPrecios.length === 0) plataformasPrecios.push("pc");
 
   // Clasificación de URLs tiendas y otras
   const enlacesTiendas = [];
@@ -273,6 +305,16 @@ export default function JuegoUnico() {
                     </a>
                   ))}
                 </div>
+              </div>
+            )}
+            {plataformasPrecios.length > 0 && (
+              <div className="mt-6 w-full">
+                <button
+                  onClick={() => setMostrarCompra(true)}
+                  className="w-full bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded"
+                >
+                  Abrir comparador de precios
+                </button>
               </div>
             )}
             {otrosEnlaces.length > 0 && (
@@ -420,6 +462,28 @@ export default function JuegoUnico() {
           </div>
         </div>
       </div>
+      {mostrarCompra && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/60"
+            onClick={() => setMostrarCompra(false)}
+          />
+          <div className="w-full sm:w-96 bg-metal shadow-xl transform transition-transform animate-in slide-in-from-right">
+            <div className="flex justify-between items-center p-4 border-b border-borde">
+              <h2 className="text-lg font-semibold">Comparador de precios</h2>
+              <button
+                onClick={() => setMostrarCompra(false)}
+                className="text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-full">
+              <Precios nombre={juego.name} plataformas={plataformasPrecios} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

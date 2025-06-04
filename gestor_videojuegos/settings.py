@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "actividad",
     "diario",
     "sesiones",
+    "precios",
     "corsheaders",
 ]
 

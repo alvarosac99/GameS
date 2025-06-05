@@ -111,6 +111,7 @@ check_price_responses = {
                             "edition": "Standard",
                         },
                     },
+                    "url": "https://www.allkeyshop.com/blog/buy-elden-ring-cd-key-compare-prices/",
                 },
             },
         },
@@ -131,8 +132,14 @@ buscar_ofertas_responses = {
                     "game": "Elden Ring",
                     "information": {"Release date": "25 February 2022"},
                     "grouped_offers": {
-                        "pc": {"0": {"price": "38€", "merchant": "G2A"}},
-                        "ps4": {"0": {"price": "44€", "merchant": "IG"}},
+                        "pc": {
+                            "url": "https://example.com/pc",
+                            "offers": {"0": {"price": "38€", "merchant": "G2A"}},
+                        },
+                        "ps4": {
+                            "url": "https://example.com/ps4",
+                            "offers": {"0": {"price": "44€", "merchant": "IG"}},
+                        },
                     },
                 }
             }

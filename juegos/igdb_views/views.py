@@ -204,3 +204,17 @@ def tiempo_juego(request):
         )
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def recomendaciones_usuario(request):
+    try:
+        juegos = calcular_recomendaciones_usuario(request.user)
+        return Response({"recomendaciones": juegos})
+    except Exception as e:
+        print("Error recomendaciones_usuario:", e)
+        return Response(
+            {"error": "Error interno del servidor"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

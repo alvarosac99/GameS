@@ -88,3 +88,6 @@ ejemplo, "Dark Souls II" se transforma en "dark souls 2".
 
 Desde la sección de **Ajustes** puedes elegir entre tema claro u oscuro.
 La preferencia se guarda en el navegador y se aplica al recargar la página
+## Recomendaciones personalizadas
+
+El servidor calcula cada día los géneros más presentes en la biblioteca de cada usuario y expone sugerencias en `/api/juegos/recomendados/`. Estas recomendaciones aparecen en el panel principal.

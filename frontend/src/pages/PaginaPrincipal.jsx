@@ -12,6 +12,7 @@ export default function Bienvenida() {
     juegosPopulares: [],
     juegosRandom: [],
   });
+  const [recomendados, setRecomendados] = useState([]);
   const navigate = useNavigate();
 
   // Solo consulta la API de stats y la sesión de usuario
@@ -26,6 +27,10 @@ export default function Bienvenida() {
     fetch("/api/juegos/stats_bienvenida/", { credentials: "include" })
       .then(res => res.json())
       .then(data => setStats(data));
+
+    fetch("/api/juegos/recomendados/", { credentials: "include" })
+      .then(res => (res.ok ? res.json() : { recomendaciones: [] }))
+      .then(data => setRecomendados(data.recomendaciones || []));
   }, [navigate]);
 
   return (
@@ -75,6 +80,19 @@ export default function Bienvenida() {
           </h2>
           <Carrusel
             juegos={stats.juegosPopulares}
+            onSelect={juego => navigate(`/juego/${juego.id}`)}
+          />
+        </div>
+      )}
+
+      {/* Recomendaciones personalizadas */}
+      {recomendados.length > 0 && (
+        <div className="w-full mb-10">
+          <h2 className="text-2xl font-bold text-center mb-2 text-claro">
+            Recomendados para ti
+          </h2>
+          <Carrusel
+            juegos={recomendados}
             onSelect={juego => navigate(`/juego/${juego.id}`)}
           />
         </div>

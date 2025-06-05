@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import TarjetaSkeleton from "../components/TarjetaSkeleton";
 import { FaSort, FaSortAmountUp, FaSortAmountDown } from "react-icons/fa";
+import { useLang } from "../context/LangContext";
 
 const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
 
@@ -18,6 +19,7 @@ export default function Biblioteca() {
   const [mostrarMenuOrden, setMostrarMenuOrden] = useState(false);
   const [porPagina, setPorPagina] = useState(30);
   const navigate = useNavigate();
+  const { t } = useLang();
   const menuRef = useRef();
 
   useEffect(() => {
@@ -86,12 +88,12 @@ export default function Biblioteca() {
         ref={menuRef}
         className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4"
       >
-        <h1 className="text-3xl font-bold">Mi biblioteca</h1>
+        <h1 className="text-3xl font-bold">{t("libraryTitle")}</h1>
 
         <div className="flex flex-wrap items-center gap-2 relative">
           <input
             type="text"
-            placeholder="Buscar en tu biblioteca..."
+            placeholder={t("searchLibrary")}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="bg-metal text-claro border border-borde rounded px-3 py-1"
@@ -101,7 +103,7 @@ export default function Biblioteca() {
             onClick={() => setMostrarMenuOrden(!mostrarMenuOrden)}
             className="bg-borde hover:bg-metal text-claro px-3 py-1 rounded flex items-center gap-2"
           >
-            <FaSort /> Ordenar
+            <FaSort /> {t("order")}
           </button>
 
           {mostrarMenuOrden && (
@@ -122,9 +124,9 @@ export default function Biblioteca() {
                     orden === tipo ? "font-bold text-naranja" : ""
                   }`}
                 >
-                  {tipo === "popularidad" && "📈 Popularidad"}
-                  {tipo === "nombre" && "🔤 Nombre"}
-                  {tipo === "fecha" && "🕒 Fecha de salida"}
+                  {tipo === "popularidad" && `📈 ${t("popularity")}`}
+                  {tipo === "nombre" && `🔤 ${t("name")}`}
+                  {tipo === "fecha" && `🕒 ${t("releaseDate")}`}
                   {orden === tipo &&
                     (ascendente ? (
                       <FaSortAmountUp className="inline ml-1" />
@@ -142,10 +144,10 @@ export default function Biblioteca() {
               onChange={cambiarPorPagina}
               className="bg-metal text-claro border border-borde rounded px-3 py-1"
             >
-              <option value="">Otro…</option>
+              <option value="">{t("other")}</option>
               {OPCIONES_POR_PAGINA.map((n) => (
                 <option key={n} value={n}>
-                  Mostrar {n}
+                  {t("showNumber")} {n}
                 </option>
               ))}
             </select>
@@ -162,9 +164,9 @@ export default function Biblioteca() {
                 setPagina(1);
               }}
               className="w-20 bg-metal text-claro border border-borde rounded px-2 py-1 text-center"
-              title="Cantidad personalizada"
+              title={t("customAmount")}
             />
-            <span className="text-xs text-borde">/página</span>
+            <span className="text-xs text-borde">{t("perPage")}</span>
           </div>
         </div>
       </div>
@@ -185,7 +187,7 @@ export default function Biblioteca() {
             ))}
         </div>
       ) : juegosPaginados.length === 0 ? (
-        <p>No tienes juegos que coincidan.</p>
+        <p>{t("noMatchingGames")}</p>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
@@ -201,7 +203,9 @@ export default function Biblioteca() {
           {paginasCalculadas > 1 && (
             <div className="mt-6 text-center">
               <p>
-                Página {pagina} de {paginasCalculadas}
+                {t("pageOf")
+                  .replace("{page}", pagina)
+                  .replace("{total}", paginasCalculadas)}
               </p>
               <div className="flex justify-center gap-2 mt-2 flex-wrap">
                 {Array.from({ length: paginasCalculadas }, (_, i) => i + 1).map((n) => (

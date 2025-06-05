@@ -17,7 +17,7 @@ export default function ListaEntradasDiario({ entradas, cargando }) {
       {entradas.map((entrada) => (
         <div
           key={entrada.id}
-          className="flex gap-4 bg-[#1a1a1a] p-4 rounded-xl shadow border-l-4 border-naranja"
+          className="flex gap-4 bg-metal p-4 rounded-xl shadow border-l-4 border-naranja"
         >
           <div
             className="w-20 flex-shrink-0 cursor-pointer"

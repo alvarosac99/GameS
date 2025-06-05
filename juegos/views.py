@@ -7,6 +7,7 @@ from .igdb_views.views import (
     buscar_en_biblioteca,
     valorar_juego,
     tiempo_juego,
+    recomendaciones_usuario,
 )
 
 from .igdb_views.biblioteca import BibliotecaViewSet
@@ -21,6 +22,7 @@ __all__ = [
     "buscar_en_biblioteca",
     "valorar_juego",
     "tiempo_juego",
+    "recomendaciones_usuario",
     "BibliotecaViewSet",
     "PlanificacionViewSet",
 ]

@@ -237,3 +237,53 @@ def valorar_juego_service(juego_id, usuario, valor=None):
         "media_valoracion": media["media"] or 0,
         "total_valoraciones": media["total"],
     }
+
+
+def calcular_recomendaciones_usuario(usuario, limite=10):
+    """Devuelve juegos recomendados para un usuario."""
+    juegos = cargar_cache_juegos() or []
+    if not juegos:
+        return []
+
+    mis_ids = set(
+        Biblioteca.objects.filter(user=usuario).values_list("game_id", flat=True)
+    )
+    if not mis_ids:
+        return []
+
+    contador = {}
+    for juego in juegos:
+        if juego["id"] in mis_ids:
+            for g in juego.get("genres", []):
+                contador[g] = contador.get(g, 0) + 1
+
+    if not contador:
+        return []
+
+    generos_top = [g for g, _ in sorted(contador.items(), key=lambda x: -x[1])[:3]]
+
+    candidatos = [
+        j
+        for j in juegos
+        if j["id"] not in mis_ids
+        and any(g in j.get("genres", []) for g in generos_top)
+    ]
+    candidatos.sort(
+        key=lambda j: (
+            j.get("popularidad") is None,
+            -(j.get("popularidad") or 0),
+        )
+    )
+
+    recomendados = candidatos[:limite]
+
+    return [
+        {
+            "id": j["id"],
+            "name": j["name"],
+            "cover": j.get("cover", {}),
+            "summary": j.get("summary", ""),
+            "first_release_date": j.get("first_release_date"),
+        }
+        for j in recomendados
+    ]

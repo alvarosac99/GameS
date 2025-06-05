@@ -58,6 +58,7 @@ export default function JuegoUnico() {
   const [cargando, setCargando] = useState(true);
   const [inLibrary, setInLibrary] = useState(false);
   const [entryId, setEntryId] = useState(null);
+  const [estado, setEstado] = useState("jugando");
   const [inWishlist, setInWishlist] = useState(false);
   const [mostrarCompra, setMostrarCompra] = useState(false);
   const [tiempo, setTiempo] = useState(null);
@@ -88,7 +89,11 @@ export default function JuegoUnico() {
       .then((data) => {
         if (data && data.found) setTiempo(data);
       })
+<<<<<<< ours
       .catch(() => { });
+=======
+      .catch(() => {});
+>>>>>>> theirs
   }, [juego?.name]);
 
   // Comprueba si el juego está en la biblioteca del usuario
@@ -103,14 +108,17 @@ export default function JuegoUnico() {
         if (Array.isArray(data) && data.length > 0) {
           setInLibrary(true);
           setEntryId(data[0].id);
+          setEstado(data[0].estado || "jugando");
         } else {
           setInLibrary(false);
           setEntryId(null);
+          setEstado("jugando");
         }
       })
       .catch(() => {
         setInLibrary(false);
         setEntryId(null);
+        setEstado("jugando");
       });
   }, [juego?.id, autenticado]);
 
@@ -118,7 +126,7 @@ export default function JuegoUnico() {
   function handleAdd() {
     fetchAuth("/api/juegos/biblioteca/", {
       method: "POST",
-      body: JSON.stringify({ game_id: juego.id }),
+      body: JSON.stringify({ game_id: juego.id, estado }),
     })
       .then((res) => {
         if (!res.ok) throw new Error("Error al añadir");
@@ -141,6 +149,7 @@ export default function JuegoUnico() {
         if (!res.ok) throw new Error("Error al eliminar");
         setInLibrary(false);
         setEntryId(null);
+        setEstado("jugando");
       })
       .catch(console.error);
   }
@@ -283,6 +292,27 @@ export default function JuegoUnico() {
                     {inWishlist ? "En wishlist" : "Añadir a wishlist"}
                   </button>
                 </div>
+                {inLibrary && (
+                  <div className="w-full">
+                    <select
+                      value={estado}
+                      onChange={(e) => {
+                        const nuevo = e.target.value;
+                        setEstado(nuevo);
+                        fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
+                          method: "PATCH",
+                          body: JSON.stringify({ estado: nuevo }),
+                        });
+                      }}
+                      className="w-full mt-2 p-2 rounded bg-fondo border border-borde"
+                    >
+                      <option value="jugando">Jugando</option>
+                      <option value="completado">Completado</option>
+                      <option value="abandonado">Abandonado</option>
+                      <option value="en_espera">En espera</option>
+                    </select>
+                  </div>
+                )}
                 <div className="w-full flex justify-center">
                   <ValoracionEstrellas juegoId={juego.id} />
                 </div>
@@ -404,6 +434,10 @@ export default function JuegoUnico() {
                     ?.filter((c) => c.publisher)
                     .map((c) => c.company?.name)
                     .join(", ") || "Desconocido"}
+                </p>
+                <p>
+                  <strong>Duración:</strong>{" "}
+                  {tiempo ? `${tiempo.main}h historia` : "Desconocida"}
                 </p>
                 <p>
                   <strong>Duración:</strong>{" "}

@@ -18,6 +18,20 @@ export default function Jugar() {
   const [mostrarNota, setMostrarNota] = useState(false);
   const notaRef = useRef("");
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("juego");
+    if (id) {
+      fetch(`/api/juegos/buscar_id/?id=${id}`)
+        .then((r) => r.json())
+        .then((j) => {
+          setSeleccionado(j);
+          setBusqueda(j.name);
+        })
+        .catch(() => {});
+    }
+  }, []);
+
   // Cargar sesión activa si existe
   useEffect(() => {
     fetchAuth("/api/sesiones/activa/")

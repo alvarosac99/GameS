@@ -33,6 +33,9 @@ import PaginaPrincipal from "./pages/PaginaPrincipal";
 import JuegoUnico from "./pages/JuegoUnico";
 import BuscadorGlobal from "./components/BuscadorGlobal";
 import ListaUsuarios from "./pages/ListaUsuarios";
+import Planificar from "./pages/Planificar";
+import Planificaciones from "./pages/Planificaciones";
+import PlanificacionDetalle from "./pages/PlanificacionDetalle";
 
 function AppContent() {
   const { autenticado, usuario } = useAuth();
@@ -167,6 +170,12 @@ function AppContent() {
           <Link to="/diario" className="flex items-center gap-2 hover:text-naranja">
             <NotebookPen /> Diario
           </Link>
+          <Link to="/planificar" className="flex items-center gap-2 hover:text-naranja">
+            <LayoutDashboard /> Planificar
+          </Link>
+          <Link to="/planificaciones" className="flex items-center gap-2 hover:text-naranja">
+            <LayoutDashboard /> Mis planes
+          </Link>
           <Link to={`/perfil/${usuario?.username}`} className="flex items-center gap-2 hover:text-naranja">
             <User /> Perfil
           </Link>
@@ -192,6 +201,9 @@ function AppContent() {
           <Route path="/juego/:id" element={<JuegoUnico />} />
           <Route path="/biblioteca" element={<Biblioteca />} />
           <Route path="/diario" element={<Diario />} />
+          <Route path="/planificar" element={<Planificar />} />
+          <Route path="/planificaciones" element={<Planificaciones />} />
+          <Route path="/planificacion/:id" element={<PlanificacionDetalle />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/perfil/:nombre" element={<Perfil />} />
           <Route path="/perfiles" element={<ListaUsuarios />} />

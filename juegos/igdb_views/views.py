@@ -1,3 +1,5 @@
+"""Vistas de la API relacionadas con IGDB y la interacción de usuarios."""
+
 import math
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -22,6 +24,7 @@ from .utils import DESCARGANDO_KEY
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def listar_juegos(request):
+    """Lista juegos almacenados en caché aplicando filtros de búsqueda."""
     try:
         pagina = max(int(request.GET.get("pagina", 1)), 1)
         por_pagina = max(int(request.GET.get("por_pagina", 60)), 1)
@@ -93,6 +96,7 @@ def listar_juegos(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def detalle_juego(request, id):
+    """Devuelve la información detallada de un juego por su ID."""
     try:
         juego = obtener_detalle_juego(id)
         if not juego:
@@ -109,6 +113,7 @@ def detalle_juego(request, id):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def filtros_juegos(request):
+    """Obtiene listas de géneros, plataformas y compañías."""
     try:
         return Response(obtener_filtros(), status=status.HTTP_200_OK)
     except Exception as e:
@@ -122,6 +127,7 @@ def filtros_juegos(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def stats_bienvenida(request):
+    """Estadísticas generales mostradas en la página inicial."""
     try:
         return Response(calcular_stats_bienvenida())
     except Exception as e:
@@ -135,6 +141,7 @@ def stats_bienvenida(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def buscar_juego_por_id(request):
+    """Busca un juego en IGDB por su ID y lo devuelve."""
     game_id = request.GET.get("id")
     if not game_id or not str(game_id).isdigit():
         return Response(
@@ -154,6 +161,7 @@ def buscar_juego_por_id(request):
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def buscar_en_biblioteca(request):
+    """Realiza una búsqueda local en la biblioteca del usuario."""
     q = request.GET.get("q", "").strip().lower()
     if not q:
         return Response([])
@@ -164,6 +172,7 @@ def buscar_en_biblioteca(request):
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def valorar_juego(request, juego_id):
+    """Consulta o envía la valoración de un juego."""
     try:
         if request.method == "GET":
             datos = valorar_juego_service(juego_id, request.user)
@@ -187,6 +196,7 @@ def valorar_juego(request, juego_id):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def tiempo_juego(request):
+    """Obtiene la duración estimada de un juego mediante HowLongToBeat."""
     nombre = request.GET.get("nombre")
     if not nombre:
         return Response({"error": "nombre requerido"}, status=400)
@@ -210,6 +220,7 @@ def tiempo_juego(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def recomendaciones_usuario(request):
+    """Devuelve recomendaciones de juegos para el usuario logueado."""
     try:
         juegos = calcular_recomendaciones_usuario(request.user)
         return Response({"recomendaciones": juegos})

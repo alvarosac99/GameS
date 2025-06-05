@@ -1,4 +1,5 @@
 # src/apps/juegos/urls.py
+"""Definición de rutas para la API de juegos."""
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter

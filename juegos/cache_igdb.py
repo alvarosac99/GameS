@@ -1,3 +1,5 @@
+"""Módulo encargado de mantener la caché local de juegos de IGDB."""
+
 import pickle
 import threading
 import time
@@ -15,10 +17,12 @@ from .igdb_views.utils import (
 )
 
 
+# Marca si la tarea de actualización ya se ha iniciado
 _CACHE_THREAD_STARTED = False
 
 
 def _descargar_juegos():
+    """Descarga todos los juegos de IGDB y los guarda en caché."""
     try:
         cache.set(
             DESCARGANDO_KEY,
@@ -101,10 +105,12 @@ def _descargar_juegos():
 
 
 def actualizar_cache_ahora():
+    """Lanza la descarga de juegos en un hilo independiente."""
     threading.Thread(target=_descargar_juegos, daemon=True).start()
 
 
 def _programar_descargas():
+    """Ejecuta la actualización diaria de la caché a las 2:00 AM."""
     while True:
         ahora = datetime.now()
         proxima = ahora.replace(hour=2, minute=0, second=0, microsecond=0)
@@ -115,6 +121,7 @@ def _programar_descargas():
 
 
 def iniciar_programacion():
+    """Inicia la tarea de actualización de la caché si no está corriendo."""
     global _CACHE_THREAD_STARTED
     if _CACHE_THREAD_STARTED:
         return

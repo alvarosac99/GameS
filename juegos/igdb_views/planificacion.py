@@ -1,4 +1,6 @@
-from rest_framework import viewsets, permissions
+"""Vistas para gestionar las planificaciones de los usuarios."""
+
+from rest_framework import permissions, viewsets
 
 from ..models import Planificacion, Juego
 from ..serializers import PlanificacionSerializer
@@ -7,13 +9,17 @@ from datetime import timedelta
 
 
 class PlanificacionViewSet(viewsets.ModelViewSet):
+    """Permite crear y listar planificaciones de juegos."""
+
     serializer_class = PlanificacionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Restringe el listado al usuario autenticado."""
         return Planificacion.objects.filter(usuario=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        """Asegura que los juegos existan antes de crear la planificación."""
         juegos_ids = request.data.get("juegos", [])
         if isinstance(juegos_ids, list):
             for j_id in juegos_ids:
@@ -21,6 +27,7 @@ class PlanificacionViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
+        """Calcula la duración total estimada de la planificación."""
         plan = serializer.save(usuario=self.request.user)
         total = timedelta()
         for juego in plan.juegos.all():

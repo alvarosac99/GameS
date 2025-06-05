@@ -1,3 +1,5 @@
+"""Funciones auxiliares usadas por los servicios de IGDB."""
+
 import requests
 from datetime import timedelta
 from django.conf import settings
@@ -30,12 +32,13 @@ def obtener_token_igdb():
 
 
 def chunked(iterable, size):
-    """Divide un iterable en porciones de tamaño `size`."""
+    """Divide un iterable en porciones de tamaño ``size``."""
     for i in range(0, len(iterable), size):
         yield iterable[i : i + size]
 
 
 def obtener_nombre_juego(juego_id):
+    """Obtiene el nombre de un juego a partir de su ID."""
     cache_key = f"nombre_juego_{juego_id}"
     nombre = cache.get(cache_key)
     if nombre:
@@ -58,6 +61,7 @@ def obtener_nombre_juego(juego_id):
 
 
 def obtener_duracion_juego(juego_id):
+    """Consulta la duración principal de un juego en HowLongToBeat."""
     obj = DuracionJuego.objects.filter(juego_id=juego_id).first()
     if obj and obj.duracion_main is not None:
         return obj.duracion_main

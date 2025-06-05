@@ -1,3 +1,5 @@
+"""Servicios auxiliares para interactuar con IGDB y la caché local."""
+
 import pickle
 import random
 
@@ -13,6 +15,7 @@ from .utils import (
     chunked,
 )
 from django.db.models import Avg, Count
+from collections import Counter
 from ..models import Biblioteca, Juego, Valoracion
 from actividad.utils import registrar_actividad
 
@@ -43,6 +46,7 @@ def cargar_cache_juegos():
 
 def filtrar_y_ordenar(juegos, q="", genero=None, plataforma=None, publisher=None,
                        filtro_adulto=True, orden="popular", asc=False):
+    """Filtra y ordena una lista de juegos seg\u00fan distintos criterios."""
     if q.strip():
         terms = q.lower().split()
         juegos = [j for j in juegos if all(t in (j.get("name") or "").lower() for t in terms)]
@@ -74,6 +78,7 @@ def filtrar_y_ordenar(juegos, q="", genero=None, plataforma=None, publisher=None
 
 
 def obtener_detalle_juego(juego_id):
+    """Recupera información detallada de IGDB para un juego."""
     headers = _headers()
     query = f"""
         fields id, name, summary, storyline, first_release_date, cover.url,
@@ -111,6 +116,7 @@ def obtener_detalle_juego(juego_id):
 
 
 def obtener_filtros():
+    """Solicita a IGDB las opciones de filtro disponibles."""
     headers = _headers()
     res_gen = requests.post(
         f"{IGDB_BASE_URL}/genres",
@@ -141,6 +147,7 @@ def obtener_filtros():
 
 
 def calcular_stats_bienvenida():
+    """Estadísticas resumidas para mostrar en la pantalla de inicio."""
     usuarios = get_user_model().objects.count()
     bibliotecas = Biblioteca.objects.count()
 
@@ -183,6 +190,7 @@ def calcular_stats_bienvenida():
 
 
 def buscar_juego_por_id_igdb(game_id):
+    """Busca un juego por ID haciendo una consulta directa a IGDB."""
     headers = _headers()
     fields = (
         "id, name, summary, cover.url, first_release_date, "
@@ -198,6 +206,7 @@ def buscar_juego_por_id_igdb(game_id):
 
 
 def buscar_en_biblioteca_igdb(q, user):
+    """Busca juegos en la biblioteca del usuario coincidiendo con un texto."""
     qs = Biblioteca.objects.filter(user=user)
     game_ids = qs.values_list("game_id", flat=True)
 
@@ -217,6 +226,7 @@ def buscar_en_biblioteca_igdb(q, user):
 
 
 def valorar_juego_service(juego_id, usuario, valor=None):
+    """Registra o devuelve la valoraci\u00f3n de un usuario sobre un juego."""
     juego, _ = Juego.objects.get_or_create(id=juego_id)
     if valor is None:
         valoracion = Valoracion.objects.filter(juego=juego, usuario=usuario).first()
@@ -251,16 +261,17 @@ def calcular_recomendaciones_usuario(usuario, limite=10):
     if not mis_ids:
         return []
 
-    contador = {}
-    for juego in juegos:
-        if juego["id"] in mis_ids:
-            for g in juego.get("genres", []):
-                contador[g] = contador.get(g, 0) + 1
+    contador = Counter(
+        g
+        for juego in juegos
+        if juego["id"] in mis_ids
+        for g in juego.get("genres", [])
+    )
 
     if not contador:
         return []
 
-    generos_top = [g for g, _ in sorted(contador.items(), key=lambda x: -x[1])[:3]]
+    generos_top = [g for g, _ in contador.most_common(3)]
 
     perfil = getattr(usuario, "perfil", None)
     if perfil and perfil.gustos_generos != generos_top:

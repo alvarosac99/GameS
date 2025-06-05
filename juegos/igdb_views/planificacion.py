@@ -2,6 +2,8 @@ from rest_framework import viewsets, permissions
 
 from ..models import Planificacion, Juego
 from ..serializers import PlanificacionSerializer
+from .utils import obtener_duracion_juego
+from datetime import timedelta
 
 
 class PlanificacionViewSet(viewsets.ModelViewSet):
@@ -19,4 +21,11 @@ class PlanificacionViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user)
+        plan = serializer.save(usuario=self.request.user)
+        total = timedelta()
+        for juego in plan.juegos.all():
+            dur = obtener_duracion_juego(juego.id)
+            if dur:
+                total += dur
+        plan.duracion_total = total
+        plan.save()

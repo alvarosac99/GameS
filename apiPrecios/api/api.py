@@ -129,54 +129,59 @@ async def check_price(game: str, platform: str = "pc") -> dict:
 
 @api.get("/buscar-ofertas", responses=docs.buscar_ofertas_responses)
 async def buscar_ofertas(game: str) -> dict:
-    """Obtiene ofertas agrupadas por plataforma para un juego."""
-    platform_enum = {
-        "pc": "cd-key",
-        "ps5": "ps5",
-        "ps4": "ps4",
-        "ps3": "ps3",
-        "xbox series x": "xbox-series",
-        "xbox one": "xbox-one",
-        "xbox 360": "xbox-360",
-        "nintendo switch": "nintendo-switch",
-        "nintendo wii u": "nintendo-wii-u",
-        "nintendo 3ds": "nintendo-3ds",
-    }
+    """Obtiene ofertas para todas las plataformas disponibles."""
 
     sanitized_game = "-".join(game.lower().split())
+    url = (
+        f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-cd-key-compare-prices/"
+    )
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, follow_redirects=True)
+        if resp.status_code != 200:
+            search_url = await utils.quicksearch(game)
+            if not search_url:
+                status_code = resp.status_code
+                detail = HTTPStatus(status_code).phrase
+                return JSONResponse(status_code=status_code, content={"message": detail})
+            url = search_url
+            resp = await client.get(url, follow_redirects=True)
+            if resp.status_code != 200:
+                status_code = resp.status_code
+                detail = HTTPStatus(status_code).phrase
+                return JSONResponse(status_code=status_code, content={"message": detail})
+
+    options = Options()
+    options.headless = True
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+
+    soup = bs(driver.page_source, "html.parser")
+    platform_links: list[tuple[str, str]] = []
+    for tab in soup.select("li.tab.platforms-link"):
+        anchor = tab.find("a", href=True)
+        meta = tab.find("meta", attrs={"data-itemprop": "platform"})
+        name = meta.get("content") if meta else (anchor.text if anchor else tab.text)
+        name = name.strip().lower()
+        link = anchor["href"] if anchor else driver.current_url
+        platform_links.append((name, link))
+
     result_offers: dict[str, dict] = {}
     info: dict | None = None
     game_name = game
 
-    async with httpx.AsyncClient() as client:
-        for plat, slug in platform_enum.items():
-            url = (
-                f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-{slug}-compare-prices/"
-            )
-            resp = await client.get(url, follow_redirects=True)
-            if resp.status_code != 200:
-                search_url = await utils.quicksearch(game)
-                if not search_url:
-                    continue
-                url = search_url
-                resp = await client.get(url, follow_redirects=True)
-                if resp.status_code != 200:
-                    continue
+    for plat, link in platform_links:
+        driver.get(link)
+        page_soup = bs(driver.page_source, "html.parser")
+        data = utils.extract_data(page_soup)
+        if isinstance(data, JSONResponse):
+            continue
+        if info is None:
+            info = data.get("information", {})
+            game_name = data.get("game", game)
+        result_offers[plat] = data.get("offers", {})
 
-            options = Options()
-            options.headless = True
-            driver = webdriver.Chrome(options=options)
-            driver.get(url)
-            soup = bs(driver.page_source)
-            driver.close()
-
-            data = utils.extract_data(soup)
-            if isinstance(data, JSONResponse):
-                continue
-            if info is None:
-                info = data.get("information", {})
-                game_name = data.get("game", game)
-            result_offers[plat] = data.get("offers", {})
+    driver.close()
 
     if not result_offers:
         return JSONResponse(status_code=404, content={"message": "Game not found"})

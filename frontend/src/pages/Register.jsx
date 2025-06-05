@@ -62,7 +62,7 @@ export default function Register() {
         <input
           type="text"
           placeholder={t("registerUsername")}
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
@@ -70,7 +70,7 @@ export default function Register() {
         <input
           type="email"
           placeholder={t("registerEmail")}
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -78,7 +78,7 @@ export default function Register() {
         <input
           type="password"
           placeholder={t("registerPassword")}
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -86,7 +86,7 @@ export default function Register() {
         <input
           type="password"
           placeholder={t("registerConfirmPassword")}
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
           value={confirmarPassword}
           onChange={(e) => setConfirmarPassword(e.target.value)}
           required

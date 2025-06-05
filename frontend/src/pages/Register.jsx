@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { useLang } from "../context/LangContext";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const { t } = useLang();
   const [csrfToken, setCsrfToken] = useState("");
   const [username, setUsername] = useState("");
@@ -49,6 +51,7 @@ export default function Register() {
 
     const data = await res.json();
     if (res.ok) {
+      login("session", data.usuario);
       navigate("/bienvenida");
     } else {
       setMensaje(data.error || "Error al registrar");

@@ -14,6 +14,7 @@ from .services import (
     buscar_juego_por_id_igdb,
     buscar_en_biblioteca_igdb,
     valorar_juego_service,
+    calcular_recomendaciones_usuario,
 )
 from .utils import DESCARGANDO_KEY
 

@@ -52,6 +52,7 @@ def perfil_publico_view(request, nombre_usuario):
             "amigos": getattr(perfil, "amigos", 0),
             "seguidores": perfil.seguidores.count(),
             "favoritos": favoritos,
+            "gustos_generos": perfil.gustos_generos,
             "bio": perfil.biografia or "",
             "yo_sigo": yo_sigo,
             "yo_lo_bloquee": yo_lo_bloquee,
@@ -83,6 +84,7 @@ def perfil_usuario(request):
                     else None
                 ),
                 "filtro_adulto": perfil.filtro_adulto,
+                "gustos_generos": perfil.gustos_generos,
             }
         )
 

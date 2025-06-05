@@ -39,6 +39,8 @@ class Perfil(models.Model):
     filtro_adulto = models.BooleanField(default=True)
     # Lista de identificadores de juegos favoritos
     favoritos = models.JSONField(default=list, blank=True)
+    # Lista de identificadores de géneros preferidos
+    gustos_generos = models.JSONField(default=list, blank=True)
     # Usuarios que siguen al perfil
     seguidores = models.ManyToManyField(User, related_name="seguidos", blank=True)
     # Usuarios bloqueados por este perfil

@@ -2,6 +2,7 @@ from fastapi.responses import JSONResponse
 from bs4 import BeautifulSoup as bs
 import pandas as pd
 import httpx
+import re
 
 
 def check_config(CONFIG: dict) -> dict:
@@ -55,35 +56,52 @@ def extract_data(data: bs) -> dict:
                 value = value.split()
             info[label] = value
 
-    # Extraer todas las filas de oferta agrupadas
-    offer_rows = data.find_all("div", class_="offers-table-row")
+    script = data.find("script", string=lambda t: t and "productId" in t)
+    product_id = None
+    if script and script.string:
+        match = re.search(r"productId\s*=\s*(\d+)", script.string)
+        if match:
+            product_id = match.group(1)
+
     offers = {}
-
-    for idx, row in enumerate(offer_rows):
-        price = row.find("a", class_="x-offer-buy-btn")
-        price_text = price.get_text(strip=True) if price else "Unknown"
-        link = price.get("href") if price else None
-
-        merchant = row.find("span", class_="offers-merchant-name")
-        merchant_text = merchant.get_text(strip=True) if merchant else "Unknown"
-
-        region = row.find("div", class_="offers-edition-region")
-        region_text = region.get_text(strip=True) if region else "Unknown"
-
-        edition = row.find("a", class_="x-offer-edition-name")
-        edition_text = edition.get_text(strip=True) if edition else "Unknown"
-
-        coupon = row.find("span", class_="x-offer-coupon-code")
-        coupon_code = coupon.get_text(strip=True) if coupon else None
-
-        offers[idx] = {
-            "price": price_text,
-            "merchant": merchant_text,
-            "region": region_text,
-            "edition": edition_text,
-            "link": link,
-            "coupon": coupon_code,
+    if product_id:
+        params = {
+            "action": "get_offers",
+            "product": product_id,
+            "currency": "eur",
+            "region": "",
+            "edition": "",
+            "moreq": "",
+            "locale": "en",
+            "use_beta_offers_display": 1,
         }
+        try:
+            resp = httpx.get(
+                "https://www.allkeyshop.com/blog/wp-admin/admin-ajax.php",
+                params=params,
+                follow_redirects=True,
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                data_json = resp.json()
+                merchants = data_json.get("merchants", {})
+                regions = data_json.get("regions", {})
+                editions = data_json.get("editions", {})
+                for idx, offer in enumerate(data_json.get("offers", [])):
+                    price_info = offer.get("price", {}).get("eur", {})
+                    merchant_id = str(offer.get("merchant"))
+                    offers[idx] = {
+                        "price": f"{price_info.get('price', '')}€",
+                        "merchant": merchants.get(merchant_id, {}).get("name", "Unknown"),
+                        "region": regions.get(offer.get("region"), {}).get("name", "Unknown"),
+                        "edition": editions.get(offer.get("edition"), {}).get("name", "Unknown"),
+                        "link": (
+                            f"https://www.allkeyshop.com/redirection/offer/eur/{offer.get('id')}?locale=en&merchant={merchant_id}"
+                        ),
+                        "coupon": price_info.get("bestCoupon"),
+                    }
+        except httpx.HTTPError:
+            pass
 
     return {"game": game, "information": info, "offers": offers}
 

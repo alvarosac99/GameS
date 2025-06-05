@@ -10,7 +10,7 @@ from starlette.responses import RedirectResponse
 import docs
 import os
 import httpx
-import utils
+from . import utils
 import uvicorn
 import asyncio
 

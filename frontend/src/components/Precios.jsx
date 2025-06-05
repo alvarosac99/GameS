@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Tab } from "@headlessui/react";
 import LoaderCirculo from "@/components/LoaderCirculo";
 
 function classNames(...classes) {
@@ -10,6 +9,7 @@ export default function Precios({ nombre }) {
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
+  const [tabActual, setTabActual] = useState("");
   const abortRef = useRef(null);
 
   const limpiarPrecio = (p) =>
@@ -48,6 +48,12 @@ export default function Precios({ nombre }) {
 
   const plataformas = datos ? Object.keys(datos) : [];
 
+  useEffect(() => {
+    if (plataformas.length > 0 && !tabActual) {
+      setTabActual(plataformas[0]);
+    }
+  }, [plataformas, tabActual]);
+
   if (cargando) return <LoaderCirculo texto="Buscando precios..." />;
 
   if (error)
@@ -71,25 +77,24 @@ export default function Precios({ nombre }) {
     );
 
   return (
-    <Tab.Group>
-      <Tab.List className="flex gap-2 mb-4">
+    <div>
+      <div className="flex gap-2 mb-4">
         {plataformas.map((p) => (
-          <Tab
+          <button
             key={p}
-            className={({ selected }) =>
-              classNames(
-                "px-3 py-1 rounded-md text-sm font-semibold",
-                selected ? "bg-naranja text-black" : "bg-metal hover:bg-borde"
-              )
-            }
+            onClick={() => setTabActual(p)}
+            className={classNames(
+              "px-3 py-1 rounded-md text-sm font-semibold",
+              tabActual === p ? "bg-naranja text-black" : "bg-metal hover:bg-borde"
+            )}
           >
             {p}
-          </Tab>
+          </button>
         ))}
-      </Tab.List>
-      <Tab.Panels>
+      </div>
+      <div>
         {plataformas.map((p) => (
-          <Tab.Panel key={p} className="space-y-2">
+          <div key={p} className={tabActual === p ? "space-y-2" : "hidden"}>
             {Object.values(datos[p] || {}).filter((o) => o.price).length > 0 ? (
               Object.values(datos[p])
                 .filter((o) => o.price)
@@ -126,9 +131,9 @@ export default function Precios({ nombre }) {
             ) : (
               <p>No se encontraron ofertas.</p>
             )}
-          </Tab.Panel>
+          </div>
         ))}
-      </Tab.Panels>
-    </Tab.Group>
+      </div>
+    </div>
   );
 }

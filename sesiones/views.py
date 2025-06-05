@@ -9,6 +9,7 @@ from .serializers import SesionJuegoSerializer
 from diario.models import EntradaDiario
 from actividad.utils import registrar_actividad
 from usuarios.models import Perfil
+from juegos.models import Planificacion
 
 
 @api_view(["GET"])
@@ -56,6 +57,10 @@ def finalizar_sesion(request):
     )
     tiempo.duracion_total += duracion
     tiempo.save()
+
+    for plan in Planificacion.objects.filter(usuario=request.user, juegos=sesion.juego):
+        plan.duracion_jugada += duracion
+        plan.save()
 
     perfil = Perfil.objects.filter(user=request.user).first()
     if perfil:

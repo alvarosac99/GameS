@@ -15,31 +15,26 @@ export default function Planificaciones() {
       try {
         const res = await fetchAuth("/api/juegos/planificaciones/");
         const data = await res.json();
-        const resTimes = await fetchAuth("/api/sesiones/tiempos/");
-        const tiempos = await resTimes.json();
         const detallados = await Promise.all(
           data.map(async (p) => {
             const juegosDet = await Promise.all(
-              p.juegos.map(async (gid) => {
+              p.juegos.slice(0, 4).map(async (gid) => {
                 const j = await fetch(`/api/juegos/buscar_id/?id=${gid}`)
                   .then((r) => r.json())
                   .catch(() => null);
-                if (!j) return null;
-                const t = await fetch(
-                  `/api/juegos/tiempo/?nombre=${encodeURIComponent(j.name)}`
-                )
-                  .then((r) => (r.ok ? r.json() : null))
-                  .catch(() => null);
-                const jugado = tiempos[gid] || 0;
-                const total = t?.main ? t.main * 3600 : null;
-                const restante = total != null ? Math.max(0, total - jugado) : null;
-                return { ...j, jugado, total, restante };
+                return j;
               })
             );
-            const total = juegosDet.reduce((a, j) => a + (j?.total || 0), 0);
-            const jugado = juegosDet.reduce((a, j) => a + (j?.jugado || 0), 0);
-            const restante = total ? Math.max(0, total - jugado) : null;
-            return { ...p, juegos: juegosDet.filter(Boolean), total, jugado, restante };
+            return {
+              ...p,
+              juegos: juegosDet.filter(Boolean),
+              total: p.duracion_total,
+              jugado: p.duracion_jugada,
+              restante:
+                p.duracion_total != null
+                  ? Math.max(0, p.duracion_total - p.duracion_jugada)
+                  : null,
+            };
           })
         );
         setPlanes(detallados);

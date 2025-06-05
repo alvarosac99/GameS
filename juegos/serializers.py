@@ -33,7 +33,23 @@ class ValoracionSerializer(serializers.ModelSerializer):
 
 
 class PlanificacionSerializer(serializers.ModelSerializer):
+    duracion_total = serializers.SerializerMethodField()
+    duracion_jugada = serializers.SerializerMethodField()
+
     class Meta:
         model = Planificacion
-        fields = ["id", "nombre", "juegos", "creado"]
-        read_only_fields = ["id", "creado"]
+        fields = [
+            "id",
+            "nombre",
+            "juegos",
+            "creado",
+            "duracion_total",
+            "duracion_jugada",
+        ]
+        read_only_fields = ["id", "creado", "duracion_total", "duracion_jugada"]
+
+    def get_duracion_total(self, obj):
+        return obj.duracion_total.total_seconds() if obj.duracion_total else 0
+
+    def get_duracion_jugada(self, obj):
+        return obj.duracion_jugada.total_seconds() if obj.duracion_jugada else 0

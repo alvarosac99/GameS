@@ -10,6 +10,7 @@ from starlette.responses import RedirectResponse
 import docs
 import os
 import httpx
+from httpx import HTTPError
 import utils
 import uvicorn
 import asyncio
@@ -37,6 +38,14 @@ class Game(BaseModel):
     game: str
     information: dict
     offers: dict
+
+
+async def fetch_page(client: httpx.AsyncClient, url: str):
+    """Realiza una solicitud GET y devuelve la respuesta o ``None`` si falla."""
+    try:
+        return await client.get(url, follow_redirects=True)
+    except HTTPError:
+        return None
 
 
 @api.get("/", include_in_schema=False)
@@ -84,7 +93,9 @@ async def check_price(game: str, platform: str = "pc") -> dict:
 
     async with httpx.AsyncClient() as client:
         print("[check_price] Solicitando página con httpx...")
-        resp = await client.get(url, follow_redirects=True)
+        resp = await fetch_page(client, url)
+        if resp is None:
+            return JSONResponse(status_code=503, content={"message": "Service unavailable"})
         print("[check_price] Código de estado recibido:", resp.status_code)
         if resp.status_code != 200:
             search_url = await utils.quicksearch(game)
@@ -94,19 +105,18 @@ async def check_price(game: str, platform: str = "pc") -> dict:
                 print("[check_price] Error al obtener la página:", detail)
                 return JSONResponse(status_code=status_code, content={"message": detail})
             url = search_url
-            resp = await client.get(url, follow_redirects=True)
-            if resp.status_code != 200:
-                status_code = resp.status_code
-                detail = HTTPStatus(status_code).phrase
+            resp = await fetch_page(client, url)
+            if resp is None or resp.status_code != 200:
+                status_code = resp.status_code if resp else 503
+                detail = HTTPStatus(status_code).phrase if resp else "Service Unavailable"
                 print("[check_price] Error al obtener la página tras búsqueda:", detail)
                 return JSONResponse(status_code=status_code, content={"message": detail})
 
     options = Options()
     options.headless = True
-    driver = webdriver.Chrome(options=options)
-    driver.get(url)
-    soup = bs(driver.page_source)
-    driver.close()
+    with webdriver.Chrome(options=options) as driver:
+        driver.get(url)
+        soup = bs(driver.page_source)
 
     csv = utils.extract_data(soup)
     if isinstance(csv, JSONResponse):
@@ -114,10 +124,9 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         if search_url and search_url != url:
             options = Options()
             options.headless = True
-            driver = webdriver.Chrome(options=options)
-            driver.get(search_url)
-            soup = bs(driver.page_source)
-            driver.close()
+            with webdriver.Chrome(options=options) as driver:
+                driver.get(search_url)
+                soup = bs(driver.page_source)
             csv = utils.extract_data(soup)
         if isinstance(csv, JSONResponse):
             return csv
@@ -138,7 +147,9 @@ async def buscar_ofertas(game: str) -> dict:
     )
 
     async with httpx.AsyncClient() as client:
-        resp = await client.get(url, follow_redirects=True)
+        resp = await fetch_page(client, url)
+        if resp is None:
+            return JSONResponse(status_code=503, content={"message": "Service unavailable"})
         if resp.status_code != 200:
             search_url = await utils.quicksearch(game)
             if not search_url:
@@ -146,43 +157,40 @@ async def buscar_ofertas(game: str) -> dict:
                 detail = HTTPStatus(status_code).phrase
                 return JSONResponse(status_code=status_code, content={"message": detail})
             url = search_url
-            resp = await client.get(url, follow_redirects=True)
-            if resp.status_code != 200:
-                status_code = resp.status_code
-                detail = HTTPStatus(status_code).phrase
+            resp = await fetch_page(client, url)
+            if resp is None or resp.status_code != 200:
+                status_code = resp.status_code if resp else 503
+                detail = HTTPStatus(status_code).phrase if resp else "Service Unavailable"
                 return JSONResponse(status_code=status_code, content={"message": detail})
 
     options = Options()
     options.headless = True
-    driver = webdriver.Chrome(options=options)
-    driver.get(url)
+    with webdriver.Chrome(options=options) as driver:
+        driver.get(url)
+        soup = bs(driver.page_source, "html.parser")
+        platform_links: list[tuple[str, str]] = []
+        for tab in soup.select("li.tab.platforms-link"):
+            anchor = tab.find("a", href=True)
+            meta = tab.find("meta", attrs={"data-itemprop": "platform"})
+            name = meta.get("content") if meta else (anchor.text if anchor else tab.text)
+            name = name.strip().lower()
+            link = anchor["href"] if anchor else driver.current_url
+            platform_links.append((name, link))
 
-    soup = bs(driver.page_source, "html.parser")
-    platform_links: list[tuple[str, str]] = []
-    for tab in soup.select("li.tab.platforms-link"):
-        anchor = tab.find("a", href=True)
-        meta = tab.find("meta", attrs={"data-itemprop": "platform"})
-        name = meta.get("content") if meta else (anchor.text if anchor else tab.text)
-        name = name.strip().lower()
-        link = anchor["href"] if anchor else driver.current_url
-        platform_links.append((name, link))
+        result_offers: dict[str, dict] = {}
+        info: dict | None = None
+        game_name = game
 
-    result_offers: dict[str, dict] = {}
-    info: dict | None = None
-    game_name = game
-
-    for plat, link in platform_links:
-        driver.get(link)
-        page_soup = bs(driver.page_source, "html.parser")
-        data = utils.extract_data(page_soup)
-        if isinstance(data, JSONResponse):
-            continue
-        if info is None:
-            info = data.get("information", {})
-            game_name = data.get("game", game)
-        result_offers[plat] = {"url": link, "offers": data.get("offers", {})}
-
-    driver.close()
+        for plat, link in platform_links:
+            driver.get(link)
+            page_soup = bs(driver.page_source, "html.parser")
+            data = utils.extract_data(page_soup)
+            if isinstance(data, JSONResponse):
+                continue
+            if info is None:
+                info = data.get("information", {})
+                game_name = data.get("game", game)
+            result_offers[plat] = {"url": link, "offers": data.get("offers", {})}
 
     if not result_offers:
         return JSONResponse(status_code=404, content={"message": "Game not found"})

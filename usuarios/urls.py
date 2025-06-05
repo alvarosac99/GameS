@@ -14,11 +14,7 @@ urlpatterns = [
     path("perfil-publico/<str:nombre_usuario>/", views.perfil_publico_view),
     path("me/", views.perfil_usuario, name="perfil_usuario"),
     path("buscar/", views.buscar_usuarios, name="buscar_usuarios"),
-    path(
-        "me/filtro_adulto/",
-        views.actualizar_filtro_adulto,
-        name="actualizar_filtro_adulto",
-    ),
+    path("me/filtro_adulto/", views.actualizar_filtro_adulto, name="actualizar_filtro_adulto"),
     path("favoritos/", views.actualizar_favoritos, name="actualizar_favoritos"),
 
     # Seguimiento y bloqueos

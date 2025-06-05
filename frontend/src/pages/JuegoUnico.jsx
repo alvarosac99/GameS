@@ -89,11 +89,7 @@ export default function JuegoUnico() {
       .then((data) => {
         if (data && data.found) setTiempo(data);
       })
-<<<<<<< ours
-      .catch(() => { });
-=======
       .catch(() => {});
->>>>>>> theirs
   }, [juego?.name]);
 
   // Comprueba si el juego está en la biblioteca del usuario

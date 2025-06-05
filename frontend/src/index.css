@@ -10,7 +10,7 @@
 }
 
 body {
-  background-image: url('/background.png');
+  background-image: var(--imagen-fondo);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -124,11 +124,12 @@ button:focus-visible {
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --color-fondo: 0 0% 100%;
-    --color-metal: 0 0% 96%;
-    --color-borde: 0 0% 88%;
-    --color-claro: 0 0% 20%;
+  --radius: 0.5rem;
+  --color-fondo: 0 0% 100%;
+  --color-metal: 0 0% 96%;
+  --color-borde: 0 0% 88%;
+  --color-claro: 0 0% 20%;
+  --imagen-fondo: url('/background_claro.png');
   }
 
   .dark {
@@ -150,12 +151,13 @@ button:focus-visible {
     --destructive-foreground: 210 20% 98%;
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 216 12.2% 83.9%;
-    --color-fondo: 0 0% 12%;
-    --color-metal: 0 0% 16%;
-    --color-borde: 0 0% 23%;
-    --color-claro: 0 0% 88%;
-    --chart-1: 220 70% 50%;
+  --ring: 216 12.2% 83.9%;
+  --color-fondo: 0 0% 12%;
+  --color-metal: 0 0% 16%;
+  --color-borde: 0 0% 23%;
+  --color-claro: 0 0% 88%;
+  --imagen-fondo: url('/background.png');
+  --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;

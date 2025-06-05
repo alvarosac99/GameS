@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useLang } from "../context/LangContext";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { t } = useLang();
   const [csrfToken, setCsrfToken] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -31,7 +33,7 @@ export default function Register() {
     e.preventDefault();
 
     if (password !== confirmarPassword) {
-      setMensaje("Las contraseñas no coinciden.");
+      setMensaje(t("passwordMismatch"));
       return;
     }
 
@@ -55,11 +57,11 @@ export default function Register() {
 
   return (
     <div className="max-w-sm mx-auto mt-12 p-6 bg-metal shadow-lg rounded text-claro">
-      <h2 className="text-2xl font-bold mb-4 text-center">Crear Cuenta</h2>
+      <h2 className="text-2xl font-bold mb-4 text-center">{t("registerTitle")}</h2>
       <form onSubmit={handleRegister}>
         <input
           type="text"
-          placeholder="Usuario"
+          placeholder={t("registerUsername")}
           className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -67,7 +69,7 @@ export default function Register() {
         />
         <input
           type="email"
-          placeholder="Correo electrónico"
+          placeholder={t("registerEmail")}
           className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -75,7 +77,7 @@ export default function Register() {
         />
         <input
           type="password"
-          placeholder="Contraseña"
+          placeholder={t("registerPassword")}
           className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -83,20 +85,20 @@ export default function Register() {
         />
         <input
           type="password"
-          placeholder="Confirmar contraseña"
+          placeholder={t("registerConfirmPassword")}
           className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={confirmarPassword}
           onChange={(e) => setConfirmarPassword(e.target.value)}
           required
         />
         <button type="submit" className="bg-naranja hover:bg-naranjaHover text-white p-2 rounded w-full font-medium">
-          Registrarse
+          {t("registerButton")}
         </button>
       </form>
       {mensaje && <p className="mt-3 text-sm text-red-400 text-center">{mensaje}</p>}
       <p className="mt-4 text-sm text-center">
-        ¿Ya tienes cuenta?{" "}
-        <Link to="/login" className="text-naranja hover:underline">Inicia sesión aquí</Link>
+        {t("registerHasAccount")} {" "}
+        <Link to="/login" className="text-naranja hover:underline">{t("registerLoginHere")}</Link>
       </p>
     </div>
   );

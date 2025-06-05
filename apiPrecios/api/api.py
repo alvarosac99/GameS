@@ -12,6 +12,7 @@ import os
 import httpx
 import utils
 import uvicorn
+import asyncio
 
 CONFIG = dict(dotenv_values(".env") or dotenv_values(".env.example"))
 if not CONFIG:
@@ -124,6 +125,66 @@ async def check_price(game: str, platform: str = "pc") -> dict:
     if SAVE:
         utils.save(csv.get("Word", "any"), csv)
     return JSONResponse(status_code=HTTPStatus.OK, content=csv)
+
+
+@api.get("/buscar-ofertas", responses=docs.buscar_ofertas_responses)
+async def buscar_ofertas(game: str) -> dict:
+    """Obtiene ofertas agrupadas por plataforma para un juego."""
+    platform_enum = {
+        "pc": "cd-key",
+        "ps5": "ps5",
+        "ps4": "ps4",
+        "ps3": "ps3",
+        "xbox series x": "xbox-series",
+        "xbox one": "xbox-one",
+        "xbox 360": "xbox-360",
+        "nintendo switch": "nintendo-switch",
+        "nintendo wii u": "nintendo-wii-u",
+        "nintendo 3ds": "nintendo-3ds",
+    }
+
+    sanitized_game = "-".join(game.lower().split())
+    result_offers: dict[str, dict] = {}
+    info: dict | None = None
+    game_name = game
+
+    async with httpx.AsyncClient() as client:
+        for plat, slug in platform_enum.items():
+            url = (
+                f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-{slug}-compare-prices/"
+            )
+            resp = await client.get(url, follow_redirects=True)
+            if resp.status_code != 200:
+                search_url = await utils.quicksearch(game)
+                if not search_url:
+                    continue
+                url = search_url
+                resp = await client.get(url, follow_redirects=True)
+                if resp.status_code != 200:
+                    continue
+
+            options = Options()
+            options.headless = True
+            driver = webdriver.Chrome(options=options)
+            driver.get(url)
+            soup = bs(driver.page_source)
+            driver.close()
+
+            data = utils.extract_data(soup)
+            if isinstance(data, JSONResponse):
+                continue
+            if info is None:
+                info = data.get("information", {})
+                game_name = data.get("game", game)
+            result_offers[plat] = data.get("offers", {})
+
+    if not result_offers:
+        return JSONResponse(status_code=404, content={"message": "Game not found"})
+
+    return JSONResponse(
+        status_code=HTTPStatus.OK,
+        content={"game": game_name, "information": info or {}, "grouped_offers": result_offers},
+    )
 
 
 def start() -> None:

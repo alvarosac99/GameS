@@ -262,6 +262,11 @@ def calcular_recomendaciones_usuario(usuario, limite=10):
 
     generos_top = [g for g, _ in sorted(contador.items(), key=lambda x: -x[1])[:3]]
 
+    perfil = getattr(usuario, "perfil", None)
+    if perfil and perfil.gustos_generos != generos_top:
+        perfil.gustos_generos = generos_top
+        perfil.save(update_fields=["gustos_generos"])
+
     candidatos = [
         j
         for j in juegos

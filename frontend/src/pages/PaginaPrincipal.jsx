@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Carrusel from "@/components/Carrusel";
 import { FaUsers, FaGamepad, FaBook } from "react-icons/fa";
 
-export default function Bienvenida() {
+export default function PaginaPrincipal() {
   const [usuario, setUsuario] = useState("");
   const [stats, setStats] = useState({
     totalJuegos: 0,
@@ -17,7 +17,7 @@ export default function Bienvenida() {
 
   // Solo consulta la API de stats y la sesión de usuario
   useEffect(() => {
-    fetch("/api/usuarios/session", { credentials: "include" })
+    fetch("/api/usuarios/session/", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) setUsuario(data.username);

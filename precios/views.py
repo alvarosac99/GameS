@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-import requests
+import httpx
 
 FASTAPI_URL = "http://localhost:8080/check-price"
 
@@ -14,8 +14,9 @@ def consultar_precios(request):
     platform = request.GET.get("platform", "pc")
 
     try:
-        resp = requests.get(FASTAPI_URL, params={"game": game, "platform": platform}, timeout=60)
-        data = resp.json()
-        return Response(data, status=resp.status_code)
-    except Exception as e:
+        with httpx.Client(timeout=60) as client:
+            resp = client.get(FASTAPI_URL, params={"game": game, "platform": platform})
+            data = resp.json()
+            return Response(data, status=resp.status_code)
+    except httpx.HTTPError as e:
         return Response({"message": str(e)}, status=500)

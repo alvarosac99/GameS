@@ -1,6 +1,7 @@
 from fastapi.responses import JSONResponse
 from bs4 import BeautifulSoup as bs
 import pandas as pd
+import httpx
 
 
 def check_config(CONFIG: dict) -> dict:
@@ -29,7 +30,7 @@ def check_config(CONFIG: dict) -> dict:
     return config
 
 
-################################################################################
+###############################################################################
 #######################################
 
 
@@ -87,7 +88,39 @@ def extract_data(data: bs) -> dict:
     return {"game": game, "information": info, "offers": offers}
 
 
-################################################################################
+###############################################################################
+#######################################
+
+
+async def quicksearch(query: str) -> str | None:
+    """Devuelve la URL del primer resultado de búsqueda en AllKeyShop."""
+    params = {
+        "action": "quicksearch",
+        "search_name": query,
+        "currency": "eur",
+        "locale": "en",
+    }
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(
+                "https://www.allkeyshop.com/blog/wp-admin/admin-ajax.php",
+                params=params,
+                follow_redirects=True,
+            )
+        except httpx.HTTPError:
+            return None
+    if resp.status_code != 200:
+        return None
+    try:
+        html = resp.json().get("results", "")
+    except ValueError:
+        return None
+    soup = bs(html, "html.parser")
+    first = soup.find("a", class_="ls-results-row-link")
+    return first.get("href") if first else None
+
+
+###############################################################################
 #######################################
 
 

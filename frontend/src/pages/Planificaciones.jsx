@@ -2,12 +2,26 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
+import { FaTimes } from "react-icons/fa";
 
 export default function Planificaciones() {
   const { fetchAuth } = useAuth();
   const navigate = useNavigate();
   const [planes, setPlanes] = useState([]);
   const [cargando, setCargando] = useState(true);
+
+  const eliminarPlan = async (id) => {
+    if (!window.confirm("¿Eliminar esta planificación?")) return;
+    try {
+      const res = await fetchAuth(`/api/juegos/planificaciones/${id}/`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Error al eliminar");
+      setPlanes((prev) => prev.filter((p) => p.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     const cargar = async () => {
@@ -57,7 +71,13 @@ export default function Planificaciones() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           {planes.map((p) => (
-            <div key={p.id} className="bg-metal/30 p-4 rounded">
+            <div key={p.id} className="bg-metal/30 p-4 rounded relative">
+              <button
+                onClick={() => eliminarPlan(p.id)}
+                className="absolute top-2 right-2 bg-[#1f1f1f] text-red-400 text-xs rounded-md px-2 py-1 flex items-center gap-1 hover:bg-red-900/20 hover:text-red-500"
+              >
+                <FaTimes /> Eliminar
+              </button>
               <h2 className="font-semibold mb-2">{p.nombre}</h2>
               <div
                 className="grid grid-cols-2 gap-2 cursor-pointer"

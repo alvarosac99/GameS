@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useLang } from "../context/LangContext";
 
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useLang();
   const [csrfToken, setCsrfToken] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -52,11 +54,11 @@ export default function Login() {
 
   return (
     <div className="max-w-sm mx-auto mt-12 p-6 bg-metal shadow-lg rounded text-claro">
-      <h2 className="text-2xl font-bold mb-4 text-center">Iniciar Sesión</h2>
+      <h2 className="text-2xl font-bold mb-4 text-center">{t("loginTitle")}</h2>
       <form onSubmit={handleLogin}>
         <input
           type="text"
-          placeholder="Usuario"
+          placeholder={t("loginUsername")}
           className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -64,20 +66,20 @@ export default function Login() {
         />
         <input
           type="password"
-          placeholder="Contraseña"
+          placeholder={t("loginPassword")}
           className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
         <button type="submit" className="bg-naranja hover:bg-naranjaHover text-white p-2 rounded w-full font-medium">
-          Entrar
+          {t("loginButton")}
         </button>
       </form>
       {mensaje && <p className="mt-3 text-sm text-red-400 text-center">{mensaje}</p>}
       <p className="mt-4 text-sm text-center">
-        ¿No tienes cuenta?{" "}
-        <Link to="/register" className="text-naranja hover:underline">Regístrate aquí</Link>
+        {t("loginNoAccount")} {" "}
+        <Link to="/register" className="text-naranja hover:underline">{t("loginRegisterHere")}</Link>
       </p>
     </div>
   );

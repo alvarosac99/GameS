@@ -6,6 +6,7 @@ import Carrusel from "@/components/Carrusel";
 import Comentarios from "@/components/Comentarios";
 import Precios from "@/components/Precios";
 import { useAuth } from "@/context/AuthContext";
+import { useLang } from "@/context/LangContext";
 
 
 import ValoracionEstrellas from "@/components/ValoracionEstrellas";
@@ -62,8 +63,10 @@ export default function JuegoUnico() {
   const [inWishlist, setInWishlist] = useState(false);
   const [mostrarCompra, setMostrarCompra] = useState(false);
   const [tiempo, setTiempo] = useState(null);
+  const [descripcion, setDescripcion] = useState("");
 
   const { autenticado, fetchAuth } = useAuth();
+  const { t, lang } = useLang();
 
   // Carga la info del juego por ID
   useEffect(() => {
@@ -80,6 +83,38 @@ export default function JuegoUnico() {
       })
       .catch(() => setCargando(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!juego) return;
+    const texto = juego.summary_es || juego.summary || "";
+    if (!texto) {
+      setDescripcion(t("noDescription"));
+      return;
+    }
+    if (lang === "en") {
+      if (juego.summary && !juego.summary_es) {
+        setDescripcion(juego.summary);
+        return;
+      }
+      fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(texto)}`
+      )
+        .then((r) => r.json())
+        .then((d) => setDescripcion(d[0].map((x) => x[0]).join("")))
+        .catch(() => setDescripcion(texto));
+    } else {
+      if (juego.summary_es) {
+        setDescripcion(juego.summary_es);
+        return;
+      }
+      fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=es&dt=t&q=${encodeURIComponent(texto)}`
+      )
+        .then((r) => r.json())
+        .then((d) => setDescripcion(d[0].map((x) => x[0]).join("")))
+        .catch(() => setDescripcion(texto));
+    }
+  }, [juego, lang, t]);
 
   useEffect(() => {
     if (!juego) return;
@@ -160,7 +195,7 @@ export default function JuegoUnico() {
   if (!juego)
     return (
       <div className="min-h-screen flex items-center justify-center text-xl">
-        Juego no encontrado
+        {t("gameNotFound")}
       </div>
     );
 
@@ -174,7 +209,6 @@ export default function JuegoUnico() {
   const generos = juego.genres?.map((g) => ({ id: g.id, name: g.name })) || [];
   const modos =
     juego.game_modes?.map((m) => ({ id: m.id, name: m.name })) || [];
-  const descripcion = juego.summary_es || juego.summary || "No hay descripción disponible.";
 
   // Plataformas soportadas por la API de precios
   const mapaPlataformas = {
@@ -352,7 +386,7 @@ export default function JuegoUnico() {
                   onClick={() => setMostrarCompra(true)}
                   className="w-full bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded"
                 >
-                  Abrir comparador de precios
+                  {t("openPriceComparator")}
                 </button>
               </div>
             )}
@@ -514,7 +548,7 @@ export default function JuegoUnico() {
           />
           <div className="w-full sm:w-96 bg-metal shadow-xl transform transition-transform animate-in slide-in-from-right">
             <div className="flex justify-between items-center p-4 border-b border-borde">
-              <h2 className="text-lg font-semibold">Comparador de precios</h2>
+              <h2 className="text-lg font-semibold">{t("openPriceComparator")}</h2>
               <button
                 onClick={() => setMostrarCompra(false)}
                 className="text-2xl leading-none"

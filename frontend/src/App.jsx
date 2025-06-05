@@ -8,6 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { useLang } from "./context/LangContext";
 
 import {
   Menu,
@@ -39,6 +40,7 @@ import PlanificacionDetalle from "./pages/PlanificacionDetalle";
 
 function AppContent() {
   const { autenticado, usuario } = useAuth();
+  const { t } = useLang();
   const [mostrarBuscador, setMostrarBuscador] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const { pathname } = useLocation();
@@ -108,10 +110,10 @@ function AppContent() {
           {!autenticado ? (
             <>
               <Link to="/login" className="text-naranja underline">
-                Login
+                {t("loginLink")}
               </Link>
               <Link to="/register" className="text-naranja underline">
-                Register
+                {t("registerLink")}
               </Link>
             </>
           ) : (
@@ -156,28 +158,28 @@ function AppContent() {
       >
         <nav className="flex flex-col p-6 space-y-4">
           <Link to="/jugar" className="flex items-center gap-2 hover:text-naranja">
-            <LayoutDashboard /> JUGAR!
+            <LayoutDashboard /> {t("menuPlay")}
           </Link>
           <Link to="/juegos" className="flex items-center gap-2 hover:text-naranja">
-            <Gamepad /> Juegos
+            <Gamepad /> {t("menuJuegos")}
           </Link>
           <Link to="/bienvenida" className="flex items-center gap-2 hover:text-naranja">
-            <LayoutDashboard /> Panel
+            <LayoutDashboard /> {t("menuPanel")}
           </Link>
           <Link to="/biblioteca" className="flex items-center gap-2 hover:text-naranja">
-            <BookOpenText /> Biblioteca
+            <BookOpenText /> {t("menuBiblioteca")}
           </Link>
           <Link to="/diario" className="flex items-center gap-2 hover:text-naranja">
-            <NotebookPen /> Diario
+            <NotebookPen /> {t("menuDiario")}
           </Link>
           <Link to="/planificar" className="flex items-center gap-2 hover:text-naranja">
-            <LayoutDashboard /> Planificar
+            <LayoutDashboard /> {t("menuPlanificar")}
           </Link>
           <Link to="/planificaciones" className="flex items-center gap-2 hover:text-naranja">
-            <LayoutDashboard /> Mis planes
+            <LayoutDashboard /> {t("menuMisPlanes")}
           </Link>
           <Link to={`/perfil/${usuario?.username}`} className="flex items-center gap-2 hover:text-naranja">
-            <User /> Perfil
+            <User /> {t("menuPerfil")}
           </Link>
           <button
             className="flex items-center gap-2 text-red-400 hover:text-red-300"
@@ -185,7 +187,7 @@ function AppContent() {
               fetch("/api/usuarios/logout/", { method: "POST" }).then(() => (window.location.href = "/"))
             }
           >
-            <LogOut /> Cerrar sesión
+            <LogOut /> {t("menuLogout")}
           </button>
         </nav>
       </aside>
@@ -208,7 +210,7 @@ function AppContent() {
           <Route path="/perfil/:nombre" element={<Perfil />} />
           <Route path="/perfiles" element={<ListaUsuarios />} />
           <Route path="/jugar" element={<Jugar />} />
-          <Route path="*" element={<h2 className="text-center">Página no encontrada</h2>} />
+          <Route path="*" element={<h2 className="text-center">{t("pageNotFound")}</h2>} />
         </Routes>
       </main>
 

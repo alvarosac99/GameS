@@ -510,6 +510,10 @@ def valorar_juego(request, juego_id):
             }
         )
 
+<<<<<<< ours
+=======
+
+>>>>>>> theirs
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def tiempo_juego(request):

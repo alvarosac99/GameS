@@ -48,7 +48,6 @@ function AppContent() {
   const { pathname } = useLocation();
 
   const esDetalle = /^\/juego\/\d+/.test(pathname);
-  const esPerfil = /^\/perfil(\/|$)/.test(pathname);
 
   const headerRef = useRef(null);
   const [botonTop, setBotonTop] = useState(0);
@@ -98,7 +97,20 @@ function AppContent() {
         ref={headerRef}
         className="sticky top-0 z-50 bg-metal/90 backdrop-blur-sm px-4 py-3 shadow-md border-b border-borde grid grid-cols-3 items-center"
       >
-        <div />
+        <div className="flex items-center">
+          {autenticado && (
+            <Link
+              to={`/perfil/${usuario?.username}`}
+              className="hidden xl:block ml-20"
+            >
+              <img
+                src={usuario?.foto || "/media/avatares/default.png"}
+                alt="Mi perfil"
+                className="w-10 h-10 rounded-full object-cover hover:opacity-80"
+              />
+            </Link>
+          )}
+        </div>
         <div className="flex justify-center items-center">
           <Link to="/">
             <img

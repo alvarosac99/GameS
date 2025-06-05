@@ -22,4 +22,5 @@ urlpatterns = [
     path("valoracion/<int:juego_id>/", views.valorar_juego, name="valorar_juego"),
     path("buscar_en_biblioteca/", views.buscar_en_biblioteca),
     path("tiempo/", views.tiempo_juego, name="tiempo_juego"),
+    path("recomendados/", views.recomendaciones_usuario, name="recomendados"),
 ]

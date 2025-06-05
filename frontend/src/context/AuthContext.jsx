@@ -56,7 +56,8 @@ export default function AuthProvider({ children }) {
                 nombre: data.nombre,
                 username: data.username,
                 email: data.email,
-                filtro_adulto: userdata.filtro_adulto, 
+                filtro_adulto: userdata.filtro_adulto,
+                foto: userdata.foto || "/media/avatares/default.png",
               });
               setAutenticado(true);
             });
@@ -75,6 +76,7 @@ export default function AuthProvider({ children }) {
         setUsuario({
           ...datos,
           filtro_adulto: userdata.filtro_adulto,
+          foto: userdata.foto || "/media/avatares/default.png",
         });
       });
     setAutenticado(true);

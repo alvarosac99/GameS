@@ -54,12 +54,9 @@ CACHES = {
 
 ✅ 4. Uso en el código
 
-Ya está integrado en el proyecto. El sistema de recopilación de juegos lo usa así:
-
-from django.core.cache import cache
-
-cache.set('juegos_cacheados', lista_de_juegos, timeout=None)
-juegos = cache.get('juegos_cacheados')
+Ya está integrado en el proyecto. El servidor comprueba la caché al iniciarse y,
+si está vacía, descarga automáticamente todos los juegos de IGDB. Además se 
+programa una actualización diaria a las 2:00 AM.
 
 🧪 5. Comprobación manual
 

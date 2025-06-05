@@ -1,22 +1,8 @@
 import requests
-import time
 from collections import defaultdict
 from django.core.cache import cache
 from django.conf import settings
-
-def safe_post(url, headers, data, max_retries=10):
-    retries = 0
-    while retries < max_retries:
-        resp = requests.post(url, headers=headers, data=data)
-        if resp.status_code == 429:
-            wait = int(resp.headers.get("Retry-After", 30))
-            print(f"[IGDB] 429 Too Many Requests. Esperando {wait} segundos antes de reintentar...")
-            time.sleep(wait)
-            retries += 1
-            continue
-        resp.raise_for_status()
-        return resp
-    raise Exception(f"Demasiados intentos fallidos ({max_retries}) con error 429.")
+from utils.http import safe_post
 
 def recopilar_juegos_igdb(popularity_type=1):
     """

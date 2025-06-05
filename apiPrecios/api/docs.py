@@ -116,3 +116,26 @@ check_price_responses = {
         },
     },
 }
+
+
+buscar_ofertas_responses = {
+    404: {
+        "description": "Game not found",
+        "content": {"application/json": {"example": {"message": "Game not found"}}},
+    },
+    200: {
+        "description": "Game found",
+        "content": {
+            "application/json": {
+                "example": {
+                    "game": "Elden Ring",
+                    "information": {"Release date": "25 February 2022"},
+                    "grouped_offers": {
+                        "pc": {"0": {"price": "38€", "merchant": "G2A"}},
+                        "ps4": {"0": {"price": "44€", "merchant": "IG"}},
+                    },
+                }
+            }
+        },
+    },
+}

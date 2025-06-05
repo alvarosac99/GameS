@@ -59,7 +59,7 @@ export default function Login() {
         <input
           type="text"
           placeholder={t("loginUsername")}
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
@@ -67,7 +67,7 @@ export default function Login() {
         <input
           type="password"
           placeholder={t("loginPassword")}
-          className="mb-3 p-2 w-full bg-gray-700 text-white rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

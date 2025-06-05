@@ -70,7 +70,7 @@ function AppContent() {
     <div
       className="flex flex-col min-h-screen text-claro"
       style={{
-        backgroundImage: "url('/background.png')",
+        backgroundImage: "var(--imagen-fondo)",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

@@ -371,7 +371,7 @@ export default function JuegoUnico() {
                       href={ti.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex flex-col items-center bg-gray-800 hover:bg-naranja px-4 py-3 rounded-lg"
+                      className="flex flex-col items-center bg-metal hover:bg-naranja px-4 py-3 rounded-lg"
                     >
                       <ti.Icon size={28} />
                       <span className="mt-1 text-sm font-bold">{ti.name}</span>

@@ -250,7 +250,11 @@ def valorar_juego_service(juego_id, usuario, valor=None):
 
 
 def calcular_recomendaciones_usuario(usuario, limite=10):
-    """Devuelve juegos recomendados para un usuario."""
+    """Devuelve juegos recomendados para un usuario.
+
+    Respeta la preferencia ``filtro_adulto`` del perfil, ocultando juegos cuyo
+    tema sea adulto (ID 42) si dicha opción está activa.
+    """
     juegos = cargar_cache_juegos() or []
     if not juegos:
         return []
@@ -278,11 +282,16 @@ def calcular_recomendaciones_usuario(usuario, limite=10):
         perfil.gustos_generos = generos_top
         perfil.save(update_fields=["gustos_generos"])
 
+    filtro_adulto = True
+    if perfil:
+        filtro_adulto = perfil.filtro_adulto
+
     candidatos = [
         j
         for j in juegos
         if j["id"] not in mis_ids
         and any(g in j.get("genres", []) for g in generos_top)
+        and (not filtro_adulto or 42 not in (j.get("themes") or []))
     ]
     candidatos.sort(
         key=lambda j: (

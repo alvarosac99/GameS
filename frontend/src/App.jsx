@@ -18,6 +18,7 @@ import {
   NotebookPen,
   User,
   LayoutDashboard,
+  Settings,
   LogOut,
   Search,
 } from "lucide-react";
@@ -37,6 +38,7 @@ import ListaUsuarios from "./pages/ListaUsuarios";
 import Planificar from "./pages/Planificar";
 import Planificaciones from "./pages/Planificaciones";
 import PlanificacionDetalle from "./pages/PlanificacionDetalle";
+import Ajustes from "./pages/Ajustes";
 
 function AppContent() {
   const { autenticado, usuario } = useAuth();
@@ -178,6 +180,9 @@ function AppContent() {
           <Link to="/planificaciones" className="flex items-center gap-2 hover:text-naranja">
             <LayoutDashboard /> {t("menuMisPlanes")}
           </Link>
+          <Link to="/ajustes" className="flex items-center gap-2 hover:text-naranja">
+            <Settings /> {t("menuAjustes")}
+          </Link>
           <Link to={`/perfil/${usuario?.username}`} className="flex items-center gap-2 hover:text-naranja">
             <User /> {t("menuPerfil")}
           </Link>
@@ -209,6 +214,7 @@ function AppContent() {
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/perfil/:nombre" element={<Perfil />} />
           <Route path="/perfiles" element={<ListaUsuarios />} />
+          <Route path="/ajustes" element={<Ajustes />} />
           <Route path="/jugar" element={<Jugar />} />
           <Route path="*" element={<h2 className="text-center">{t("pageNotFound")}</h2>} />
         </Routes>

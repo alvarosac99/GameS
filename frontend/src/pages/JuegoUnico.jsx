@@ -523,7 +523,7 @@ export default function JuegoUnico() {
               </button>
             </div>
             <div className="p-4 overflow-y-auto max-h-full">
-              <Precios nombre={juego.name} plataformas={plataformasPrecios} />
+              <Precios nombre={juego.name} />
             </div>
           </div>
         </div>

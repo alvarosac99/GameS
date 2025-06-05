@@ -9,10 +9,10 @@ export default {
 		extend: {
 			colors: {
 				// Paleta personalizada
-				fondo: "#1f1f1f",
-				metal: "#2a2a2a",
-				borde: "#3a3a3a",
-				claro: "#e0e0e0",
+                                fondo: "hsl(var(--color-fondo))",
+                                metal: "hsl(var(--color-metal))",
+                                borde: "hsl(var(--color-borde))",
+                                claro: "hsl(var(--color-claro))",
 				naranja: "#ff7b00",
 				naranjaHover: "#ffa94d",
 

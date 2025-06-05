@@ -179,7 +179,7 @@ export default function Comentarios({ juegoId }) {
                   e.stopPropagation();
                   borrarComentario(c.id);
                 }}
-                className="ml-auto bg-[#1f1f1f] text-red-400 text-xs rounded-md px-3 py-1 flex items-center gap-1 hover:bg-red-900/20 hover:text-red-500 cursor-pointer"
+                className="ml-auto bg-metal text-red-400 text-xs rounded-md px-3 py-1 flex items-center gap-1 hover:bg-red-900/20 hover:text-red-500 cursor-pointer"
               >
                 <FaTimes /> Eliminar
               </button>

@@ -67,7 +67,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "usuarios",
-    "juegos",
+    "juegos.apps.JuegosConfig",
     "comentarios",
     "actividad",
     "diario",

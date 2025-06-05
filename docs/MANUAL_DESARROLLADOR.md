@@ -61,11 +61,11 @@ urlpatterns = [
 ]
 ```
 
-Además se expone `forzar_cache_juegos` para lanzar manualmente la recopilación de juegos desde IGDB.
+Además se expone `forzar_cache_juegos` para lanzar manualmente la actualización de la caché, aunque el servidor la genera de forma automática.
 
 ### Integración con IGDB
 
-El módulo `gestor_videojuegos/recopilar.py` contiene la lógica para descargar masivamente información de IGDB. Utiliza la caché de Redis para almacenar el progreso y reanudar descargas en caso de fallo. El proceso se ejecuta en un hilo aparte, activado desde `gestor_videojuegos/views.py`.
+La lógica de descarga masiva se encuentra en `juegos/cache_igdb.py`. Este módulo se ejecuta al iniciar la aplicación y programa una actualización diaria a las 2 AM.
 
 La app `juegos` ofrece endpoints para listar, buscar y obtener detalles de juegos. También permite gestionar bibliotecas de usuario y valoraciones.
 

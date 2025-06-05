@@ -89,7 +89,11 @@ export default function Precios({ nombre }) {
   if (error)
     return (
       <div className="space-y-2">
-        <p>Error: {error}</p>
+        <p>
+          {error === "Error 404"
+            ? "No se han encontrado ofertas."
+            : `Error: ${error}`}
+        </p>
         <button
           onClick={obtener}
           className="px-4 py-2 bg-naranja text-black rounded"

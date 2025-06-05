@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Tab } from "@headlessui/react";
 import LoaderCirculo from "@/components/LoaderCirculo";
 
@@ -9,28 +9,47 @@ function classNames(...classes) {
 export default function Precios({ nombre, plataformas }) {
   const [datos, setDatos] = useState({});
   const [cargando, setCargando] = useState(false);
+  const [errores, setErrores] = useState({});
+  const abortRef = useRef(null);
 
   const limpiarPrecio = (p) =>
     p ? p.replace(/no hidden fees/gi, "").trim() : "";
 
-  const obtener = useCallback(async (plataforma) => {
-    setCargando(true);
-    try {
-      const params = new URLSearchParams({ game: nombre, platform: plataforma });
-      const res = await fetch(`/api/precios/consultar/?${params.toString()}`);
-      const data = await res.json();
-      setDatos((prev) => ({ ...prev, [plataforma]: data }));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setCargando(false);
-    }
-  }, [nombre]);
+  const obtener = useCallback(
+    async (plataforma) => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setCargando(true);
+      setErrores((prev) => ({ ...prev, [plataforma]: null }));
+      try {
+        const params = new URLSearchParams({ game: nombre, platform: plataforma });
+        const res = await fetch(`/api/precios/consultar/?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        const data = await res.json();
+        setDatos((prev) => ({ ...prev, [plataforma]: data }));
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          console.error(e);
+          setErrores((prev) => ({ ...prev, [plataforma]: e.message }));
+        }
+      } finally {
+        setCargando(false);
+      }
+    },
+    [nombre]
+  );
 
   useEffect(() => {
+    setDatos({});
+    setErrores({});
     if (plataformas.length > 0) obtener(plataformas[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nombre, plataformas.join(":")]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   return (
     <Tab.Group>
@@ -41,9 +60,7 @@ export default function Precios({ nombre, plataformas }) {
             className={({ selected }) =>
               classNames(
                 "px-3 py-1 rounded-md text-sm font-semibold",
-                selected
-                  ? "bg-naranja text-black"
-                  : "bg-metal hover:bg-borde"
+                selected ? "bg-naranja text-black" : "bg-metal hover:bg-borde"
               )
             }
             onClick={() => {
@@ -94,6 +111,16 @@ export default function Precios({ nombre, plataformas }) {
               ) : (
                 <p>No se encontraron ofertas.</p>
               )
+            ) : errores[p] ? (
+              <div className="space-y-2">
+                <p>Error: {errores[p]}</p>
+                <button
+                  onClick={() => obtener(p)}
+                  className="px-4 py-2 bg-naranja text-black rounded"
+                >
+                  Reintentar
+                </button>
+              </div>
             ) : cargando ? (
               <LoaderCirculo texto="Buscando precios..." />
             ) : (

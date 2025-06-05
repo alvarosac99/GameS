@@ -83,3 +83,8 @@ redis-cli
 La API de precios detecta números romanos en el título de un juego y los
 convierte a cifras decimales antes de realizar la consulta a AllKeyShop. Por
 ejemplo, "Dark Souls II" se transforma en "dark souls 2".
+
+## Modo claro
+
+Desde la sección de **Ajustes** puedes elegir entre tema claro u oscuro.
+La preferencia se guarda en el navegador y se aplica al recargar la página

@@ -124,6 +124,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
 
     if SAVE:
         utils.save(csv.get("Word", "any"), csv)
+    csv["url"] = url
     return JSONResponse(status_code=HTTPStatus.OK, content=csv)
 
 
@@ -179,7 +180,7 @@ async def buscar_ofertas(game: str) -> dict:
         if info is None:
             info = data.get("information", {})
             game_name = data.get("game", game)
-        result_offers[plat] = data.get("offers", {})
+        result_offers[plat] = {"url": link, "offers": data.get("offers", {})}
 
     driver.close()
 

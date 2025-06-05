@@ -5,4 +5,5 @@ urlpatterns = [
     path("activa/", views.sesion_activa),
     path("iniciar/", views.iniciar_sesion),
     path("finalizar/", views.finalizar_sesion),
+    path("tiempos/", views.tiempos_juego),
 ]

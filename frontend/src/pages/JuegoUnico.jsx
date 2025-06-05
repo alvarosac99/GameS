@@ -7,6 +7,7 @@ import Comentarios from "@/components/Comentarios";
 import Precios from "@/components/Precios";
 import { useAuth } from "@/context/AuthContext";
 
+
 import ValoracionEstrellas from "@/components/ValoracionEstrellas";
 import {
   SiSteam,
@@ -59,6 +60,7 @@ export default function JuegoUnico() {
   const [entryId, setEntryId] = useState(null);
   const [inWishlist, setInWishlist] = useState(false);
   const [mostrarCompra, setMostrarCompra] = useState(false);
+  const [tiempo, setTiempo] = useState(null);
 
   const { autenticado, fetchAuth } = useAuth();
 
@@ -77,6 +79,17 @@ export default function JuegoUnico() {
       })
       .catch(() => setCargando(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!juego) return;
+    setTiempo(null);
+    fetch(`/api/juegos/tiempo/?nombre=${encodeURIComponent(juego.name)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.found) setTiempo(data);
+      })
+      .catch(() => { });
+  }, [juego?.name]);
 
   // Comprueba si el juego está en la biblioteca del usuario
   useEffect(() => {
@@ -393,7 +406,8 @@ export default function JuegoUnico() {
                     .join(", ") || "Desconocido"}
                 </p>
                 <p>
-                  <strong>Idiomas:</strong> {juego.idiomas?.join(", ") || "N/A"}
+                  <strong>Duración:</strong>{" "}
+                  {tiempo ? `${tiempo.main}h historia` : "Desconocida"}
                 </p>
                 <p>
                   <strong>Saga:</strong> {juego.collection?.name || "Desconocida"}

@@ -79,3 +79,11 @@ def finalizar_sesion(request):
         )
 
     return Response({"duracion": duracion.total_seconds()})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def tiempos_juego(request):
+    registros = TiempoJuego.objects.filter(usuario=request.user)
+    datos = {r.juego_id: r.duracion_total.total_seconds() for r in registros}
+    return Response(datos)

@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from howlongtobeatpy import HowLongToBeat
 
 from .utils import (
     IGDB_BASE_URL,
@@ -178,7 +179,10 @@ def listar_juegos(request):
             if asc:
                 juegos = sorted(
                     juegos,
-                    key=lambda j: (j.get("popularidad") is None, j.get("popularidad") or 0),
+                    key=lambda j: (
+                        j.get("popularidad") is None,
+                        j.get("popularidad") or 0,
+                    ),
                 )
             else:
                 juegos = sorted(
@@ -505,3 +509,25 @@ def valorar_juego(request, juego_id):
                 "total_valoraciones": media["total"],
             }
         )
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def tiempo_juego(request):
+    nombre = request.GET.get("nombre")
+    if not nombre:
+        return Response({"error": "nombre requerido"}, status=400)
+    try:
+        resultados = HowLongToBeat().search(nombre)
+        if not resultados:
+            return Response({"found": False}, status=404)
+        mejor = max(resultados, key=lambda r: r.similarity)
+        return Response(
+            {
+                "found": True,
+                "main": mejor.main_story,
+                "main_extra": mejor.main_extra,
+                "completionist": mejor.completionist,
+            }
+        )
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

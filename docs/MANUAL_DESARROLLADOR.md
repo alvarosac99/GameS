@@ -116,3 +116,36 @@ No se detallan todos los componentes por ser un tema más propio del desarrollo 
 ## 7. Próximos pasos
 
 Este manual es una referencia rápida. Cada app contiene lógica específica (modelos, vistas y tests) que conviene revisar para comprender por completo el flujo interno. En tareas futuras se documentará el código de forma más detallada.
+## 8. Buenas prácticas de desarrollo
+
+### Entorno de desarrollo
+Indica las versiones de Python y Node recomendadas en `README.md`. Utiliza un entorno virtual (`python -m venv venv`) y activa tailwind y eslint en el frontend.
+
+### Proceso de revisión de código
+1. Crea una rama descriptiva por funcionalidad.
+2. Abre un Pull Request en GitHub solicitando revisión.
+3. Otro desarrollador revisará lint, pruebas y claridad del código antes de aprobar.
+
+### Refactorización
+Refactoriza cuando el código sea difícil de mantener o duplicado. Asegura que las pruebas sigan pasando y realiza commits atómicos.
+
+### Manejo de errores y solicitudes
+Registra los errores en la sección *issues* del repositorio. Etiqueta cada incidencia con su prioridad. Las nuevas características siguen el mismo flujo antes de su desarrollo.
+
+### Estándares de código
+Sigue el PEP8 para Python y la guía de estilo de Airbnb para React. Mantén los comentarios breves y significativos.
+
+### Pruebas
+Ejecuta `python manage.py test` para las apps de Django y `npm test` para el frontend. Añade pruebas unitarias y de integración por cada módulo nuevo.
+
+### Documentación
+Actualiza este manual y los comentarios del código en cada cambio relevante. Usa docstrings en Python y JSDoc en JavaScript.
+
+### Implementación
+El despliegue se realiza mediante contenedores Docker. Revisa los Dockerfiles del proyecto y sigue el entorno de producción indicado en `docs/GestorVideojuegos.pdf`.
+
+### Mantenimiento
+Planifica actualizaciones de dependencias cada mes y revisa vulnerabilidades. Limpia la caché de Redis periódicamente.
+
+### Prácticas de desarrollo ágil
+Se trabaja con iteraciones semanales utilizando un tablero Kanban en GitHub Projects. Las tareas se definen como *issues* y se priorizan en conjunto con el equipo.

@@ -75,7 +75,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
             },
         )
 
-    sanitized_game = "-".join(game.lower().split(" "))
+    sanitized_game = "-".join(utils.convert_roman_tokens(game).lower().split())
     url = (
         f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-"
         f"{platform_enum[platform]}-compare-prices/"
@@ -132,7 +132,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
 async def buscar_ofertas(game: str) -> dict:
     """Obtiene ofertas para todas las plataformas disponibles."""
 
-    sanitized_game = "-".join(game.lower().split())
+    sanitized_game = "-".join(utils.convert_roman_tokens(game).lower().split())
     url = (
         f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-cd-key-compare-prices/"
     )

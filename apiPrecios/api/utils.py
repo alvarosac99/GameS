@@ -5,6 +5,63 @@ import httpx
 import re
 
 
+ROMAN_PATTERN = re.compile(
+    r"^(?=[MDCLXVI])M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$",
+    re.IGNORECASE,
+)
+
+
+def is_roman_numeral(token: str) -> bool:
+    """Devuelve ``True`` si el *token* es un número romano válido."""
+
+    return bool(ROMAN_PATTERN.fullmatch(token))
+
+
+def roman_to_int(token: str) -> int:
+    """Convierte un número romano en su valor entero."""
+
+    values = {
+        "M": 1000,
+        "CM": 900,
+        "D": 500,
+        "CD": 400,
+        "C": 100,
+        "XC": 90,
+        "L": 50,
+        "XL": 40,
+        "X": 10,
+        "IX": 9,
+        "V": 5,
+        "IV": 4,
+        "I": 1,
+    }
+
+    i = 0
+    result = 0
+    token = token.upper()
+    while i < len(token):
+        if i + 1 < len(token) and token[i : i + 2] in values:
+            result += values[token[i : i + 2]]
+            i += 2
+        else:
+            result += values[token[i]]
+            i += 1
+    return result
+
+
+def convert_roman_tokens(text: str) -> str:
+    """Reemplaza tokens que sean números romanos por enteros."""
+
+    tokens = text.split()
+    converted = []
+    for token in tokens:
+        if is_roman_numeral(token):
+            converted.append(str(roman_to_int(token)))
+        else:
+            converted.append(token)
+    return " ".join(converted)
+
+
 def check_config(CONFIG: dict) -> dict:
     """Valida el archivo de configuración. Devuelve el diccionario ya parseado."""
     fields = {
@@ -112,6 +169,8 @@ def extract_data(data: bs) -> dict:
 
 async def quicksearch(query: str) -> str | None:
     """Devuelve la URL del primer resultado de búsqueda en AllKeyShop."""
+
+    query = convert_roman_tokens(query)
     params = {
         "action": "quicksearch",
         "search_name": query,

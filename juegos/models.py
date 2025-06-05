@@ -10,11 +10,19 @@ class Juego(models.Model):
 
 
 class Biblioteca(models.Model):
+    ESTADOS = [
+        ("jugando", "Jugando"),
+        ("completado", "Completado"),
+        ("abandonado", "Abandonado"),
+        ("en_espera", "En espera"),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="biblioteca"
     )
     game_id = models.IntegerField()
     added_at = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default="jugando")
 
     class Meta:
         unique_together = ("user", "game_id")
@@ -39,3 +47,18 @@ class Valoracion(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username} - {self.juego.name}: {self.valor}"
+
+
+class Planificacion(models.Model):
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="planificaciones"
+    )
+    nombre = models.CharField(max_length=100)
+    juegos = models.ManyToManyField(Juego, related_name="planificaciones")
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-creado"]
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.nombre}"

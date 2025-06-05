@@ -1,3 +1,5 @@
+"""Reexporta las vistas definidas en :mod:`juegos.igdb_views`."""
+
 from .igdb_views.views import (
     listar_juegos,
     detalle_juego,

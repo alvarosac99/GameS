@@ -1,13 +1,18 @@
-from django.db import models
-from django.conf import settings
+"""Modelos relacionados con la gestión de juegos y bibliotecas."""
+
 from datetime import timedelta
+
+from django.conf import settings
+from django.db import models
 
 
 def default_duration():
+    """Duración nula para campos ``DurationField``."""
     return timedelta()
 
 
 class Juego(models.Model):
+    """Representa un juego básico identificado por su ID de IGDB."""
     id = models.BigIntegerField(primary_key=True)
 
     def __str__(self):
@@ -15,6 +20,7 @@ class Juego(models.Model):
 
 
 class Biblioteca(models.Model):
+    """Relación entre un usuario y los juegos que posee."""
     ESTADOS = [
         ("jugando", "Jugando"),
         ("completado", "Completado"),
@@ -38,6 +44,7 @@ class Biblioteca(models.Model):
 
 
 class Valoracion(models.Model):
+    """Puntuación otorgada por un usuario a un juego."""
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="valoraciones"
     )
@@ -55,6 +62,7 @@ class Valoracion(models.Model):
 
 
 class DuracionJuego(models.Model):
+    """Duración aproximada de un juego obtenida de HowLongToBeat."""
     juego = models.OneToOneField(
         Juego, on_delete=models.CASCADE, related_name="duracion_juego"
     )
@@ -66,6 +74,7 @@ class DuracionJuego(models.Model):
 
 
 class Planificacion(models.Model):
+    """Planificaciones personalizadas de juegos por parte del usuario."""
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="planificaciones"
     )

@@ -1,7 +1,11 @@
+"""Serializadores utilizados por la API de juegos."""
+
 from rest_framework import serializers
+
 from .models import Biblioteca, Valoracion, Planificacion
 
 class BibliotecaSerializer(serializers.ModelSerializer):
+    """Gestiona la serialización de elementos de la biblioteca."""
     class Meta:
         model = Biblioteca
         fields = ("id", "game_id", "added_at", "estado")
@@ -26,6 +30,7 @@ class BibliotecaSerializer(serializers.ModelSerializer):
 
 
 class ValoracionSerializer(serializers.ModelSerializer):
+    """Serializa las valoraciones de los usuarios."""
     class Meta:
         model = Valoracion
         fields = ["id", "usuario", "juego", "valor", "fecha"]
@@ -33,6 +38,7 @@ class ValoracionSerializer(serializers.ModelSerializer):
 
 
 class PlanificacionSerializer(serializers.ModelSerializer):
+    """Serializa los planes de juego de cada usuario."""
     duracion_total = serializers.SerializerMethodField()
     duracion_jugada = serializers.SerializerMethodField()
 

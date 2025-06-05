@@ -1,7 +1,9 @@
+"""Vistas relacionadas con la biblioteca personal de cada usuario."""
+
 import math
 import requests
 from django.conf import settings
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 
 from .utils import obtener_token_igdb, IGDB_BASE_URL, chunked
@@ -11,10 +13,13 @@ from actividad.utils import registrar_actividad, otorgar_logro
 
 
 class BibliotecaViewSet(viewsets.ModelViewSet):
+    """CRUD de la biblioteca de juegos de un usuario."""
+
     serializer_class = BibliotecaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Filtra la biblioteca por usuario y opcionalmente por ID de juego."""
         qs = Biblioteca.objects.filter(user=self.request.user)
         game_id = self.request.query_params.get("game_id")
         if game_id:
@@ -22,6 +27,7 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
+        """Registra la creación y otorga logros cuando corresponda."""
         instancia = serializer.save(user=self.request.user)
         registrar_actividad(
             self.request.user,
@@ -32,6 +38,7 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
             otorgar_logro(self.request.user, "primer_juego")
 
     def list(self, request, *args, **kwargs):
+        """Devuelve la lista paginada de juegos de la biblioteca."""
         qs = self.get_queryset()
         total = qs.count()
 
@@ -49,7 +56,7 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
         offset = (pagina - 1) * por_pagina
         paginados = qs[offset : offset + por_pagina]
 
-        game_ids = [b.game_id for b in paginados]
+        game_ids = list(paginados.values_list("game_id", flat=True))
         if not game_ids:
             return Response(
                 {

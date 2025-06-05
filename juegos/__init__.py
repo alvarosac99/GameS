@@ -1,0 +1,1 @@
+"""Aplicación Django encargada de la lógica relacionada con juegos."""

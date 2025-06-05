@@ -82,6 +82,8 @@ La app `usuarios` extiende el modelo de usuario mediante `Perfil`. Incluye avata
 
 Dentro de `frontend/` se encuentra la aplicación React. Usa Vite para el bundling y dispone de configuración de ESLint y Tailwind. El código fuente se organiza en `src/`, que contiene componentes, páginas y contexto global para la autenticación. Se conecta a la API del backend para mostrar juegos, perfiles y demás datos.
 
+El usuario puede alternar entre **modo claro** y oscuro desde la página de ajustes; la preferencia se guarda en el navegador.
+
 No se detallan todos los componentes por ser un tema más propio del desarrollo del cliente, pero su estructura sigue la convención de React y Vite.
 
 ## 5. Flujo de ejecución resumido

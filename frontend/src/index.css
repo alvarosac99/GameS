@@ -66,7 +66,8 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #f9f9f9;
+  color: #333;
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -124,6 +125,10 @@ button:focus-visible {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    --color-fondo: 0 0% 100%;
+    --color-metal: 0 0% 96%;
+    --color-borde: 0 0% 88%;
+    --color-claro: 0 0% 20%;
   }
 
   .dark {
@@ -146,6 +151,10 @@ button:focus-visible {
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
     --ring: 216 12.2% 83.9%;
+    --color-fondo: 0 0% 12%;
+    --color-metal: 0 0% 16%;
+    --color-borde: 0 0% 23%;
+    --color-claro: 0 0% 88%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -224,12 +233,12 @@ button:focus-visible {
 }
 
 .react-calendar {
-  background-color: #1a1a1a;
-  color: #ccc;
+  background-color: #fff;
+  color: #333;
   border-radius: 1rem;
   padding: 1rem;
   font-family: inherit;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
 }
 
 .react-calendar__navigation {
@@ -256,8 +265,8 @@ button:focus-visible {
 .react-calendar__month-view__weekdays {
   text-transform: uppercase;
   font-size: 0.75rem;
-  background-color: #121212;
-  color: #888;
+  background-color: #f0f0f0;
+  color: #777;
   padding: 0.5rem 0;
   border-radius: 0.5rem;
 }
@@ -265,14 +274,14 @@ button:focus-visible {
 .react-calendar__tile {
   background: transparent;
   border-radius: 0.5rem;
-  color: #ccc;
+  color: #333;
   padding: 0.5rem 0;
   transition: background-color 0.2s ease;
 }
 
 .react-calendar__tile:enabled:hover {
-  background-color: #262626;
-  color: #fff;
+  background-color: #eaeaea;
+  color: #000;
 }
 
 .react-calendar__tile--now {

@@ -1,11 +1,11 @@
 .react-calendar {
-  background-color: #1a1a1a !important;
-  color: #ccc;
+  background-color: #fff !important;
+  color: #333;
   border-radius: 1rem;
   padding: 1rem;
   width: 100% !important;
   font-family: inherit;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   font-size: 14px;
 }
@@ -28,8 +28,8 @@
 .react-calendar__month-view__weekdays {
   text-transform: uppercase;
   font-size: 0.8rem;
-  color: #999;
-  background-color: #111;
+  color: #777;
+  background-color: #f0f0f0;
   border-radius: 0.5rem;
   padding: 0.5rem 0;
 }
@@ -46,8 +46,8 @@
 }
 
 .tile-normal:hover {
-  background-color: #2a2a2a !important;
-  color: #fff;
+  background-color: #eaeaea !important;
+  color: #000;
 }
 
 /* Día seleccionado */
@@ -66,8 +66,8 @@
 
 /* Día actual (hoy) */
 .react-calendar__tile--now {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
+  background: rgba(255, 165, 0, 0.2) !important;
+  color: #000 !important;
   border-radius: 8px;
 }
 

@@ -26,7 +26,6 @@ import {
 import Jugar from "./pages/Jugar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Bienvenida from "./pages/Bienvenida";
 import Juegos from "./pages/Juegos";
 import Biblioteca from "./pages/Biblioteca";
 import Diario from "./pages/Diario";
@@ -215,7 +214,7 @@ function AppContent() {
           <Route path="/" element={<PaginaPrincipal />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/bienvenida" element={<Bienvenida />} />
+          <Route path="/bienvenida" element={<PaginaPrincipal />} />
           <Route path="/juegos" element={<Juegos />} />
           <Route path="/juego/:id" element={<JuegoUnico />} />
           <Route path="/biblioteca" element={<Biblioteca />} />

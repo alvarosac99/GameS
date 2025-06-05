@@ -1,6 +1,10 @@
-import React from "react";
+import React, { useRef } from "react";
 
 export default function GameCard({ juego, onClick }) {
+    const rectRef = useRef(null);
+    const rafRef = useRef(null);
+    const cardRef = useRef(null);
+
     if (!juego) {
         // Tarjeta vacía si no hay juego
         return (
@@ -23,21 +27,37 @@ export default function GameCard({ juego, onClick }) {
 
     return (
         <div
+            ref={cardRef}
             className="relative group rounded-lg overflow-hidden shadow-lg transition-transform duration-50 transform-gpu cursor-pointer"
+            style={{ willChange: "transform" }}
             onClick={onClick}
-            onMouseMove={(e) => {
-                const card = e.currentTarget;
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                const rotateX = -(y - centerY) / 10;
-                const rotateY = (x - centerX) / 10;
-                card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+            onMouseEnter={(e) => {
+                rectRef.current = e.currentTarget.getBoundingClientRect();
             }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)";
+            onMouseMove={(e) => {
+                const card = cardRef.current;
+                if (!card) return;
+                if (!rectRef.current) rectRef.current = card.getBoundingClientRect();
+                const { left, top, width, height } = rectRef.current;
+                const x = e.clientX - left;
+                const y = e.clientY - top;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const factorX = width / 6;
+                const factorY = height / 6;
+                const rotateX = Math.max(Math.min(-(y - centerY) / factorY, 15), -15);
+                const rotateY = Math.max(Math.min((x - centerX) / factorX, 15), -15);
+                if (rafRef.current) cancelAnimationFrame(rafRef.current);
+                rafRef.current = requestAnimationFrame(() => {
+                    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+                });
+            }}
+            onMouseLeave={() => {
+                rectRef.current = null;
+                if (rafRef.current) cancelAnimationFrame(rafRef.current);
+                if (cardRef.current) {
+                    cardRef.current.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)";
+                }
             }}
         >
             {coverUrl ? (

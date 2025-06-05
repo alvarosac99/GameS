@@ -18,6 +18,7 @@ import {
   User,
   LayoutDashboard,
   LogOut,
+  Search,
 } from "lucide-react";
 
 import Jugar from "./pages/Jugar";
@@ -51,7 +52,7 @@ function AppContent() {
       if (headerRef.current) {
         const hHeight = headerRef.current.offsetHeight;
         setHeaderHeight(hHeight);
-        setBotonTop(hHeight / 2 - 24 - 6); // 24 mitad botón, 6px más arriba
+        setBotonTop(hHeight / 2 - 24 - 6);
       }
     };
     calcularPosiciones();
@@ -71,10 +72,11 @@ function AppContent() {
       {/* Botón flotante del menú */}
       {autenticado && (
         <button
-          className={`
-            fixed left-4 z-[100] bg-metal/70 hover:bg-metal transition-transform duration-300 rounded-full p-3
-            ${menuAbierto ? "rotate-90 scale-105" : ""}
-          `}
+          className={` 
+      fixed left-4 z-[100] transition-transform duration-300 rounded-full p-3
+      bg-metal/70 hover:bg-metal
+      ${menuAbierto ? "rotate-90 text-red-400" : "text-naranja"}
+    `}
           style={{ top: `${botonTop}px` }}
           onClick={() => setMenuAbierto(!menuAbierto)}
           aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
@@ -83,10 +85,11 @@ function AppContent() {
         </button>
       )}
 
+
       {/* HEADER */}
       <header
         ref={headerRef}
-        className="sticky top-0 z-50 bg-metal bg-opacity-70 backdrop-blur-sm px-4 py-3 shadow-md border-b border-borde grid grid-cols-3 items-center"
+        className="sticky top-0 z-50 bg-metal/90 backdrop-blur-sm px-4 py-3 shadow-md border-b border-borde grid grid-cols-3 items-center"
       >
         <div />
         <div className="flex justify-center items-center">
@@ -112,10 +115,10 @@ function AppContent() {
             <>
               <button
                 onClick={() => setMostrarBuscador(!mostrarBuscador)}
-                className="text-naranja text-xl xl:hidden"
-                aria-label="Mostrar buscador"
+                className={`xl:hidden text-xl p-3 rounded-full transition-transform duration-300 bg-metal/70 hover:bg-metal ${mostrarBuscador ? "rotate-90 text-red-400" : "text-naranja"}`}
+                aria-label={mostrarBuscador ? "Cerrar buscador" : "Mostrar buscador"}
               >
-                🔍
+                {mostrarBuscador ? <X /> : <Search />}
               </button>
               <BuscadorGlobal className="hidden xl:flex" />
             </>
@@ -125,9 +128,9 @@ function AppContent() {
 
       {/* Buscador móvil debajo del header */}
       <div
-        className={`
-          fixed left-0 w-full px-4 py-2 bg-metal border-b border-borde z-40 shadow-md
-          transition-all duration-300 bg-opacity-20 backdrop-blur-sm origin-top
+        className={` 
+          fixed left-0 w-full px-4 py-2 bg-metal/95 border-b border-borde z-40 shadow-md
+          transition-all duration-300 backdrop-blur-sm origin-top
           ${mostrarBuscador ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 pointer-events-none"}
         `}
         style={{ top: `${headerHeight}px` }}
@@ -145,9 +148,8 @@ function AppContent() {
 
       {/* Menú lateral */}
       <aside
-        className={`fixed top-0 left-0 w-64 bg-metal/90 z-50 pt-24 transition-transform duration-300 ${
-          menuAbierto ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 w-64 bg-metal shadow-lg border-r border-borde z-50 pt-24 transition-transform duration-300 ${menuAbierto ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <nav className="flex flex-col p-6 space-y-4">
           <Link to="/jugar" className="flex items-center gap-2 hover:text-naranja">

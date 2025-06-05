@@ -1,5 +1,27 @@
-*__pycache__
-gestor_env
-venv
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+env/
+venv/
+gestor_env/
+
+# Archivos de Selenium
+selenium.log
+selenium-screenshot*.png
+
+# Archivos temporales
+*.tmp
+*.temp
+*.log
+*.bak
+
+# CSV generados
+*.csv
+
+# Media
 media/avatares/*
-apiPrecios/apiPrecios
+
+# Cache de apiPrecios
+apiPrecios/__pycache__/

@@ -1,3 +1,5 @@
+"""Vistas encargadas de la gestión de usuarios y perfiles."""
+
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
@@ -15,6 +17,8 @@ User = get_user_model()
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def perfil_publico_view(request, nombre_usuario):
+    """Devuelve la información pública de un perfil."""
+
     user = get_object_or_404(User, username=nombre_usuario)
 
     # Si el usuario ha sido bloqueado por el objetivo, se rechaza
@@ -22,6 +26,8 @@ def perfil_publico_view(request, nombre_usuario):
         return Response({"detail": "Has sido bloqueado por este usuario."}, status=403)
 
     perfil, _ = Perfil.objects.get_or_create(user=user)
+
+    # Los favoritos se rellenan con "None" hasta completar 5 elementos
     favoritos = perfil.favoritos if perfil.favoritos else []
     favoritos = list(favoritos) + [None] * (5 - len(favoritos))
     favoritos = favoritos[:5]
@@ -57,6 +63,8 @@ def perfil_publico_view(request, nombre_usuario):
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def perfil_usuario(request):
+    """Obtiene o actualiza el perfil del usuario autenticado."""
+
     usuario = request.user
     perfil, _ = Perfil.objects.get_or_create(user=usuario)
 
@@ -79,6 +87,7 @@ def perfil_usuario(request):
         )
 
     elif request.method == "PATCH":
+        # Datos que puede modificar el usuario
         nombre = request.data.get("nombre")
         email = request.data.get("email")
         bio = request.data.get("bio")
@@ -96,14 +105,17 @@ def perfil_usuario(request):
             perfil.avatar = avatar
         perfil.save()
 
-        registrar_actividad(usuario, "logro", "Actualizó su perfil")  # NUEVO
+        # Registramos la actividad de actualización de perfil
+        registrar_actividad(usuario, "logro", "Actualizó su perfil")
 
         return Response({"message": "Perfil actualizado correctamente"})
 
 
 @csrf_exempt
 def register_view(request):
+    """Registra un nuevo usuario y crea su sesión."""
     if request.method == "POST":
+        # Extraemos datos del cuerpo de la petición
         data = json.loads(request.body)
 
         username = data.get("username")
@@ -111,6 +123,7 @@ def register_view(request):
         confirmarPassword = data.get("confirmarPassword")
         email = data.get("email")
 
+        # Validamos que todos los campos estén presentes
         if not all([username, password, confirmarPassword, email]):
             return JsonResponse(
                 {"error": "Todos los campos son obligatorios"}, status=400
@@ -119,21 +132,22 @@ def register_view(request):
         if password != confirmarPassword:
             return JsonResponse({"error": "Las contraseñas no coinciden"}, status=400)
 
+        # Comprobaciones de unicidad
         if User.objects.filter(username=username).exists():
             return JsonResponse({"error": "El usuario ya existe"}, status=400)
 
         if User.objects.filter(email=email).exists():
-            return JsonResponse(
-                {"error": "Ya existe una cuenta con ese correo"}, status=400
-            )
+            return JsonResponse({"error": "Ya existe una cuenta con ese correo"}, status=400)
 
         try:
+            # Creación del nuevo usuario
             user = User.objects.create_user(
                 username=username, email=email, password=password
             )
             login(request, user)
 
-            registrar_actividad(user, "logro", "Se unió a la comunidad 🎉")  # NUEVO
+            # Registramos que se unió a la comunidad
+            registrar_actividad(user, "logro", "Se unió a la comunidad 🎉")
 
             return JsonResponse(
                 {
@@ -147,11 +161,13 @@ def register_view(request):
                 }
             )
         except Exception as e:
+            # Cualquier error se envía en la respuesta
             return JsonResponse({"error": str(e)}, status=500)
 
 
 @ensure_csrf_cookie
 def session_view(request):
+    """Devuelve el estado de autenticación de la sesión actual."""
     if request.user.is_authenticated:
         return JsonResponse(
             {
@@ -167,10 +183,12 @@ def session_view(request):
 
 @csrf_exempt
 def login_view(request):
+    """Inicia la sesión del usuario si las credenciales son válidas."""
     data = json.loads(request.body)
     username = data.get("username")
     password = data.get("password")
 
+    # Autenticamos al usuario
     user = authenticate(request, username=username, password=password)
 
     if user is not None:
@@ -195,6 +213,7 @@ def login_view(request):
 
 @csrf_exempt
 def logout_view(request):
+    """Cierra la sesión del usuario actual."""
     if request.method == "POST":
         logout(request)
         return JsonResponse({"success": True})
@@ -203,6 +222,7 @@ def logout_view(request):
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def actualizar_filtro_adulto(request):
+    """Actualiza la preferencia de filtro de contenido adulto."""
     perfil, _ = Perfil.objects.get_or_create(user=request.user)
     filtro_adulto = request.data.get("filtro_adulto")
 
@@ -224,7 +244,9 @@ def actualizar_filtro_adulto(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def actualizar_favoritos(request):
+    """Guarda la lista de juegos favoritos del usuario."""
     favoritos = request.data.get("favoritos", [])
+    # Validamos que sea una lista y que no supere el máximo permitido
     if not isinstance(favoritos, list) or len(favoritos) > 5:
         return Response(
             {"error": "Solo puedes tener hasta 5 juegos favoritos."}, status=400
@@ -246,22 +268,22 @@ def actualizar_favoritos(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def buscar_usuarios(request):
+    """Realiza una búsqueda simple de usuarios por nombre o username."""
+
     q = request.GET.get("q", "").strip().lower()
-    print(">>> Recibida búsqueda:", q)
-    usuarios = User.objects.filter(username__icontains=q) | User.objects.filter(
-        first_name__icontains=q
-    )
-    print(">>> Resultados:", usuarios)
+
     if not q or len(q) < 2:
         return Response({"resultados": []})
 
-    usuarios = User.objects.filter(username__icontains=q) | User.objects.filter(
-        first_name__icontains=q
-    )
+    usuarios = (
+        User.objects.filter(username__icontains=q)
+        | User.objects.filter(first_name__icontains=q)
+    ).distinct()[:10]
 
+    # Evitamos usuarios duplicados en el resultado
     encontrados = []
     ids_vistos = set()
-    for user in usuarios.distinct()[:10]:
+    for user in usuarios:
         if user.id in ids_vistos:
             continue
         ids_vistos.add(user.id)
@@ -289,6 +311,7 @@ def buscar_usuarios(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def seguir_usuario(request, username):
+    """Permite seguir a otro usuario."""
     objetivo = get_object_or_404(User, username=username)
     perfil_objetivo = getattr(objetivo, "perfil", None)
     perfil_actual = request.user.perfil
@@ -301,9 +324,8 @@ def seguir_usuario(request, username):
             {"error": "Debes desbloquear al usuario para seguirlo."}, status=400
         )
 
-    perfil_objetivo.seguidores.add(request.user)
-
     if not perfil_objetivo.seguidores.filter(id=request.user.id).exists():
+        perfil_objetivo.seguidores.add(request.user)
         registrar_actividad(
             request.user, "seguimiento", f"Siguió a {objetivo.username}"
         )
@@ -314,6 +336,7 @@ def seguir_usuario(request, username):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def dejar_de_seguir(request, username):
+    """Deja de seguir al usuario indicado."""
     objetivo = get_object_or_404(User, username=username)
     perfil_objetivo = getattr(objetivo, "perfil", None)
 
@@ -326,6 +349,7 @@ def dejar_de_seguir(request, username):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def bloquear_usuario(request, username):
+    """Bloquea al usuario indicado y lo elimina de seguidores."""
     objetivo = get_object_or_404(User, username=username)
     perfil_actual = request.user.perfil
 
@@ -343,6 +367,7 @@ def bloquear_usuario(request, username):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def desbloquear_usuario(request, username):
+    """Elimina al usuario indicado de la lista de bloqueados."""
     objetivo = get_object_or_404(User, username=username)
     perfil_actual = request.user.perfil
 

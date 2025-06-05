@@ -6,6 +6,7 @@ from . import views
 
 router = DefaultRouter()
 router.register(r"biblioteca", views.BibliotecaViewSet, basename="biblioteca")
+router.register(r"planificaciones", views.PlanificacionViewSet, basename="planificacion")
 
 urlpatterns = [
     path("stats_bienvenida/", views.stats_bienvenida, name="stats_bienvenida"),

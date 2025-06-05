@@ -9,47 +9,43 @@ function classNames(...classes) {
 export default function Precios({ nombre, plataformas }) {
   const [datos, setDatos] = useState({});
   const [cargando, setCargando] = useState(false);
-  const [errores, setErrores] = useState({});
+  const [error, setError] = useState(null);
   const abortRef = useRef(null);
 
   const limpiarPrecio = (p) =>
     p ? p.replace(/no hidden fees/gi, "").trim() : "";
 
-  const obtener = useCallback(
-    async (plataforma) => {
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      setCargando(true);
-      setErrores((prev) => ({ ...prev, [plataforma]: null }));
-      try {
-        const params = new URLSearchParams({ game: nombre, platform: plataforma });
-        const res = await fetch(`/api/precios/consultar/?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error(`Error ${res.status}`);
-        const data = await res.json();
-        setDatos((prev) => ({ ...prev, [plataforma]: data }));
-      } catch (e) {
-        if (e.name !== "AbortError") {
-          console.error(e);
-          setErrores((prev) => ({ ...prev, [plataforma]: e.message }));
-        }
-      } finally {
-        setCargando(false);
+  const obtener = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setCargando(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ game: nombre });
+      const res = await fetch(`/api/precios/consultar/?${params.toString()}`, {
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      setDatos(data.grouped_offers || {});
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        console.error(e);
+        setError(e.message);
       }
-    },
-    [nombre]
-  );
+    } finally {
+      setCargando(false);
+    }
+  }, [nombre]);
 
   useEffect(() => {
     setDatos({});
-    setErrores({});
-    if (plataformas.length > 0) obtener(plataformas[0]);
+    obtener();
+    return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nombre, plataformas.join(":")]);
+  }, [nombre]);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
 
   return (
     <Tab.Group>
@@ -63,9 +59,6 @@ export default function Precios({ nombre, plataformas }) {
                 selected ? "bg-naranja text-black" : "bg-metal hover:bg-borde"
               )
             }
-            onClick={() => {
-              if (!datos[p]) obtener(p);
-            }}
           >
             {p}
           </Tab>
@@ -75,8 +68,8 @@ export default function Precios({ nombre, plataformas }) {
         {plataformas.map((p) => (
           <Tab.Panel key={p} className="space-y-2">
             {datos[p] ? (
-              Object.values(datos[p].offers || {}).filter((o) => o.price).length > 0 ? (
-                Object.values(datos[p].offers)
+              Object.values(datos[p]).filter((o) => o.price).length > 0 ? (
+                Object.values(datos[p])
                   .filter((o) => o.price)
                   .map((o, i) => (
                     <a
@@ -111,11 +104,11 @@ export default function Precios({ nombre, plataformas }) {
               ) : (
                 <p>No se encontraron ofertas.</p>
               )
-            ) : errores[p] ? (
+            ) : error ? (
               <div className="space-y-2">
-                <p>Error: {errores[p]}</p>
+                <p>Error: {error}</p>
                 <button
-                  onClick={() => obtener(p)}
+                  onClick={obtener}
                   className="px-4 py-2 bg-naranja text-black rounded"
                 >
                   Reintentar
@@ -125,7 +118,7 @@ export default function Precios({ nombre, plataformas }) {
               <LoaderCirculo texto="Buscando precios..." />
             ) : (
               <button
-                onClick={() => obtener(p)}
+                onClick={obtener}
                 className="px-4 py-2 bg-naranja text-black rounded"
               >
                 Consultar

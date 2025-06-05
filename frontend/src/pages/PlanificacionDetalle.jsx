@@ -21,29 +21,24 @@ export default function PlanificacionDetalle() {
           setCargando(false);
           return;
         }
-        const resTimes = await fetchAuth("/api/sesiones/tiempos/");
-        const tiempos = await resTimes.json();
         const juegosDet = await Promise.all(
           data.juegos.map(async (gid) => {
             const j = await fetch(`/api/juegos/buscar_id/?id=${gid}`)
               .then((r) => r.json())
               .catch(() => null);
-            if (!j) return null;
-            const t = await fetch(
-              `/api/juegos/tiempo/?nombre=${encodeURIComponent(j.name)}`
-            )
-              .then((r) => (r.ok ? r.json() : null))
-              .catch(() => null);
-            const jugado = tiempos[gid] || 0;
-            const total = t?.main ? t.main * 3600 : null;
-            const restante = total != null ? Math.max(0, total - jugado) : null;
-            return { ...j, jugado, total, restante };
+            return j;
           })
         );
-        const total = juegosDet.reduce((a, j) => a + (j?.total || 0), 0);
-        const jugado = juegosDet.reduce((a, j) => a + (j?.jugado || 0), 0);
-        const restante = total ? Math.max(0, total - jugado) : null;
-        setPlan({ ...data, juegos: juegosDet.filter(Boolean), total, jugado, restante });
+        setPlan({
+          ...data,
+          juegos: juegosDet.filter(Boolean),
+          total: data.duracion_total,
+          jugado: data.duracion_jugada,
+          restante:
+            data.duracion_total != null
+              ? Math.max(0, data.duracion_total - data.duracion_jugada)
+              : null,
+        });
       } catch (e) {
         setPlan(null);
       } finally {

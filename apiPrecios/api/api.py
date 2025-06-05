@@ -74,9 +74,9 @@ async def check_price(game: str, platform: str = "pc") -> dict:
             },
         )
 
-    game = "-".join(game.lower().split(" "))
+    sanitized_game = "-".join(game.lower().split(" "))
     url = (
-        f"https://www.allkeyshop.com/blog/buy-{game}-"
+        f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-"
         f"{platform_enum[platform]}-compare-prices/"
     )
     print("[check_price] URL construida:", url)
@@ -86,10 +86,19 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         resp = await client.get(url, follow_redirects=True)
         print("[check_price] Código de estado recibido:", resp.status_code)
         if resp.status_code != 200:
-            status_code = resp.status_code
-            detail = HTTPStatus(status_code).phrase
-            print("[check_price] Error al obtener la página:", detail)
-            return JSONResponse(status_code=status_code, content={"message": detail})
+            search_url = await utils.quicksearch(game)
+            if not search_url:
+                status_code = resp.status_code
+                detail = HTTPStatus(status_code).phrase
+                print("[check_price] Error al obtener la página:", detail)
+                return JSONResponse(status_code=status_code, content={"message": detail})
+            url = search_url
+            resp = await client.get(url, follow_redirects=True)
+            if resp.status_code != 200:
+                status_code = resp.status_code
+                detail = HTTPStatus(status_code).phrase
+                print("[check_price] Error al obtener la página tras búsqueda:", detail)
+                return JSONResponse(status_code=status_code, content={"message": detail})
 
     options = Options()
     options.headless = True
@@ -99,6 +108,19 @@ async def check_price(game: str, platform: str = "pc") -> dict:
     driver.close()
 
     csv = utils.extract_data(soup)
+    if isinstance(csv, JSONResponse):
+        search_url = await utils.quicksearch(game)
+        if search_url and search_url != url:
+            options = Options()
+            options.headless = True
+            driver = webdriver.Chrome(options=options)
+            driver.get(search_url)
+            soup = bs(driver.page_source)
+            driver.close()
+            csv = utils.extract_data(soup)
+        if isinstance(csv, JSONResponse):
+            return csv
+
     if SAVE:
         utils.save(csv.get("Word", "any"), csv)
     return JSONResponse(status_code=HTTPStatus.OK, content=csv)

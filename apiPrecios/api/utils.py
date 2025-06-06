@@ -1,5 +1,6 @@
 from fastapi.responses import JSONResponse
 from bs4 import BeautifulSoup as bs
+from http import HTTPStatus
 import pandas as pd
 import httpx
 import re
@@ -92,10 +93,18 @@ def check_config(CONFIG: dict) -> dict:
 #######################################
 
 
-def extract_data(data: bs) -> dict:
-    """Extrae datos de un juego desde el HTML parseado con BeautifulSoup."""
+def extract_data(data: bs, cookies: dict | None = None) -> dict:
+    """Extrae datos de un juego desde el HTML parseado con BeautifulSoup.
 
-    print("[extract_data] Iniciando extracción")
+    Parameters
+    ----------
+    data: bs
+        Documento parseado con BeautifulSoup.
+    cookies: dict | None
+        Cookies obtenidas durante la navegación con Selenium. Se envían en la
+        petición para evitar bloqueos por parte de la web.
+    """
+
     game_bs = data.find("span", {"data-itemprop": "name"})
     if game_bs is None:
         return JSONResponse(status_code=404, content={"message": "Game not found"})
@@ -145,6 +154,8 @@ def extract_data(data: bs) -> dict:
                 params=params,
                 follow_redirects=True,
                 timeout=10,
+                headers={"User-Agent": "Mozilla/5.0"},
+                cookies=cookies,
             )
             print("[extract_data] Status ofertas:", resp.status_code)
             if resp.status_code == 200:
@@ -158,7 +169,7 @@ def extract_data(data: bs) -> dict:
                         status_code=500,
                         content={"message": "Error parsing offer data as JSON"},
                     )
-
+            
                 merchants = data_json.get("merchants", {})
                 regions = data_json.get("regions", {})
                 editions = data_json.get("editions", {})
@@ -183,6 +194,13 @@ def extract_data(data: bs) -> dict:
                     }
         except httpx.HTTPError as e:
             print("[extract_data] Error de red:", e)
+            else:
+                return JSONResponse(
+                    status_code=resp.status_code,
+                    content={"message": HTTPStatus(resp.status_code).phrase},
+                )
+        except httpx.HTTPError:
+            pass
 
     return {"game": game, "information": info, "offers": offers}
 

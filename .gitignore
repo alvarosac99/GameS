@@ -11,6 +11,7 @@ venvPrecios/
 # Archivos de Selenium
 selenium.log
 selenium-screenshot*.png
+chrome114/
 
 # Archivos temporales
 *.tmp

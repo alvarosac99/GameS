@@ -42,6 +42,7 @@ SECRET_KEY = "django-insecure-g%j5z$3ww3)o!=lzmb6#01k-==k)9l7rs02-abxn)d%fma#y(-
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    "192.168.82.139",
     "10.42.0.1",
     "localhost",
     "172.16.2.206",
@@ -95,6 +96,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.1.37:5173",
     "http://192.168.1.39:5173",
     "http://192.168.56.1:5173",
+    "http://192.168.82.139:5173",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -105,6 +107,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://192.168.1.37:5173",
     "http://192.168.1.39:5173",
     "http://192.168.56.1:5173",
+    "http://192.82.139.1:5173",
 ]
 
 # Rest framework settings

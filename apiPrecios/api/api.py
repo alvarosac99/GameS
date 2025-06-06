@@ -6,6 +6,8 @@ from http import HTTPStatus
 from pydantic import BaseModel
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from starlette.responses import RedirectResponse
 import docs
 import os
@@ -30,6 +32,20 @@ if not CONFIG:
 SAVE = False
 CONFIG = utils.check_config(CONFIG)
 api = FastAPI()
+
+
+def get_driver(options: Options) -> webdriver.Chrome:
+    """Devuelve una instancia de Chrome usando WebDriverManager.
+
+    Se intenta descargar el ChromeDriver 127 para asegurar compatibilidad.
+    Si falla, se recurre a la última versión disponible.
+    """
+    try:
+        service = Service(ChromeDriverManager(version="127.0.0").install())
+    except Exception as exc:  # noqa: BLE001
+        print("[get_driver] No se pudo instalar el driver 127:", exc)
+        service = Service(ChromeDriverManager().install())
+    return webdriver.Chrome(service=service, options=options)
 
 
 class Game(BaseModel):
@@ -114,7 +130,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
 
     options = Options()
     options.headless = True
-    with webdriver.Chrome(options=options) as driver:
+    with get_driver(options) as driver:
         driver.get(url)
         soup = bs(driver.page_source)
 
@@ -124,7 +140,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         if search_url and search_url != url:
             options = Options()
             options.headless = True
-            with webdriver.Chrome(options=options) as driver:
+            with get_driver(options) as driver:
                 driver.get(search_url)
                 soup = bs(driver.page_source)
             csv = utils.extract_data(soup)
@@ -165,7 +181,7 @@ async def buscar_ofertas(game: str) -> dict:
 
     options = Options()
     options.headless = True
-    with webdriver.Chrome(options=options) as driver:
+    with get_driver(options) as driver:
         driver.get(url)
         soup = bs(driver.page_source, "html.parser")
         platform_links: list[tuple[str, str]] = []

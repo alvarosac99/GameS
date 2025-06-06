@@ -173,7 +173,10 @@ export default function Comentarios({ juegoId }) {
               </span>
             )}
             <span className="text-xs text-gray-400">{fechaCorta(c.fecha)}</span>
-            {autenticado && usuario?.username === c.user.username && (
+            {autenticado &&
+              (usuario?.username === c.user.username ||
+                usuario?.rol === "STAFF" ||
+                usuario?.rol === "ADMIN") && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();

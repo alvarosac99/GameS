@@ -178,6 +178,7 @@ def session_view(request):
                 "nombre": request.user.first_name or request.user.username,
                 "id": request.user.id,
                 "email": request.user.email,
+                "rol": getattr(request.user.perfil, "rol", "PLAYER"),
             }
         )
     return JsonResponse({"authenticated": False})
@@ -204,6 +205,7 @@ def login_view(request):
                     "nombre": user.first_name or user.username,
                     "username": user.username,
                     "email": user.email,
+                    "rol": getattr(user.perfil, "rol", "PLAYER"),
                 },
             }
         )

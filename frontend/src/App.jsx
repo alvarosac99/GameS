@@ -38,6 +38,8 @@ import Planificar from "./pages/Planificar";
 import Planificaciones from "./pages/Planificaciones";
 import PlanificacionDetalle from "./pages/PlanificacionDetalle";
 import Ajustes from "./pages/Ajustes";
+import NuestrosJuegos from "./pages/NuestrosJuegos";
+import NuevoJuego from "./pages/NuevoJuego";
 
 function AppContent() {
   const { autenticado, usuario } = useAuth();
@@ -176,6 +178,14 @@ function AppContent() {
           <Link to="/juegos" className="flex items-center gap-2 hover:text-naranja">
             <Gamepad /> {t("menuJuegos")}
           </Link>
+          <Link to="/nuestros-juegos" className="flex items-center gap-2 hover:text-naranja">
+            <Gamepad /> {t("menuNuestrosJuegos")}
+          </Link>
+          {(usuario?.rol === "DEV" || usuario?.rol === "ADMIN") && (
+            <Link to="/nuevo-juego" className="flex items-center gap-2 hover:text-naranja">
+              <Gamepad /> {t("menuAnadeJuego")}
+            </Link>
+          )}
           <Link to="/bienvenida" className="flex items-center gap-2 hover:text-naranja">
             <LayoutDashboard /> {t("menuPanel")}
           </Link>
@@ -226,6 +236,8 @@ function AppContent() {
           <Route path="/perfil/:nombre" element={<Perfil />} />
           <Route path="/perfiles" element={<ListaUsuarios />} />
           <Route path="/ajustes" element={<Ajustes />} />
+          <Route path="/nuestros-juegos" element={<NuestrosJuegos />} />
+          <Route path="/nuevo-juego" element={<NuevoJuego />} />
           <Route path="/jugar" element={<Jugar />} />
           <Route path="*" element={<h2 className="text-center">{t("pageNotFound")}</h2>} />
         </Routes>

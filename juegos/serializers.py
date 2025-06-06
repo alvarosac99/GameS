@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from .models import Biblioteca, Valoracion, Planificacion
+from .models import Biblioteca, Valoracion, Planificacion, JuegoDev
 
 class BibliotecaSerializer(serializers.ModelSerializer):
     """Gestiona la serialización de elementos de la biblioteca."""
@@ -59,3 +59,10 @@ class PlanificacionSerializer(serializers.ModelSerializer):
 
     def get_duracion_jugada(self, obj):
         return obj.duracion_jugada.total_seconds() if obj.duracion_jugada else 0
+
+
+class JuegoDevSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JuegoDev
+        fields = ["id", "nombre", "descripcion", "desarrollador", "creado"]
+        read_only_fields = ["id", "desarrollador", "creado"]

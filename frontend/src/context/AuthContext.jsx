@@ -56,6 +56,7 @@ export default function AuthProvider({ children }) {
                 nombre: data.nombre,
                 username: data.username,
                 email: data.email,
+                rol: data.rol,
                 filtro_adulto: userdata.filtro_adulto,
                 foto: userdata.foto || "/media/avatares/default.png",
               });
@@ -75,6 +76,7 @@ export default function AuthProvider({ children }) {
       .then(userdata => {
         setUsuario({
           ...datos,
+          rol: userdata.rol,
           filtro_adulto: userdata.filtro_adulto,
           foto: userdata.foto || "/media/avatares/default.png",
         });

@@ -11,6 +11,9 @@ class Comentario(models.Model):
 
     class Meta:
         ordering = ['-fecha']
+        permissions = [
+            ("ver_comentarios", "Puede ver todos los comentarios"),
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.juego_id} - {self.texto[:30]}"

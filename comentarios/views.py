@@ -4,6 +4,7 @@ from .serializers import ComentarioSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .permissions import PuedeVerTodosLosComentarios
 
 
 class ComentariosJuegoView(generics.ListCreateAPIView):
@@ -37,3 +38,11 @@ class BorrarComentarioView(generics.DestroyAPIView):
         if rol in ["STAFF", "ADMIN"]:
             return Comentario.objects.all()
         return Comentario.objects.filter(user=user)
+
+
+class ComentariosAdminView(generics.ListAPIView):
+    """Lista todos los comentarios para usuarios staff."""
+
+    serializer_class = ComentarioSerializer
+    permission_classes = [PuedeVerTodosLosComentarios]
+    queryset = Comentario.objects.all()

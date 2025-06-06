@@ -75,7 +75,9 @@ La app `usuarios` extiende el modelo de usuario mediante `Perfil`. Incluye avata
 
 ### Comentarios y actividad
 
-- **comentarios**: Permite a los usuarios dejar comentarios asociados a distintos objetos (por ejemplo juegos). 
+- **comentarios**: Permite a los usuarios dejar comentarios asociados a distintos objetos (por ejemplo juegos).
+- Desde `/api/comentarios/admin/` los miembros del staff con el permiso
+  `comentarios.ver_comentarios` pueden listar todos los comentarios.
 - **actividad**: Registra eventos y logros desbloqueados, permitiendo mostrar un historial de acciones en el frontend.
 
 ## 4. Frontend

@@ -6,6 +6,7 @@ __pycache__/
 env/
 venv/
 gestor_env/
+venvPrecios/
 
 # Archivos de Selenium
 selenium.log

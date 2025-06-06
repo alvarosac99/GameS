@@ -32,4 +32,8 @@ class BorrarComentarioView(generics.DestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Comentario.objects.filter(user=self.request.user)
+        user = self.request.user
+        rol = getattr(getattr(user, "perfil", None), "rol", "")
+        if rol in ["STAFF", "ADMIN"]:
+            return Comentario.objects.all()
+        return Comentario.objects.filter(user=user)

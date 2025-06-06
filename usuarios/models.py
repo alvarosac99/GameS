@@ -23,7 +23,7 @@ class Perfil(models.Model):
     ROLES = [
         ("ADMIN", "Administrador"),
         ("DEV", "Desarrollador"),
-        ("REVIEWER", "Revisor"),
+        ("STAFF", "Staff"),
         ("PLAYER", "Jugador"),
     ]
 

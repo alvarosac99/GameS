@@ -107,7 +107,12 @@ def extract_data(data: bs) -> dict:
         not_splitting = ["release date", "developer", "publisher"]
         for label, value in zip(info_labels_bs, info_values_bs):
             label = label.text.replace("\n", " ").replace("\t", " ").strip()
-            value = value.text.replace("/", "").replace("\n", " ").replace("\t", " ").strip()
+            value = (
+                value.text.replace("/", "")
+                .replace("\n", " ")
+                .replace("\t", " ")
+                .strip()
+            )
 
             if " " in value and label.lower() not in not_splitting:
                 value = value.split()
@@ -140,7 +145,14 @@ def extract_data(data: bs) -> dict:
                 timeout=10,
             )
             if resp.status_code == 200:
-                data_json = resp.json()
+                try:
+                    data_json = resp.json()
+                except ValueError:
+                    return JSONResponse(
+                        status_code=500,
+                        content={"message": "Error parsing offer data as JSON"},
+                    )
+
                 merchants = data_json.get("merchants", {})
                 regions = data_json.get("regions", {})
                 editions = data_json.get("editions", {})
@@ -149,9 +161,15 @@ def extract_data(data: bs) -> dict:
                     merchant_id = str(offer.get("merchant"))
                     offers[idx] = {
                         "price": f"{price_info.get('price', '')}€",
-                        "merchant": merchants.get(merchant_id, {}).get("name", "Unknown"),
-                        "region": regions.get(offer.get("region"), {}).get("name", "Unknown"),
-                        "edition": editions.get(offer.get("edition"), {}).get("name", "Unknown"),
+                        "merchant": merchants.get(merchant_id, {}).get(
+                            "name", "Unknown"
+                        ),
+                        "region": regions.get(offer.get("region"), {}).get(
+                            "name", "Unknown"
+                        ),
+                        "edition": editions.get(offer.get("edition"), {}).get(
+                            "name", "Unknown"
+                        ),
                         "link": (
                             f"https://www.allkeyshop.com/redirection/offer/eur/{offer.get('id')}?locale=en&merchant={merchant_id}"
                         ),

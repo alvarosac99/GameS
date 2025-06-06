@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from starlette.responses import RedirectResponse
 import docs
 import os
@@ -35,16 +34,16 @@ api = FastAPI()
 
 
 def get_driver(options: Options) -> webdriver.Chrome:
-    """Devuelve una instancia de Chrome usando WebDriverManager.
+    """Devuelve una instancia de Chrome usando el chromedriver y binario local en ./chrome114."""
+    chrome_binary = os.path.abspath("chrome114/chrome")  # Ruta al navegador
+    driver_binary = os.path.abspath("chrome114/chromedriver")  # Ruta al driver
 
-    Se intenta descargar el ChromeDriver 127 para asegurar compatibilidad.
-    Si falla, se recurre a la última versión disponible.
-    """
-    try:
-        service = Service(ChromeDriverManager(version="127.0.0").install())
-    except Exception as exc:  # noqa: BLE001
-        print("[get_driver] No se pudo instalar el driver 127:", exc)
-        service = Service(ChromeDriverManager().install())
+    options.binary_location = chrome_binary
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    service = Service(executable_path=driver_binary)
     return webdriver.Chrome(service=service, options=options)
 
 
@@ -111,7 +110,9 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         print("[check_price] Solicitando página con httpx...")
         resp = await fetch_page(client, url)
         if resp is None:
-            return JSONResponse(status_code=503, content={"message": "Service unavailable"})
+            return JSONResponse(
+                status_code=503, content={"message": "Service unavailable"}
+            )
         print("[check_price] Código de estado recibido:", resp.status_code)
         if resp.status_code != 200:
             search_url = await utils.quicksearch(game)
@@ -119,14 +120,20 @@ async def check_price(game: str, platform: str = "pc") -> dict:
                 status_code = resp.status_code
                 detail = HTTPStatus(status_code).phrase
                 print("[check_price] Error al obtener la página:", detail)
-                return JSONResponse(status_code=status_code, content={"message": detail})
+                return JSONResponse(
+                    status_code=status_code, content={"message": detail}
+                )
             url = search_url
             resp = await fetch_page(client, url)
             if resp is None or resp.status_code != 200:
                 status_code = resp.status_code if resp else 503
-                detail = HTTPStatus(status_code).phrase if resp else "Service Unavailable"
+                detail = (
+                    HTTPStatus(status_code).phrase if resp else "Service Unavailable"
+                )
                 print("[check_price] Error al obtener la página tras búsqueda:", detail)
-                return JSONResponse(status_code=status_code, content={"message": detail})
+                return JSONResponse(
+                    status_code=status_code, content={"message": detail}
+                )
 
     options = Options()
     options.headless = True
@@ -158,26 +165,32 @@ async def buscar_ofertas(game: str) -> dict:
     """Obtiene ofertas para todas las plataformas disponibles."""
 
     sanitized_game = "-".join(utils.convert_roman_tokens(game).lower().split())
-    url = (
-        f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-cd-key-compare-prices/"
-    )
+    url = f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-cd-key-compare-prices/"
 
     async with httpx.AsyncClient() as client:
         resp = await fetch_page(client, url)
         if resp is None:
-            return JSONResponse(status_code=503, content={"message": "Service unavailable"})
+            return JSONResponse(
+                status_code=503, content={"message": "Service unavailable"}
+            )
         if resp.status_code != 200:
             search_url = await utils.quicksearch(game)
             if not search_url:
                 status_code = resp.status_code
                 detail = HTTPStatus(status_code).phrase
-                return JSONResponse(status_code=status_code, content={"message": detail})
+                return JSONResponse(
+                    status_code=status_code, content={"message": detail}
+                )
             url = search_url
             resp = await fetch_page(client, url)
             if resp is None or resp.status_code != 200:
                 status_code = resp.status_code if resp else 503
-                detail = HTTPStatus(status_code).phrase if resp else "Service Unavailable"
-                return JSONResponse(status_code=status_code, content={"message": detail})
+                detail = (
+                    HTTPStatus(status_code).phrase if resp else "Service Unavailable"
+                )
+                return JSONResponse(
+                    status_code=status_code, content={"message": detail}
+                )
 
     options = Options()
     options.headless = True
@@ -188,7 +201,9 @@ async def buscar_ofertas(game: str) -> dict:
         for tab in soup.select("li.tab.platforms-link"):
             anchor = tab.find("a", href=True)
             meta = tab.find("meta", attrs={"data-itemprop": "platform"})
-            name = meta.get("content") if meta else (anchor.text if anchor else tab.text)
+            name = (
+                meta.get("content") if meta else (anchor.text if anchor else tab.text)
+            )
             name = name.strip().lower()
             link = anchor["href"] if anchor else driver.current_url
             platform_links.append((name, link))
@@ -213,7 +228,11 @@ async def buscar_ofertas(game: str) -> dict:
 
     return JSONResponse(
         status_code=HTTPStatus.OK,
-        content={"game": game_name, "information": info or {}, "grouped_offers": result_offers},
+        content={
+            "game": game_name,
+            "information": info or {},
+            "grouped_offers": result_offers,
+        },
     )
 
 

@@ -14,7 +14,6 @@ import httpx
 from httpx import HTTPError
 import utils
 import uvicorn
-import asyncio
 
 CONFIG = dict(dotenv_values(".env") or dotenv_values(".env.example"))
 if not CONFIG:
@@ -56,11 +55,15 @@ class Game(BaseModel):
 
 
 async def fetch_page(client: httpx.AsyncClient, url: str):
-    """Realiza una solicitud GET y devuelve la respuesta o ``None`` si falla."""
+    """Realiza una solicitud GET y registra el resultado."""
+    print(f"[fetch_page] URL: {url}")
     try:
-        return await client.get(url, follow_redirects=True)
-    except HTTPError:
+        resp = await client.get(url, follow_redirects=True)
+    except HTTPError as e:
+        print("[fetch_page] Error:", e)
         return None
+    print("[fetch_page] Status:", resp.status_code)
+    return resp
 
 
 @api.get("/", include_in_schema=False)
@@ -100,6 +103,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         )
 
     sanitized_game = "-".join(utils.convert_roman_tokens(game).lower().split())
+    print("[check_price] Juego saneado:", sanitized_game)
     url = (
         f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-"
         f"{platform_enum[platform]}-compare-prices/"
@@ -116,6 +120,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         print("[check_price] Código de estado recibido:", resp.status_code)
         if resp.status_code != 200:
             search_url = await utils.quicksearch(game)
+            print("[check_price] URL alternativa:", search_url)
             if not search_url:
                 status_code = resp.status_code
                 detail = HTTPStatus(status_code).phrase
@@ -135,21 +140,18 @@ async def check_price(game: str, platform: str = "pc") -> dict:
                     status_code=status_code, content={"message": detail}
                 )
 
-    options = Options()
-    options.headless = True
-    with get_driver(options) as driver:
-        driver.get(url)
-        soup = bs(driver.page_source)
+    soup = bs(resp.text, "html.parser")
 
     csv = utils.extract_data(soup)
     if isinstance(csv, JSONResponse):
         search_url = await utils.quicksearch(game)
+        print("[check_price] Segunda URL alternativa:", search_url)
         if search_url and search_url != url:
-            options = Options()
-            options.headless = True
-            with get_driver(options) as driver:
-                driver.get(search_url)
-                soup = bs(driver.page_source)
+            async with httpx.AsyncClient() as client:
+                alt_resp = await fetch_page(client, search_url)
+            if alt_resp is None or alt_resp.status_code != 200:
+                return csv
+            soup = bs(alt_resp.text, "html.parser")
             csv = utils.extract_data(soup)
         if isinstance(csv, JSONResponse):
             return csv
@@ -165,7 +167,9 @@ async def buscar_ofertas(game: str) -> dict:
     """Obtiene ofertas para todas las plataformas disponibles."""
 
     sanitized_game = "-".join(utils.convert_roman_tokens(game).lower().split())
+    print("[buscar_ofertas] Juego saneado:", sanitized_game)
     url = f"https://www.allkeyshop.com/blog/buy-{sanitized_game}-cd-key-compare-prices/"
+    print("[buscar_ofertas] URL construida:", url)
 
     async with httpx.AsyncClient() as client:
         resp = await fetch_page(client, url)
@@ -175,6 +179,7 @@ async def buscar_ofertas(game: str) -> dict:
             )
         if resp.status_code != 200:
             search_url = await utils.quicksearch(game)
+            print("[buscar_ofertas] URL alternativa:", search_url)
             if not search_url:
                 status_code = resp.status_code
                 detail = HTTPStatus(status_code).phrase
@@ -213,6 +218,7 @@ async def buscar_ofertas(game: str) -> dict:
         game_name = game
 
         for plat, link in platform_links:
+            print(f"[buscar_ofertas] Procesando {plat}: {link}")
             driver.get(link)
             page_soup = bs(driver.page_source, "html.parser")
             data = utils.extract_data(page_soup)
@@ -221,6 +227,7 @@ async def buscar_ofertas(game: str) -> dict:
             if info is None:
                 info = data.get("information", {})
                 game_name = data.get("game", game)
+            print(f"[buscar_ofertas] {plat} ofertas: {len(data.get('offers', {}))}")
             result_offers[plat] = {"url": link, "offers": data.get("offers", {})}
 
     if not result_offers:

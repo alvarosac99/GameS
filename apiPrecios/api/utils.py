@@ -95,6 +95,7 @@ def check_config(CONFIG: dict) -> dict:
 def extract_data(data: bs) -> dict:
     """Extrae datos de un juego desde el HTML parseado con BeautifulSoup."""
 
+    print("[extract_data] Iniciando extracción")
     game_bs = data.find("span", {"data-itemprop": "name"})
     if game_bs is None:
         return JSONResponse(status_code=404, content={"message": "Game not found"})
@@ -124,6 +125,7 @@ def extract_data(data: bs) -> dict:
         match = re.search(r"productId\s*=\s*(\d+)", script.string)
         if match:
             product_id = match.group(1)
+    print("[extract_data] product_id:", product_id)
 
     offers = {}
     if product_id:
@@ -144,10 +146,14 @@ def extract_data(data: bs) -> dict:
                 follow_redirects=True,
                 timeout=10,
             )
+            print("[extract_data] Status ofertas:", resp.status_code)
             if resp.status_code == 200:
                 try:
                     data_json = resp.json()
+                    if not isinstance(data_json, dict):
+                        raise ValueError("Invalid JSON")
                 except ValueError:
+                    print("[extract_data] Error al parsear JSON")
                     return JSONResponse(
                         status_code=500,
                         content={"message": "Error parsing offer data as JSON"},
@@ -175,8 +181,8 @@ def extract_data(data: bs) -> dict:
                         ),
                         "coupon": price_info.get("bestCoupon"),
                     }
-        except httpx.HTTPError:
-            pass
+        except httpx.HTTPError as e:
+            print("[extract_data] Error de red:", e)
 
     return {"game": game, "information": info, "offers": offers}
 
@@ -189,6 +195,7 @@ async def quicksearch(query: str) -> str | None:
     """Devuelve la URL del primer resultado de búsqueda en AllKeyShop."""
 
     query = convert_roman_tokens(query)
+    print("[quicksearch] Consulta:", query)
     params = {
         "action": "quicksearch",
         "search_name": query,
@@ -202,13 +209,16 @@ async def quicksearch(query: str) -> str | None:
                 params=params,
                 follow_redirects=True,
             )
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            print("[quicksearch] Error de red:", e)
             return None
+    print("[quicksearch] Status:", resp.status_code)
     if resp.status_code != 200:
         return None
     try:
         html = resp.json().get("results", "")
     except ValueError:
+        print("[quicksearch] Error al parsear JSON")
         return None
     soup = bs(html, "html.parser")
     first = soup.find("a", class_="ls-results-row-link")

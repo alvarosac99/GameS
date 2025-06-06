@@ -140,19 +140,38 @@ async def check_price(game: str, platform: str = "pc") -> dict:
                     status_code=status_code, content={"message": detail}
                 )
 
+<<<<<<< ours
     soup = bs(resp.text, "html.parser")
+=======
+    options = Options()
+    options.headless = True
+    with get_driver(options) as driver:
+        driver.get(url)
+        cookies = {c["name"]: c["value"] for c in driver.get_cookies()}
+        soup = bs(driver.page_source)
+>>>>>>> theirs
 
-    csv = utils.extract_data(soup)
+    csv = utils.extract_data(soup, cookies=cookies)
     if isinstance(csv, JSONResponse):
         search_url = await utils.quicksearch(game)
         print("[check_price] Segunda URL alternativa:", search_url)
         if search_url and search_url != url:
+<<<<<<< ours
             async with httpx.AsyncClient() as client:
                 alt_resp = await fetch_page(client, search_url)
             if alt_resp is None or alt_resp.status_code != 200:
                 return csv
             soup = bs(alt_resp.text, "html.parser")
             csv = utils.extract_data(soup)
+=======
+            options = Options()
+            options.headless = True
+            with get_driver(options) as driver:
+                driver.get(search_url)
+                cookies = {c["name"]: c["value"] for c in driver.get_cookies()}
+                soup = bs(driver.page_source)
+            csv = utils.extract_data(soup, cookies=cookies)
+>>>>>>> theirs
         if isinstance(csv, JSONResponse):
             return csv
 
@@ -220,8 +239,9 @@ async def buscar_ofertas(game: str) -> dict:
         for plat, link in platform_links:
             print(f"[buscar_ofertas] Procesando {plat}: {link}")
             driver.get(link)
+            cookies = {c["name"]: c["value"] for c in driver.get_cookies()}
             page_soup = bs(driver.page_source, "html.parser")
-            data = utils.extract_data(page_soup)
+            data = utils.extract_data(page_soup, cookies=cookies)
             if isinstance(data, JSONResponse):
                 continue
             if info is None:
@@ -245,8 +265,17 @@ async def buscar_ofertas(game: str) -> dict:
 
 def start() -> None:
     """Starts the Uvicorn server with the provided configuration."""
-    uviconfig = {"app": "api:api", "interface": "asgi3"}
-    uviconfig.update(CONFIG)
+    uviconfig = {
+        "app": "api:api",
+        "interface": "asgi3",
+        "host": CONFIG["host"],
+        "port": CONFIG["port"],
+        "log_level": CONFIG["log_level"],
+        "reload": CONFIG["reload"],
+        "workers": CONFIG["workers"],
+        "backlog": CONFIG["backlog"],
+        "timeout_keep_alive": CONFIG["timeout_keep_alive"],
+    }
     try:
         uvicorn.run(**uviconfig)
     except Exception as e:

@@ -89,3 +89,22 @@ class Planificacion(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username} - {self.nombre}"
+
+
+class JuegoDev(models.Model):
+    """Juego creado por un desarrollador de la plataforma."""
+
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True)
+    desarrollador = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="juegos_dev",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-creado"]
+
+    def __str__(self) -> str:
+        return self.nombre

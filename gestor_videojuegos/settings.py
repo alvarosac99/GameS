@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "diario",
     "sesiones",
     "precios",
+    "reportes",
     "corsheaders",
 ]
 
@@ -197,3 +198,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Enviar correos a la consola durante el desarrollo
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

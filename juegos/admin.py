@@ -8,6 +8,7 @@ from .models import (
     Valoracion,
     DuracionJuego,
     Planificacion,
+    JuegoDev,
 )
 
 
@@ -16,4 +17,5 @@ admin.site.register(Biblioteca)
 admin.site.register(Valoracion)
 admin.site.register(DuracionJuego)
 admin.site.register(Planificacion)
+admin.site.register(JuegoDev)
 

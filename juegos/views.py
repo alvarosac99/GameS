@@ -14,6 +14,7 @@ from .igdb_views.views import (
 
 from .igdb_views.biblioteca import BibliotecaViewSet
 from .igdb_views.planificacion import PlanificacionViewSet
+from .developer import JuegoDevViewSet
 
 __all__ = [
     "listar_juegos",
@@ -27,4 +28,5 @@ __all__ = [
     "recomendaciones_usuario",
     "BibliotecaViewSet",
     "PlanificacionViewSet",
+    "JuegoDevViewSet",
 ]

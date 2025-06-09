@@ -14,6 +14,10 @@ from httpx import HTTPError
 import utils
 import uvicorn
 import asyncio
+from selenium.webdriver.chrome.service import Service
+
+CHROMEDRIVER_PATH = os.path.join(os.path.dirname(__file__), "../chromedriver")
+service = Service(executable_path=CHROMEDRIVER_PATH)
 
 CONFIG = dict(dotenv_values(".env") or dotenv_values(".env.example"))
 if not CONFIG:
@@ -114,7 +118,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
 
     options = Options()
     options.headless = True
-    with webdriver.Chrome(options=options) as driver:
+    with webdriver.Chrome(service=service, options=options) as driver:
         driver.get(url)
         soup = bs(driver.page_source)
 
@@ -124,7 +128,7 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         if search_url and search_url != url:
             options = Options()
             options.headless = True
-            with webdriver.Chrome(options=options) as driver:
+            with webdriver.Chrome(service=service, options=options) as driver:
                 driver.get(search_url)
                 soup = bs(driver.page_source)
             csv = utils.extract_data(soup)
@@ -165,7 +169,7 @@ async def buscar_ofertas(game: str) -> dict:
 
     options = Options()
     options.headless = True
-    with webdriver.Chrome(options=options) as driver:
+    with webdriver.Chrome(service=service, options=options) as driver:
         driver.get(url)
         soup = bs(driver.page_source, "html.parser")
         platform_links: list[tuple[str, str]] = []

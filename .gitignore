@@ -24,6 +24,7 @@ chrome114/
 
 # Media
 media/avatares/*
+!media/avatares/default.jpg
 
 # Cache de apiPrecios
 apiPrecios/__pycache__/

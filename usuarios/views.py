@@ -45,7 +45,7 @@ def perfil_publico_view(request, nombre_usuario):
             "foto": (
                 request.build_absolute_uri(perfil.avatar.url)
                 if perfil.avatar
-                else request.build_absolute_uri("/media/avatares/default.png")
+                else request.build_absolute_uri("/media/avatares/default.jpg")
             ),
             "horas": getattr(perfil, "horas", 0),
             "juegos": getattr(perfil, "juegos", 0),
@@ -81,7 +81,7 @@ def perfil_usuario(request):
                 "foto": (
                     request.build_absolute_uri(perfil.avatar.url)
                     if perfil.avatar
-                    else None
+                    else request.build_absolute_uri("/media/avatares/default.jpg")
                 ),
                 "filtro_adulto": perfil.filtro_adulto,
                 "gustos_generos": perfil.gustos_generos,

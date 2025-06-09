@@ -1,6 +1,8 @@
 import React, { useRef } from "react";
 
-export default function GameCard({ juego, onClick }) {
+import { FaStar, FaRegStar, FaStarHalfAlt } from "react-icons/fa";
+
+export default function GameCard({ juego, onClick, tiempo = 0, valoracion = null }) {
     const rectRef = useRef(null);
     const rafRef = useRef(null);
     const cardRef = useRef(null);
@@ -78,6 +80,27 @@ export default function GameCard({ juego, onClick }) {
                     {juego.name}
                 </h2>
             </div>
+
+            {tiempo > 0 && (
+                <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded z-30">
+                    {(tiempo / 3600).toFixed(1)}h
+                </div>
+            )}
+
+            {valoracion != null && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/80 flex justify-center gap-0.5 py-1 translate-y-full group-hover:translate-y-0 transition-transform duration-200 z-20">
+                    {Array.from({ length: 5 }, (_, i) => {
+                        const val = i + 1;
+                        return valoracion >= val ? (
+                            <FaStar key={i} className="text-naranja" />
+                        ) : valoracion >= val - 0.5 ? (
+                            <FaStarHalfAlt key={i} className="text-naranja" />
+                        ) : (
+                            <FaRegStar key={i} className="text-borde" />
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

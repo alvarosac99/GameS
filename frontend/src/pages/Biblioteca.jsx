@@ -10,6 +10,8 @@ const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
 export default function Biblioteca() {
   const [juegosTotales, setJuegosTotales] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [tiempos, setTiempos] = useState({});
+  const [valoraciones, setValoraciones] = useState({});
   const [pagina, setPagina] = useState(1);
   const [paginasTotales, setPaginasTotales] = useState(1);
   const [totalResultados, setTotalResultados] = useState(0);
@@ -28,10 +30,34 @@ export default function Biblioteca() {
       credentials: "include",
     })
       .then((res) => res.json())
-      .then((data) => {
-        setJuegosTotales(data.juegos || []);
-        setTotalResultados(data.juegos?.length || 0);
-        setPaginasTotales(Math.ceil((data.juegos?.length || 0) / porPagina));
+      .then(async (data) => {
+        const juegos = data.juegos || [];
+        const resTiempos = await fetch("/api/sesiones/tiempos/", {
+          credentials: "include",
+        });
+        const tiemposData = resTiempos.ok ? await resTiempos.json() : {};
+
+        const valores = {};
+        await Promise.all(
+          juegos.map(async (j) => {
+            const r = await fetch(`/api/juegos/valoracion/${j.id}/`, {
+              credentials: "include",
+            }).then((x) => (x.ok ? x.json() : null));
+            if (r && r.mi_valoracion != null) valores[j.id] = r.mi_valoracion;
+          })
+        );
+
+        const conInfo = juegos.map((j) => ({
+          ...j,
+          tiempo: tiemposData[j.id] || 0,
+          valoracion: valores[j.id] ?? null,
+        }));
+
+        setJuegosTotales(conInfo);
+        setTiempos(tiemposData);
+        setValoraciones(valores);
+        setTotalResultados(conInfo.length);
+        setPaginasTotales(Math.ceil(conInfo.length / porPagina));
       })
       .catch(() => setJuegosTotales([]))
       .finally(() => setCargando(false));
@@ -195,6 +221,8 @@ export default function Biblioteca() {
               <GameCard
                 key={juego.id}
                 juego={juego}
+                tiempo={juego.tiempo}
+                valoracion={juego.valoracion}
                 onClick={() => navigate(`/juego/${juego.id}`)}
               />
             ))}

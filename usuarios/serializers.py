@@ -8,4 +8,11 @@ class PerfilSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Perfil
-        fields = ["user", "rol", "avatar", "biografia", "filtro_adulto"]
+        fields = [
+            "user",
+            "rol",
+            "avatar",
+            "biografia",
+            "filtro_adulto",
+            "tiempo_total",
+        ]

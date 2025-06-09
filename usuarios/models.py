@@ -4,6 +4,7 @@ from django.contrib.auth.models import User  # Modelo base de Django
 from django.db import models
 import os  # Para construir la ruta de los avatares
 from django.utils.deconstruct import deconstructible
+from datetime import timedelta
 
 
 @deconstructible
@@ -45,6 +46,8 @@ class Perfil(models.Model):
     seguidores = models.ManyToManyField(User, related_name="seguidos", blank=True)
     # Usuarios bloqueados por este perfil
     bloqueados = models.ManyToManyField(User, related_name="bloqueados_por", blank=True)
+    # Tiempo total jugado en todos los juegos
+    tiempo_total = models.DurationField(default=timedelta())
 
     def __str__(self) -> str:
         """Representación legible del perfil."""

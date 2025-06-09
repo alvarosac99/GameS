@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { FaStar, FaRegStar, FaStarHalfAlt, FaTimes } from "react-icons/fa";
+import Reportar from "./Reportar";
 
 // Formato de fecha
 const fechaCorta = (iso) => {
@@ -186,6 +187,9 @@ export default function Comentarios({ juegoId }) {
               >
                 <FaTimes /> Eliminar
               </button>
+            )}
+            {autenticado && usuario?.username !== c.user.username && (
+              <Reportar modelo="comentario" objectId={c.id} />
             )}
           </div>
           <div className="text-white/90">{c.texto}</div>

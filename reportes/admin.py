@@ -8,7 +8,14 @@ User = get_user_model()
 
 @admin.register(Reporte)
 class ReporteAdmin(admin.ModelAdmin):
-    list_display = ["id", "content_type", "object_id", "reportado_por", "fecha"]
+    list_display = [
+        "id",
+        "content_type",
+        "object_id",
+        "titulo",
+        "reportado_por",
+        "fecha",
+    ]
     actions = ["borrar_comentario", "banear_usuario"]
 
     def borrar_comentario(self, request, queryset):

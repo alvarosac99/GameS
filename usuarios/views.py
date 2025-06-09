@@ -333,6 +333,12 @@ def seguir_usuario(request, username):
         registrar_actividad(
             request.user, "seguimiento", f"Siguió a {objetivo.username}"
         )
+        from notificaciones.utils import crear_notificacion
+        crear_notificacion(
+            objetivo,
+            f"{request.user.username} te ha seguido",
+            link=f"/perfil/{request.user.username}"
+        )
 
     return Response({"ok": True, "mensaje": f"Ahora sigues a {objetivo.username}."})
 

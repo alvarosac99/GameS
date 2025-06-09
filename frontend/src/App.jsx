@@ -21,6 +21,7 @@ import {
   Settings,
   LogOut,
   Search,
+  Bell,
 } from "lucide-react";
 
 import Jugar from "./pages/Jugar";
@@ -33,6 +34,7 @@ import Perfil from "./pages/Perfil";
 import PaginaPrincipal from "./pages/PaginaPrincipal";
 import JuegoUnico from "./pages/JuegoUnico";
 import BuscadorGlobal from "./components/BuscadorGlobal";
+import NotificacionesLista from "./components/NotificacionesLista";
 import ListaUsuarios from "./pages/ListaUsuarios";
 import Planificar from "./pages/Planificar";
 import Planificaciones from "./pages/Planificaciones";
@@ -46,6 +48,7 @@ function AppContent() {
   const { t } = useLang();
   const [mostrarBuscador, setMostrarBuscador] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [mostrarNotis, setMostrarNotis] = useState(false);
   const { pathname } = useLocation();
 
   const esDetalle = /^\/juego\/\d+/.test(pathname);
@@ -140,6 +143,13 @@ function AppContent() {
               >
                 {mostrarBuscador ? <X /> : <Search />}
               </button>
+              <button
+                onClick={() => setMostrarNotis(!mostrarNotis)}
+                className="text-xl p-3 rounded-full bg-metal/70 hover:bg-metal text-naranja relative"
+                aria-label="Notificaciones"
+              >
+                <Bell />
+              </button>
               <BuscadorGlobal className="hidden xl:flex" />
             </>
           )}
@@ -165,6 +175,8 @@ function AppContent() {
           onClick={() => setMenuAbierto(false)}
         />
       )}
+
+      {mostrarNotis && <NotificacionesLista />}
 
       {/* Menú lateral */}
       <aside

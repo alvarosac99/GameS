@@ -32,4 +32,5 @@ urlpatterns = [
     path('api/sesiones/', include('sesiones.urls')), # URL para la app de sesiones
     path('api/precios/', include('precios.urls')), # URL para la app de sesiones
     path('api/reportes/', include('reportes.urls')), # Sistema de reportes
+    path('api/notificaciones/', include('notificaciones.urls')), # Notificaciones
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -8,6 +8,7 @@ import GameCard from "@/components/GameCard";
 import LoaderCirculo from "@/components/LoaderCirculo";
 import { Pencil } from "lucide-react";
 import ActividadReciente from "@/components/ActividadReciente";
+import Reportar from "@/components/Reportar";
 
 export default function Perfil() {
   const { nombre } = useParams();
@@ -260,6 +261,7 @@ export default function Perfil() {
             >
               {bloqueado ? "Desbloquear" : "Bloquear"}
             </button>
+            <Reportar modelo="usuario" objectId={perfil.id} />
           </div>
         )}
       </div>

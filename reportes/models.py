@@ -10,9 +10,11 @@ class Reporte(models.Model):
     reportado_por = models.ForeignKey(User, on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    contenido = GenericForeignKey('content_type', 'object_id')
+    titulo = models.CharField(max_length=200, blank=True)
+    contenido = GenericForeignKey("content_type", "object_id")
     motivo = models.TextField(blank=True)
     fecha = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
-        return f"Reporte sobre {self.content_type} {self.object_id}"
+        titulo = f" - {self.titulo}" if self.titulo else ""
+        return f"Reporte sobre {self.content_type} {self.object_id}{titulo}"

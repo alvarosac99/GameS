@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "juegos.apps.JuegosConfig",
     "comentarios",
     "actividad",
+    "notificaciones",
     "diario",
     "sesiones",
     "precios",

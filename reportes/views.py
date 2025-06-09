@@ -14,15 +14,19 @@ class ReportarView(generics.CreateAPIView):
     serializer_class = ReporteSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    MODELOS = {
+        "usuario": User,
+        "comentario": Comentario,
+    }
+
     def perform_create(self, serializer):
         modelo = self.kwargs["modelo"]
         objeto_id = self.kwargs["object_id"]
-        if modelo == "usuario":
-            modelo_obj = User
-        elif modelo == "comentario":
-            modelo_obj = Comentario
-        else:
+
+        modelo_obj = self.MODELOS.get(modelo)
+        if not modelo_obj:
             raise ValueError("Modelo no soportado")
+
         content_type = ContentType.objects.get_for_model(modelo_obj)
         reporte = serializer.save(
             reportado_por=self.request.user,
@@ -32,7 +36,9 @@ class ReportarView(generics.CreateAPIView):
         self.notificar_staff(reporte)
 
     def notificar_staff(self, reporte):
-        staff_emails = User.objects.filter(perfil__rol="STAFF").values_list("email", flat=True)
+        staff_emails = User.objects.filter(perfil__rol="STAFF").values_list(
+            "email", flat=True
+        )
         if staff_emails:
             send_mail(
                 "Nuevo reporte",
@@ -40,5 +46,3 @@ class ReportarView(generics.CreateAPIView):
                 None,
                 list(staff_emails),
             )
-
-

@@ -173,11 +173,14 @@ async def buscar_ofertas(game: str) -> dict:
         driver.get(url)
         soup = bs(driver.page_source, "html.parser")
         platform_links: list[tuple[str, str]] = []
-        for tab in soup.select("li.tab.platforms-link"):
-            anchor = tab.find("a", href=True)
-            meta = tab.find("meta", attrs={"data-itemprop": "platform"})
-            name = meta.get("content") if meta else (anchor.text if anchor else tab.text)
-            name = name.strip().lower()
+        for li in soup.select("ul.aks-offer-tabulations li"):
+            anchor = li.find("a", href=True)
+            meta = li.find("meta", attrs={"data-itemprop": "platform"})
+            name = (
+                meta.get("content")
+                if meta
+                else (anchor.text if anchor else li.get_text())
+            ).strip().lower()
             link = anchor["href"] if anchor else driver.current_url
             platform_links.append((name, link))
 

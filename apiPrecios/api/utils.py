@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup as bs
 import pandas as pd
 import httpx
 import re
+import json
 
 
 ROMAN_PATTERN = re.compile(
@@ -113,52 +114,38 @@ def extract_data(data: bs) -> dict:
                 value = value.split()
             info[label] = value
 
-    script = data.find("script", string=lambda t: t and "productId" in t)
-    product_id = None
-    if script and script.string:
-        match = re.search(r"productId\s*=\s*(\d+)", script.string)
-        if match:
-            product_id = match.group(1)
+    offers_list = []
 
-    offers = {}
-    if product_id:
-        params = {
-            "action": "get_offers",
-            "product": product_id,
-            "currency": "eur",
-            "region": "",
-            "edition": "",
-            "moreq": "",
-            "locale": "en",
-            "use_beta_offers_display": 1,
-        }
-        try:
-            resp = httpx.get(
-                "https://www.allkeyshop.com/blog/wp-admin/admin-ajax.php",
-                params=params,
-                follow_redirects=True,
-                timeout=10,
-            )
-            if resp.status_code == 200:
-                data_json = resp.json()
+    script = data.find("script", id="aks-offers-js-extra")
+    if script and script.string:
+        match = re.search(r"var gamePageTrans = (\{.*?\});", script.string, re.DOTALL)
+        if match:
+            try:
+                data_json = json.loads(match.group(1))
+            except ValueError:
+                data_json = {}
+            if isinstance(data_json, dict):
                 merchants = data_json.get("merchants", {})
                 regions = data_json.get("regions", {})
                 editions = data_json.get("editions", {})
-                for idx, offer in enumerate(data_json.get("offers", [])):
-                    price_info = offer.get("price", {}).get("eur", {})
+                for offer in data_json.get("prices", []):
                     merchant_id = str(offer.get("merchant"))
-                    offers[idx] = {
-                        "price": f"{price_info.get('price', '')}€",
+                    try:
+                        price_value = float(offer.get("price", 0))
+                    except (TypeError, ValueError):
+                        price_value = float("inf")
+                    offers_list.append({
+                        "price_value": price_value,
+                        "price": f"{offer.get('price', '')}€",
                         "merchant": merchants.get(merchant_id, {}).get("name", "Unknown"),
-                        "region": regions.get(offer.get("region"), {}).get("name", "Unknown"),
+                        "region": regions.get(offer.get("region"), {}).get("region_name", "Unknown"),
                         "edition": editions.get(offer.get("edition"), {}).get("name", "Unknown"),
-                        "link": (
-                            f"https://www.allkeyshop.com/redirection/offer/eur/{offer.get('id')}?locale=en&merchant={merchant_id}"
-                        ),
-                        "coupon": price_info.get("bestCoupon"),
-                    }
-        except httpx.HTTPError:
-            pass
+                        "link": f"https://www.allkeyshop.com/redirection/offer/eur/{offer.get('id')}?locale=en&merchant={merchant_id}",
+                        "coupon": offer.get("voucher_code"),
+                    })
+
+    offers_list.sort(key=lambda x: x.get("price_value", float("inf")))
+    offers = {idx: {k: v for k, v in offer.items() if k != "price_value"} for idx, offer in enumerate(offers_list)}
 
     return {"game": game, "information": info, "offers": offers}
 

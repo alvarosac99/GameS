@@ -84,6 +84,24 @@ La API de precios detecta números romanos en el título de un juego y los
 convierte a cifras decimales antes de realizar la consulta a AllKeyShop. Por
 ejemplo, "Dark Souls II" se transforma en "dark souls 2".
 
+### Manejo de errores en la API de precios
+
+Cuando AllKeyShop devuelve datos que no son JSON válidos (por ejemplo el texto
+"NOPE"), la API ya no genera un fallo interno. En su lugar se omiten las ofertas
+y se responde únicamente con la información disponible del juego.
+
+### Extracción de ofertas
+
+Para obtener las ofertas, la API analiza el script `aks-offers-js-extra` presente
+en la página de AllKeyShop. Los resultados se ordenan por precio antes de
+devolverlos al usuario.
+
+### Búsqueda de ofertas por plataforma
+
+El endpoint `/buscar-ofertas` extrae los enlaces de `ul.aks-offer-tabulations`
+para recorrer cada plataforma disponible. Las ofertas se agrupan por plataforma
+y se ordenan por precio en cada grupo.
+
 ## Modo claro
 
 Desde la sección de **Ajustes** puedes elegir entre tema claro u oscuro.

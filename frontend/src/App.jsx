@@ -36,7 +36,6 @@ import JuegoUnico from "./pages/JuegoUnico";
 import BuscadorGlobal from "./components/BuscadorGlobal";
 import NotificacionesLista from "./components/NotificacionesLista";
 import ListaUsuarios from "./pages/ListaUsuarios";
-import Planificar from "./pages/Planificar";
 import Planificaciones from "./pages/Planificaciones";
 import PlanificacionDetalle from "./pages/PlanificacionDetalle";
 import Ajustes from "./pages/Ajustes";
@@ -207,11 +206,8 @@ function AppContent() {
           <Link to="/diario" className="flex items-center gap-2 hover:text-naranja">
             <NotebookPen /> {t("menuDiario")}
           </Link>
-          <Link to="/planificar" className="flex items-center gap-2 hover:text-naranja">
-            <LayoutDashboard /> {t("menuPlanificar")}
-          </Link>
           <Link to="/planificaciones" className="flex items-center gap-2 hover:text-naranja">
-            <LayoutDashboard /> {t("menuMisPlanes")}
+            <LayoutDashboard /> Planificaciones
           </Link>
           <Link to="/ajustes" className="flex items-center gap-2 hover:text-naranja">
             <Settings /> {t("menuAjustes")}
@@ -241,7 +237,6 @@ function AppContent() {
           <Route path="/juego/:id" element={<JuegoUnico />} />
           <Route path="/biblioteca" element={<Biblioteca />} />
           <Route path="/diario" element={<Diario />} />
-          <Route path="/planificar" element={<Planificar />} />
           <Route path="/planificaciones" element={<Planificaciones />} />
           <Route path="/planificacion/:id" element={<PlanificacionDetalle />} />
           <Route path="/perfil" element={<Perfil />} />

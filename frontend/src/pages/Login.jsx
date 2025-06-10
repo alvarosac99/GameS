@@ -48,7 +48,7 @@ export default function Login() {
       login(data.token, data.usuario);
       navigate("/bienvenida");
     } else {
-      setMensaje(data.error || "Fallo al iniciar sesión");
+      setMensaje(data.error || t("loginFailed"));
     }
   };
 

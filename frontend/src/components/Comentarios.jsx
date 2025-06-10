@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLang } from "@/context/LangContext";
 import { useNavigate, Link } from "react-router-dom";
 import { FaStar, FaRegStar, FaStarHalfAlt, FaTimes } from "react-icons/fa";
 import Reportar from "./Reportar";
@@ -29,13 +30,14 @@ function renderEstrellas(valor) {
 }
 
 const ORDENES = [
-  { value: "recientes", label: "Más nuevos" },
-  { value: "antiguos", label: "Más antiguos" },
+  { value: "recientes", label: "commentSortNewest" },
+  { value: "antiguos", label: "commentSortOldest" },
 ];
 
 export default function Comentarios({ juegoId }) {
   const { usuario, autenticado, fetchAuth } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLang();
 
   const [comentarios, setComentarios] = useState([]);
   const [nuevo, setNuevo] = useState("");
@@ -117,7 +119,7 @@ export default function Comentarios({ juegoId }) {
 
     const texto = nuevo.trim();
     if (texto.length < 2) {
-      setError("El comentario debe tener al menos 2 caracteres.");
+      setError(t("commentMinLength"));
       return;
     }
 
@@ -145,7 +147,7 @@ export default function Comentarios({ juegoId }) {
   }
 
   function borrarComentario(id) {
-    if (!window.confirm("¿Eliminar este comentario?")) return;
+    if (!window.confirm(t("confirmDeleteComment"))) return;
     fetchAuth(`/api/comentarios/borrar/${id}/`, { method: "DELETE" }).then(() =>
       cargarComentarios()
     );
@@ -185,7 +187,7 @@ export default function Comentarios({ juegoId }) {
                 }}
                 className="ml-auto bg-metal text-red-400 text-xs rounded-md px-3 py-1 flex items-center gap-1 hover:bg-red-900/20 hover:text-red-500 cursor-pointer"
               >
-                <FaTimes /> Eliminar
+                <FaTimes /> {t("delete")}
               </button>
             )}
             {autenticado && usuario?.username !== c.user.username && (
@@ -206,13 +208,13 @@ export default function Comentarios({ juegoId }) {
     return (
       <div className="mt-8 text-center text-white">
         <p>
-          <strong>Inicia sesión</strong> para ver y publicar comentarios.
+          <strong>{t("loginPrompt")}</strong> {t("commentPromptSuffix")}
         </p>
         <Link
           to="/login"
           className="inline-block mt-2 px-4 py-2 bg-naranja text-black rounded-xl font-semibold hover:bg-naranja/90"
         >
-          Ir a Login
+          {t("goToLogin")}
         </Link>
       </div>
     );
@@ -220,10 +222,10 @@ export default function Comentarios({ juegoId }) {
 
   return (
     <div className="mt-8" ref={comentariosRef}>
-      <h2 className="text-xl font-bold mb-4 text-white">Comentarios</h2>
+      <h2 className="text-xl font-bold mb-4 text-white">{t("comments")}</h2>
 
       <div className="flex items-center gap-4 mb-2">
-        <label className="text-xs text-gray-400 font-semibold">Ordenar por:</label>
+        <label className="text-xs text-gray-400 font-semibold">{t("orderBy")}</label>
         <select
           className="bg-metal border-borde rounded-xl px-2 py-1 text-naranja font-bold"
           value={orden}
@@ -234,7 +236,7 @@ export default function Comentarios({ juegoId }) {
         >
           {ORDENES.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {t(o.label)}
             </option>
           ))}
         </select>
@@ -249,7 +251,7 @@ export default function Comentarios({ juegoId }) {
           onChange={(e) => setNuevo(e.target.value)}
           maxLength={1000}
           rows={3}
-          placeholder="Escribe tu comentario..."
+          placeholder={t("commentPlaceholder")}
           required
           disabled={publicando}
         />
@@ -261,7 +263,7 @@ export default function Comentarios({ juegoId }) {
             }`}
             disabled={!nuevo.trim() || publicando}
           >
-            {publicando ? "Publicando..." : "Publicar"}
+            {publicando ? t("publishing") : t("publish")}
           </button>
           <span className="text-xs text-gray-400 ml-2">{nuevo.length}/1000</span>
         </div>
@@ -270,9 +272,9 @@ export default function Comentarios({ juegoId }) {
       {error && <div className="text-red-500 mb-2">{error}</div>}
 
       {cargando ? (
-        <div className="text-gray-400">Cargando comentarios...</div>
+        <div className="text-gray-400">{t("loadingComments")}</div>
       ) : comentarios.length === 0 ? (
-        <div className="text-gray-500">¡Sé el primero en comentar!</div>
+        <div className="text-gray-500">{t("beFirstComment")}</div>
       ) : (
         <>
           <div className="space-y-4">
@@ -287,17 +289,19 @@ export default function Comentarios({ juegoId }) {
                 onClick={() => setPagina((p) => Math.max(1, p - 1))}
                 disabled={pagina === 1}
               >
-                Anterior
+                {t("prev")}
               </button>
               <span className="font-mono text-xs text-white/70">
-                Página {pagina} de {paginas}
+                {t("pageOf")
+                  .replace("{page}", pagina)
+                  .replace("{total}", paginas)}
               </span>
               <button
                 className="px-2 py-1 rounded bg-borde text-xs text-white/80"
                 onClick={() => setPagina((p) => Math.min(paginas, p + 1))}
                 disabled={pagina === paginas}
               >
-                Siguiente
+                {t("next")}
               </button>
             </div>
           )}

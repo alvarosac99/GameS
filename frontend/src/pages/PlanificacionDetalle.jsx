@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import GameCard from "@/components/GameCard";
+import { useLang } from "@/context/LangContext";
 
 export default function PlanificacionDetalle() {
   const { id } = useParams();
   const { fetchAuth } = useAuth();
+  const { t } = useLang();
   const [plan, setPlan] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [estatus, setEstatus] = useState({});
@@ -72,8 +74,8 @@ export default function PlanificacionDetalle() {
     cargar();
   }, [id]);
 
-  if (cargando) return <div className="p-4">Cargando...</div>;
-  if (!plan) return <div className="p-4">Planificación no encontrada</div>;
+  if (cargando) return <div className="p-4">{t("loading")}</div>;
+  if (!plan) return <div className="p-4">{t("planNotFound")}</div>;
 
   return (
     <div className="p-4 space-y-6">
@@ -102,13 +104,13 @@ export default function PlanificacionDetalle() {
                 }}
                 className={`px-2 py-1 rounded ${estatus[j.id] === "completado" ? "bg-green-600" : "bg-borde"}`}
               >
-                Completar
+                {t("completePlan")}
               </button>
               <button
                 onClick={() => setEstatus((e) => ({ ...e, [j.id]: "saltado" }))}
                 className={`px-2 py-1 rounded ${estatus[j.id] === "saltado" ? "bg-yellow-600" : "bg-borde"}`}
               >
-                Saltar
+                {t("skip")}
               </button>
               <button
                 onClick={() => {
@@ -120,7 +122,7 @@ export default function PlanificacionDetalle() {
                 }}
                 className="px-2 py-1 rounded bg-red-600"
               >
-                Eliminar
+                {t("delete")}
               </button>
             </div>
           </div>
@@ -141,15 +143,15 @@ export default function PlanificacionDetalle() {
           }}
           className="mt-4 px-4 py-2 bg-naranja text-black rounded font-bold"
         >
-          Completar plan
+          {t("completePlan")}
         </button>
       )}
       {resumen && (
         <div className="space-y-2 bg-metal/30 p-4 rounded">
-          <h2 className="text-xl font-semibold">Resumen</h2>
-          <p>Total: {(resumen.total_segundos / 3600).toFixed(1)}h</p>
-          <p>Completados: {resumen.completados}</p>
-          <p>Saltados: {resumen.saltados}</p>
+          <h2 className="text-xl font-semibold">{t("summary")}</h2>
+          <p>{t("total")} {(resumen.total_segundos / 3600).toFixed(1)}h</p>
+          <p>{t("completedCount")} {resumen.completados}</p>
+          <p>{t("skippedCount")} {resumen.saltados}</p>
         </div>
       )}
     </div>

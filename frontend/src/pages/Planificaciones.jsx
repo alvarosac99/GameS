@@ -4,10 +4,12 @@ import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import Planificar from "./Planificar";
 import { FaTimes } from "react-icons/fa";
+import { useLang } from "@/context/LangContext";
 
 export default function Planificaciones() {
   const { fetchAuth } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLang();
   const [vista, setVista] = useState("lista");
   const [cargando, setCargando] = useState(true);
   const [pendientes, setPendientes] = useState([]);
@@ -60,7 +62,7 @@ export default function Planificaciones() {
   }, [vista]);
 
   const eliminarPlan = async (id) => {
-    if (!window.confirm("¿Eliminar esta planificación?")) return;
+    if (!window.confirm(t("removePlan"))) return;
     try {
       const res = await fetchAuth(`/api/juegos/planificaciones/${id}/`, {
         method: "DELETE",
@@ -117,40 +119,40 @@ export default function Planificaciones() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-3xl font-bold">Planificaciones</h1>
+      <h1 className="text-3xl font-bold">{t("planificationsTitle")}</h1>
       <div className="flex gap-2">
         <button
           onClick={() => setVista("lista")}
           className={`px-3 py-1 rounded ${vista === "lista" ? "bg-naranja text-black" : "bg-borde"}`}
         >
-          Ver planificaciones
+          {t("viewPlans")}
         </button>
         <button
           onClick={() => setVista("manual")}
           className={`px-3 py-1 rounded ${vista === "manual" ? "bg-naranja text-black" : "bg-borde"}`}
         >
-          Planificación propia
+          {t("manualPlan")}
         </button>
         <button
           onClick={() => setVista("auto")}
           className={`px-3 py-1 rounded ${vista === "auto" ? "bg-naranja text-black" : "bg-borde"}`}
         >
-          Automática
+          {t("autoPlan")}
         </button>
       </div>
 
       {vista === "lista" && (
         cargando ? (
-          <p>Cargando...</p>
+          <p>{t("loading")}</p>
         ) : (
           <>
             {pendientes.length === 0 && completadas.length === 0 ? (
-              <p>No hay planificaciones guardadas.</p>
+              <p>{t("noSavedPlans")}</p>
             ) : (
               <>
                 {pendientes.length > 0 && (
                   <>
-                    <h2 className="text-xl font-semibold">Pendientes</h2>
+                    <h2 className="text-xl font-semibold">{t("pendingTitle")}</h2>
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                       {pendientes.map((p) => (
                         <div key={p.id} className="bg-metal/30 p-4 rounded relative">
@@ -158,7 +160,7 @@ export default function Planificaciones() {
                             onClick={() => eliminarPlan(p.id)}
                             className="absolute top-2 right-2 bg-[#1f1f1f] text-red-400 text-xs rounded-md px-2 py-1 flex items-center gap-1 hover:bg-red-900/20 hover:text-red-500"
                           >
-                            <FaTimes /> Eliminar
+                            <FaTimes /> {t("delete")}
                           </button>
                           <h2 className="font-semibold mb-2">{p.nombre}</h2>
                           <div
@@ -170,10 +172,10 @@ export default function Planificaciones() {
                             ))}
                           </div>
                           <div className="text-xs mt-2">
-                            <p>Total: {p.total ? (p.total / 3600).toFixed(1) + "h" : "N/A"}</p>
-                            <p>Jugado: {(p.jugado / 3600).toFixed(1)}h</p>
+                            <p>{t("total")}: {p.total ? (p.total / 3600).toFixed(1) + "h" : "N/A"}</p>
+                            <p>{t("played")}: {(p.jugado / 3600).toFixed(1)}h</p>
                             {p.restante != null && (
-                              <p>Restante: {(p.restante / 3600).toFixed(1)}h</p>
+                              <p>{t("remaining")}: {(p.restante / 3600).toFixed(1)}h</p>
                             )}
                           </div>
                         </div>
@@ -183,14 +185,14 @@ export default function Planificaciones() {
                 )}
                 {completadas.length > 0 && (
                   <>
-                    <h2 className="text-xl font-semibold mt-6">Completadas</h2>
+                    <h2 className="text-xl font-semibold mt-6">{t("completedTitle")}</h2>
                     <ul className="space-y-4">
                       {completadas.map((p) => (
                         <li key={p.id} className="bg-metal/30 p-4 rounded">
                           <h3 className="font-semibold mb-2">{p.nombre}</h3>
-                          <p>Total jugado: {(p.resumen.total_segundos / 3600).toFixed(1)}h</p>
-                          <p>Completados: {p.resumen.completados}</p>
-                          <p>Saltados: {p.resumen.saltados}</p>
+                          <p>{t("totalPlayed")} {(p.resumen.total_segundos / 3600).toFixed(1)}h</p>
+                          <p>{t("completedCount")} {p.resumen.completados}</p>
+                          <p>{t("skippedCount")} {p.resumen.saltados}</p>
                         </li>
                       ))}
                     </ul>
@@ -206,9 +208,9 @@ export default function Planificaciones() {
 
       {vista === "auto" && (
         cargando ? (
-          <p>Cargando...</p>
+          <p>{t("loading")}</p>
         ) : autoPlan.length === 0 ? (
-          <p>No hay juegos pendientes en tu biblioteca.</p>
+          <p>{t("noPendingGames")}</p>
         ) : (
           <>
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
@@ -229,7 +231,7 @@ export default function Planificaciones() {
               onClick={guardarAuto}
               className="mt-4 px-4 py-2 bg-naranja text-black rounded font-bold"
             >
-              Guardar plan automático
+              {t("saveAutoPlan")}
             </button>
           </>
         )

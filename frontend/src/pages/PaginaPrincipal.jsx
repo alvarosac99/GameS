@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Carrusel from "@/components/Carrusel";
 import { FaUsers, FaGamepad, FaBook } from "react-icons/fa";

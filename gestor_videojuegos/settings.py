@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from decouple import config
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -36,7 +37,7 @@ CACHES = {
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-g%j5z$3ww3)o!=lzmb6#01k-==k)9l7rs02-abxn)d%fma#y(-"
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -56,8 +57,8 @@ ALLOWED_HOSTS = [
 ]
 
 # IGDB / Twitch API
-IGDB_CLIENT_ID = "uo2hohcxtk9lyb311wo4ei9xdhn9sz"
-IGDB_CLIENT_SECRET = "3gd1ptwiarar4379v6rvll8zmnixq0"
+IGDB_CLIENT_ID = config("IGDB_CLIENT_ID")
+IGDB_CLIENT_SECRET = config("IGDB_CLIENT_SECRET")
 IGDB_BASE_URL = "https://api.igdb.com/v4"
 
 # Application definition
@@ -150,24 +151,13 @@ WSGI_APPLICATION = "gestor_videojuegos.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "gestor_db",
-        "USER": "sopa",
-        "PASSWORD": "Sopita@sopa",
-        "HOST": "localhost",
-        "PORT": "3306",
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST"),
+        "PORT": config("DB_PORT"),
     }
 }
-"http://192.168.56.1:5173"
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.mysql",
-#         "NAME": "gestor_db",
-#         "USER": "sebas",
-#         "PASSWORD": "sopa@sopa",
-#         "HOST": "localhost",
-#         "PORT": "3306",
-#     }
-# }
 
 
 # Password validation

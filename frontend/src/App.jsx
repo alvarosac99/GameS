@@ -1,4 +1,4 @@
-import React, { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import "./index.css";
 import {
   BrowserRouter as Router,
@@ -41,6 +41,8 @@ import PlanificacionDetalle from "./pages/PlanificacionDetalle";
 import Ajustes from "./pages/Ajustes";
 import NuestrosJuegos from "./pages/NuestrosJuegos";
 import NuevoJuego from "./pages/NuevoJuego";
+import SobreMi from "./pages/SobreMi";
+import ManualUso from "./pages/ManualUso";
 
 function AppContent() {
   const { autenticado, usuario } = useAuth();
@@ -223,6 +225,15 @@ function AppContent() {
           >
             <LogOut /> {t("menuLogout")}
           </button>
+          {/* Enlaces adicionales en texto pequeño */}
+          <div className="mt-6 text-xs text-gray-400 space-y-1">
+            <Link to="/sobre-mi" className="hover:text-naranja mr-6">
+              Sobre mí
+            </Link>
+            <Link to="/manual" className="hover:text-naranja">
+              Manual de uso
+            </Link>
+          </div>
         </nav>
       </aside>
 
@@ -246,6 +257,8 @@ function AppContent() {
           <Route path="/nuestros-juegos" element={<NuestrosJuegos />} />
           <Route path="/nuevo-juego" element={<NuevoJuego />} />
           <Route path="/jugar" element={<Jugar />} />
+          <Route path="/sobre-mi" element={<SobreMi />} />
+          <Route path="/manual" element={<ManualUso />} />
           <Route path="*" element={<h2 className="text-center">{t("pageNotFound")}</h2>} />
         </Routes>
       </main>
@@ -253,7 +266,7 @@ function AppContent() {
       <footer className="bg-metal py-2 text-center text-sm text-gray-400 border-t border-borde">
         GameS © 2025
       </footer>
-    </div>
+    </div >
   );
 }
 

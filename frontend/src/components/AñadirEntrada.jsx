@@ -1,5 +1,5 @@
 // src/components/AñadirEntrada.jsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AñadirEntrada({ onEntradaCreada }) {

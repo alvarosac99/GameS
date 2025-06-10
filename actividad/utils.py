@@ -14,13 +14,5 @@ def otorgar_logro(usuario, clave):
     if not LogroUsuario.objects.filter(usuario=usuario, logro=logro).exists():
         LogroUsuario.objects.create(usuario=usuario, logro=logro)
         registrar_actividad(usuario, "logro", f"Desbloqueó el logro *{logro.nombre}*")
-        from notificaciones import crear_notificacion
-        crear_notificacion(
-            usuario,
-            f"¡Has obtenido el logro {logro.nombre}!",
-        )
         from notificaciones.utils import crear_notificacion
-        crear_notificacion(
-            usuario,
-            f"¡Has obtenido el logro {logro.nombre}!",
-        )
+        crear_notificacion(usuario, f"¡Has obtenido el logro {logro.nombre}!")

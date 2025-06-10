@@ -1,5 +1,5 @@
 // src/pages/Jugar.jsx
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";

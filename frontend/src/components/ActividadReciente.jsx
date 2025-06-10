@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaGamepad, FaStar, FaTrophy, FaComment, FaUserPlus } from "react-icons/fa"; // ⬅ nuevo ícono
 
 function formatearFecha(iso) {

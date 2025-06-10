@@ -27,7 +27,11 @@ Este documento describe en detalle la arquitectura y el flujo de trabajo del pro
 1. Crear y activar entorno virtual.
 2. Instalar dependencias con `pip install -r requirements.txt`.
 3. Configurar `.env` con credenciales de base de datos y claves de IGDB.
+- El microservicio FastAPI se comunica a través del endpoint `precios/views.py` que consulta `http://localhost:8080/buscar-ofertas`.
+- Si AllKeyShop devuelve texto inválido, la API filtra los resultados en `apiPrecios` antes de enviarlos al frontend.
 4. Ejecutar migraciones y crear superusuario.
+- Las rutas principales se declaran en `gestor_videojuegos/urls.py` y cada app define sus URLs particulares en `urls.py`.
+- Para los viewsets se utiliza `DefaultRouter` de DRF, como en `juegos/urls.py`.
 
 ### Frontend (React + Vite)
 
@@ -61,6 +65,8 @@ Cada app de Django contiene `models.py`, `views.py`, `serializers.py`, `urls.py`
 - Los modelos principales son **Usuario**, **Juego**, **Biblioteca**, **Logro**, **Actividad** y **Diario**.
 - Consulta el diagrama entidad-relación en la carpeta `docs/diagramas/`. [insertar imagen]
 - Las migraciones automáticas se generan con `python manage.py makemigrations`.
+- Los modelos se encuentran en `juegos/models.py`, `usuarios/models.py`, `diario/models.py`, etc.
+- Cada uno define métodos como `__str__` y relaciones entre sí; por ejemplo `Biblioteca` enlaza `User` con `Juego`.
 
 [insertar imagen]
 
@@ -69,6 +75,8 @@ Cada app de Django contiene `models.py`, `views.py`, `serializers.py`, `urls.py`
 - Registro y login mediante JWT.
 - Middleware en Django para validar el token en cada petición.
 - Roles disponibles: administrador, revisor, jugador y desarrollador.
+- Las vistas de autenticación y gestión de perfiles se encuentran en `usuarios/views.py` y las rutas en `usuarios/urls.py`.
+- Los permisos personalizados, como ver todos los comentarios, están definidos en `comentarios/permissions.py`.
 
 [insertar imagen]
 
@@ -81,6 +89,8 @@ Cada app de Django contiene `models.py`, `views.py`, `serializers.py`, `urls.py`
 - `/api/diario/` – Entradas del diario de juego.
 
 Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permisos del usuario.
+- Las rutas principales se declaran en `gestor_videojuegos/urls.py` y cada app define sus URLs particulares en `urls.py`.
+- Para los viewsets se utiliza `DefaultRouter` de DRF, como en `juegos/urls.py`.
 
 [insertar imagen]
 
@@ -89,6 +99,8 @@ Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permiso
 - Autenticación OAuth2 para obtener el token.
 - Ejemplo de petición a la API de IGDB para buscar juegos.
 - Sistema de caché en Redis para reducir llamadas repetidas.
+- Las funciones de integración están en `juegos/igdb_views/services.py` y `juegos/cache_igdb.py`.
+- Para realizar peticiones seguras se usa `utils/http.safe_post` con reintentos automáticos.
 
 [insertar imagen]
 
@@ -97,6 +109,8 @@ Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permiso
 - Configuración del WebDriver (Chrome o Firefox).
 - Script de scraping en `apiPrecios/` para consultar AllKeyShop.
 - Agrupación de precios por plataforma y almacenamiento en la base de datos.
+- El microservicio FastAPI se comunica a través del endpoint `precios/views.py` que consulta `http://localhost:8080/buscar-ofertas`.
+- Si AllKeyShop devuelve texto inválido, la API filtra los resultados en `apiPrecios` antes de enviarlos al frontend.
 
 [insertar imagen]
 
@@ -113,6 +127,8 @@ Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permiso
 - Cada acción del usuario genera una entrada en la tabla **Actividad**.
 - El sistema de logros revisa hitos y los asocia al perfil del jugador.
 - Las actividades se muestran en el feed principal.
+- Las utilidades que registran actividad y otorgan logros están en `actividad/utils.py`.
+- Los modelos correspondientes se encuentran en `actividad/models.py`.
 
 [insertar imagen]
 
@@ -121,6 +137,8 @@ Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permiso
 - Permite registrar sesiones de juego con un cronómetro automático.
 - Las entradas se asocian a un juego de la biblioteca.
 - Vista de calendario para revisar el historial.
+- Las vistas están en `diario/views.py` y usan el modelo `EntradaDiario` de `diario/models.py`.
+- Al crear una entrada se actualiza el tiempo de juego (`sesiones/models.py`) y la planificación (`juegos/igdb_views/planificacion.py`).
 
 [insertar imagen]
 
@@ -129,6 +147,7 @@ Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permiso
 - Redis almacena juegos, tokens de IGDB y búsquedas frecuentes.
 - Para purgar la caché se puede ejecutar `redis-cli FLUSHDB`.
 - Estrategia de renovación diaria mediante tareas programadas.
+- La lógica de inicialización y refresco está en `juegos/cache_igdb.py` y se invoca desde `gestor_videojuegos/recopilar.py`.
 
 [insertar imagen]
 
@@ -146,6 +165,8 @@ Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permiso
 - Ejecutar `python manage.py test` para correr las pruebas del backend.
 - Validar la conexión con IGDB mediante un test de integración.
 - Revisar que la API de precios responde correctamente.
+- Los archivos de pruebas están en cada app como `tests.py`. Actualmente la mayoría son ejemplos mínimos (ver `usuarios/tests.py`).
+- Puedes extenderlos con `pytest` o `TestCase` estándar de Django.
 
 [insertar imagen]
 
@@ -154,12 +175,15 @@ Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permiso
 - Scripts en `utils/cron/` ejecutan la actualización de precios y la limpieza diaria.
 - El servidor se reinicia cada noche para liberar recursos.
 - Logs antiguos se purgan semanalmente.
+- Puedes crear scripts de mantenimiento programados mediante cron o systemd para ejecutar estas tareas periódicas.
 
 [insertar imagen]
 
 ## 17. Despliegue
 
 - Puede realizarse en un VPS Linux o mediante Docker.
+- En producción se recomienda ejecutar `gunicorn gestor_videojuegos.wsgi` detrás de Nginx.
+- Todas las variables sensibles deben definirse en un fichero `.env` como se muestra en `gestor_videojuegos/settings.py`.
 - Ajustar variables de entorno para producción y configurar HTTPS.
 - Para Android, firmar el APK antes de publicarlo en Google Play.
 
@@ -170,6 +194,8 @@ Cada endpoint define métodos `GET`, `POST`, `PUT` y `DELETE` según los permiso
 - Formateo con Black para Python y Prettier para JavaScript.
 - Mantener commits pequeños y descriptivos.
 - Revisar dependencias y vulnerabilidades de forma periódica.
+- Configura `pre-commit` para ejecutar `black` y `flake8` antes de cada commit.
+- Las dependencias se gestionan en `requirements.txt` y `apiPrecios/pyproject.toml`.
 
 [insertar imagen]
 

@@ -1,5 +1,5 @@
 // src/components/BuscadorGlobal.jsx
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiSearch, FiUsers } from "react-icons/fi";
 import { FaGamepad } from "react-icons/fa";

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import GameCard from "@/components/GameCard";
 import LoaderCirculo from "@/components/LoaderCirculo";
 

@@ -109,3 +109,15 @@ La preferencia se guarda en el navegador y se aplica al recargar la página
 ## Recomendaciones personalizadas
 
 El servidor calcula cada día los géneros más presentes en la biblioteca de cada usuario y expone sugerencias en `/api/juegos/recomendados/`. Estas recomendaciones aparecen en el panel principal.
+## Puesta en marcha
+1. Copia `gestor_videojuegos/.env.example` como `gestor_videojuegos/.env` y rellena cada variable.
+2. Instala dependencias con `pip install -r requirements.txt`.
+3. Aplica migraciones y crea un superusuario:
+   ```bash
+   python manage.py migrate
+   python manage.py createsuperuser
+   ```
+4. Ejecuta el servidor de desarrollo con:
+   ```bash
+   python manage.py runserver
+   ```

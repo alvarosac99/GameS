@@ -7,6 +7,11 @@ from . import views
 router = DefaultRouter()
 router.register(r"biblioteca", views.BibliotecaViewSet, basename="biblioteca")
 router.register(r"planificaciones", views.PlanificacionViewSet, basename="planificacion")
+router.register(
+    r"planificaciones_completadas",
+    views.PlanificacionCompletadaViewSet,
+    basename="planificacion-completada",
+)
 router.register(r"dev", views.JuegoDevViewSet, basename="juego-dev")
 
 urlpatterns = [

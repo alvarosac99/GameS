@@ -2,7 +2,13 @@
 
 from rest_framework import serializers
 
-from .models import Biblioteca, Valoracion, Planificacion, JuegoDev
+from .models import (
+    Biblioteca,
+    Valoracion,
+    Planificacion,
+    JuegoDev,
+    PlanificacionCompletada,
+)
 
 class BibliotecaSerializer(serializers.ModelSerializer):
     """Gestiona la serialización de elementos de la biblioteca."""
@@ -66,3 +72,10 @@ class JuegoDevSerializer(serializers.ModelSerializer):
         model = JuegoDev
         fields = ["id", "nombre", "descripcion", "desarrollador", "creado"]
         read_only_fields = ["id", "desarrollador", "creado"]
+
+
+class PlanificacionCompletadaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlanificacionCompletada
+        fields = ["id", "nombre", "resumen", "creado"]
+        read_only_fields = ["id", "resumen", "creado"]

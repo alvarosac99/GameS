@@ -91,6 +91,25 @@ class Planificacion(models.Model):
         return f"{self.usuario.username} - {self.nombre}"
 
 
+class PlanificacionCompletada(models.Model):
+    """Planificaciones finalizadas con su resumen de juego."""
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="planificaciones_completadas",
+    )
+    nombre = models.CharField(max_length=100)
+    resumen = models.JSONField(default=dict)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-creado"]
+
+    def __str__(self) -> str:
+        return f"{self.usuario.username} - {self.nombre} (completada)"
+
+
 class JuegoDev(models.Model):
     """Juego creado por un desarrollador de la plataforma."""
 

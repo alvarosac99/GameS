@@ -3,7 +3,7 @@ set -e
 
 # Instalación de Python 3.10 si no está presente
 if ! command -v python3.10 >/dev/null; then
-  echo -e "Python 3.10 no encontrado. Instálalo antes de continuar.\nPrueba: sudo apt install python3.10-venv python3.10-distutils python3.10-full" >&2
+  echo -e "Python 3.10 no encontrado. Instálalo antes de continuar.\nPrueba: sudo add-apt-repository ppa:deadsnakes/ppa \nY: sudo apt install python3.10-venv python3.10-distutils python3.10-full" >&2
   exit 1
 fi
 

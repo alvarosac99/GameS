@@ -6,6 +6,7 @@ import ListaEntradasDiario from "@/components/ListaEntradasDiario";
 import AñadirEntrada from "@/components/AñadirEntrada";
 import { Link } from "react-router-dom";
 import { useLang } from "../context/LangContext";
+import { FaGamepad } from "react-icons/fa";
 
 export default function Diario() {
   const { fetchAuth } = useAuth();
@@ -61,7 +62,9 @@ export default function Diario() {
   return (
     <div className="p-4 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">🎮 {t("myGameDiary")}</h1>
+        <h1 className="text-3xl font-bold">
+          <FaGamepad className="inline-block mr-2" /> {t("myGameDiary")}
+        </h1>
         <Link
           to="/jugar"
           className="px-4 py-2 rounded bg-naranja text-white hover:bg-opacity-80"

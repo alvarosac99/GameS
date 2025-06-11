@@ -76,7 +76,7 @@ export default function PaginaPrincipal() {
       {stats.juegosPopulares.length > 0 && (
         <div className="w-full mb-10">
           <h2 className="text-2xl font-bold text-center mb-2 text-naranja">
-            🎮 Los juegos más populares ahora mismo
+            <FaGamepad className="inline-block mr-2" /> Los juegos más populares ahora mismo
           </h2>
           <Carrusel
             juegos={stats.juegosPopulares}

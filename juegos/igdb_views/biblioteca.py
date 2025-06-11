@@ -53,6 +53,7 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
         except Exception:
             pagina, por_pagina = 1, 60
 
+        # Seleccionamos solo el tramo correspondiente a la página
         offset = (pagina - 1) * por_pagina
         paginados = qs[offset : offset + por_pagina]
 
@@ -67,6 +68,7 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
                 }
             )
 
+        # Realizamos las peticiones a IGDB en lotes
         token = obtener_token_igdb()
         headers = {
             "Client-ID": settings.IGDB_CLIENT_ID,

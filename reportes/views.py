@@ -1,3 +1,5 @@
+"""Vistas para la gestión de reportes de contenido."""
+
 from rest_framework import generics, permissions
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
@@ -11,6 +13,8 @@ User = get_user_model()
 
 
 class ReportarView(generics.CreateAPIView):
+    """Permite crear reportes sobre usuarios o comentarios."""
+
     serializer_class = ReporteSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -20,6 +24,8 @@ class ReportarView(generics.CreateAPIView):
     }
 
     def perform_create(self, serializer):
+        """Guarda el reporte y notifica al staff."""
+
         modelo = self.kwargs["modelo"]
         objeto_id = self.kwargs["object_id"]
 
@@ -36,6 +42,8 @@ class ReportarView(generics.CreateAPIView):
         self.notificar_staff(reporte)
 
     def notificar_staff(self, reporte):
+        """Envía un correo de aviso a todos los usuarios con rol STAFF."""
+
         staff_emails = User.objects.filter(perfil__rol="STAFF").values_list(
             "email", flat=True
         )

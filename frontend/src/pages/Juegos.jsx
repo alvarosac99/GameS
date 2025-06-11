@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import TarjetaSkeleton from "@/components/TarjetaSkeleton";
 import GameCard from "@/components/GameCard";
 import LoaderCirculo from "@/components/LoaderCirculo";
+import { FaGamepad } from "react-icons/fa";
 
 const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
 
@@ -187,9 +188,13 @@ export default function Juegos() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
         <div className="mb-3">
           <h1 className="text-4xl font-black mb-1">
-            {terminoBusqueda
-              ? `Resultados para ${terminoBusqueda.charAt(0).toUpperCase() + terminoBusqueda.slice(1)}`
-              : "🎮 Juegos"}
+              {terminoBusqueda
+                ? `Resultados para ${terminoBusqueda.charAt(0).toUpperCase() + terminoBusqueda.slice(1)}`
+                : (
+                  <>
+                    <FaGamepad className="inline-block mr-2" /> Juegos
+                  </>
+                )}
           </h1>
         </div>
         <div className="flex flex-wrap gap-4 w-full lg:w-auto items-center">
@@ -237,7 +242,7 @@ export default function Juegos() {
             }}
             className="bg-metal text-claro border border-borde rounded px-3 py-1"
           >
-            <option value="">🖥️ Todas las plataformas</option>
+            <option value="">Todas las plataformas</option>
             {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           {/* Selector personalizado para juegos por página */}

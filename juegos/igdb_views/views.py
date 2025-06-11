@@ -48,6 +48,7 @@ def listar_juegos(request):
         filtro_adulto = filtro_adulto_param in ["1", "true", "True", True]
 
     juegos = cargar_cache_juegos()
+    # Si no hay datos aún, indicamos que se están descargando
     if juegos is None:
         return Response(
             {
@@ -62,6 +63,7 @@ def listar_juegos(request):
 
     total_sin_filtrar = len(juegos)
 
+    # Aplicamos filtros y ordenación sobre la lista completa
     juegos = filtrar_y_ordenar(
         juegos,
         q=q,
@@ -76,6 +78,7 @@ def listar_juegos(request):
     total_filtrado = len(juegos)
     ocultos = total_sin_filtrar - total_filtrado
     offset = (pagina - 1) * por_pagina
+    # Segmentamos los resultados según la paginación solicitada
     juegos_pagina = juegos[offset: offset + por_pagina]
 
     return Response(

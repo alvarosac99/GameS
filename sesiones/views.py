@@ -1,3 +1,5 @@
+"""Vistas para registrar y administrar sesiones de juego."""
+
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -15,6 +17,8 @@ from juegos.models import Planificacion
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def sesion_activa(request):
+    """Devuelve la sesión de juego iniciada sin finalizar, si existe."""
+
     sesion = SesionJuego.objects.filter(usuario=request.user, fin__isnull=True).first()
     if not sesion:
         return Response({}, status=204)
@@ -29,9 +33,12 @@ def sesion_activa(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def iniciar_sesion(request):
+    """Comienza una nueva sesión de juego para el usuario."""
+
     juego_id = request.data.get("juego")
     if not juego_id:
         return Response({"error": "juego requerido"}, status=400)
+    # Cerramos cualquier otra sesión abierta
     SesionJuego.objects.filter(usuario=request.user, fin__isnull=True).update(
         fin=timezone.now()
     )
@@ -42,6 +49,8 @@ def iniciar_sesion(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def finalizar_sesion(request):
+    """Finaliza la sesión indicada y registra la información."""
+
     sesion_id = request.data.get("sesion")
     guardar = request.data.get("guardar", True)
     nota = request.data.get("nota", "")
@@ -89,6 +98,8 @@ def finalizar_sesion(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def tiempos_juego(request):
+    """Devuelve el tiempo total jugado por cada juego del usuario."""
+
     registros = TiempoJuego.objects.filter(usuario=request.user)
     datos = {r.juego_id: r.duracion_total.total_seconds() for r in registros}
     return Response(datos)

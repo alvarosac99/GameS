@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
+import { FaGamepad } from "react-icons/fa";
 
 export default function Jugar() {
   const { fetchAuth } = useAuth();
@@ -117,7 +118,9 @@ export default function Jugar() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-3xl font-bold">🎮 JUGAR!</h1>
+      <h1 className="text-3xl font-bold">
+        <FaGamepad className="inline-block mr-2" /> JUGAR!
+      </h1>
 
       <div className="relative">
         <input

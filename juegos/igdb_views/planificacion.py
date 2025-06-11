@@ -33,6 +33,7 @@ class PlanificacionViewSet(viewsets.ModelViewSet):
         juegos_ids = request.data.get("juegos", [])
         if isinstance(juegos_ids, list):
             for j_id in juegos_ids:
+                # Creamos el juego si no existe para evitar errores de FK
                 Juego.objects.get_or_create(id=j_id)
         return super().create(request, *args, **kwargs)
 
@@ -59,6 +60,7 @@ class PlanificacionViewSet(viewsets.ModelViewSet):
         from sesiones.models import TiempoJuego
 
         for juego in plan.juegos.all():
+            # Obtenemos el tiempo real jugado para cada juego
             tiempo = TiempoJuego.objects.filter(
                 usuario=request.user, juego=juego
             ).first()

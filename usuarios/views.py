@@ -19,19 +19,22 @@ User = get_user_model()
 def perfil_publico_view(request, nombre_usuario):
     """Devuelve la información pública de un perfil."""
 
+    # Localizamos al usuario solicitado o devolvemos 404
     user = get_object_or_404(User, username=nombre_usuario)
 
-    # Si el usuario ha sido bloqueado por el objetivo, se rechaza
+    # Si el objetivo nos ha bloqueado, denegamos la petición
     if request.user in user.perfil.bloqueados.all():
         return Response({"detail": "Has sido bloqueado por este usuario."}, status=403)
 
+    # Aseguramos disponer del perfil y preparamos datos básicos
     perfil, _ = Perfil.objects.get_or_create(user=user)
 
-    # Los favoritos se rellenan con "None" hasta completar 5 elementos
+    # Los favoritos se completan hasta 5 entradas para mostrar siempre el mismo tamaño
     favoritos = perfil.favoritos if perfil.favoritos else []
     favoritos = list(favoritos) + [None] * (5 - len(favoritos))
     favoritos = favoritos[:5]
 
+    # Relación actual entre el usuario autenticado y el perfil consultado
     yo_sigo = perfil.seguidores.filter(id=request.user.id).exists()
     yo_lo_bloquee = request.user.perfil.bloqueados.filter(id=user.id).exists()
 
@@ -89,7 +92,7 @@ def perfil_usuario(request):
         )
 
     elif request.method == "PATCH":
-        # Datos que puede modificar el usuario
+        # Datos enviados para modificar el perfil propio
         nombre = request.data.get("nombre")
         email = request.data.get("email")
         bio = request.data.get("bio")
@@ -187,6 +190,7 @@ def session_view(request):
 @csrf_exempt
 def login_view(request):
     """Inicia la sesión del usuario si las credenciales son válidas."""
+    # Datos recibidos en la petición
     data = json.loads(request.body)
     username = data.get("username")
     password = data.get("password")
@@ -219,6 +223,7 @@ def login_view(request):
 def logout_view(request):
     """Cierra la sesión del usuario actual."""
     if request.method == "POST":
+        # Django gestiona la eliminación de la sesión con logout
         logout(request)
         return JsonResponse({"success": True})
 
@@ -227,6 +232,7 @@ def logout_view(request):
 @permission_classes([IsAuthenticated])
 def actualizar_filtro_adulto(request):
     """Actualiza la preferencia de filtro de contenido adulto."""
+    # Obtenemos o creamos el perfil asociado al usuario
     perfil, _ = Perfil.objects.get_or_create(user=request.user)
     filtro_adulto = request.data.get("filtro_adulto")
 
@@ -256,6 +262,7 @@ def actualizar_favoritos(request):
             {"error": "Solo puedes tener hasta 5 juegos favoritos."}, status=400
         )
 
+    # Recuperamos el perfil para guardar la información
     perfil = getattr(request.user, "perfil", None)
     if not perfil:
         perfil, _ = Perfil.objects.get_or_create(user=request.user)
@@ -273,10 +280,11 @@ def actualizar_favoritos(request):
 @permission_classes([AllowAny])
 def buscar_usuarios(request):
     """Realiza una búsqueda simple de usuarios por nombre o username."""
-
+    # Texto a buscar
     q = request.GET.get("q", "").strip().lower()
 
     if not q or len(q) < 2:
+        # No se realiza búsqueda con cadenas tan cortas
         return Response({"resultados": []})
 
     usuarios = (
@@ -288,6 +296,7 @@ def buscar_usuarios(request):
     encontrados = []
     ids_vistos = set()
     for user in usuarios:
+        # Evitamos procesar el mismo usuario varias veces
         if user.id in ids_vistos:
             continue
         ids_vistos.add(user.id)
@@ -329,6 +338,7 @@ def seguir_usuario(request, username):
         )
 
     if not perfil_objetivo.seguidores.filter(id=request.user.id).exists():
+        # Añadimos el seguimiento y registramos la actividad
         perfil_objetivo.seguidores.add(request.user)
         registrar_actividad(
             request.user, "seguimiento", f"Siguió a {objetivo.username}"
@@ -350,6 +360,7 @@ def dejar_de_seguir(request, username):
     objetivo = get_object_or_404(User, username=username)
     perfil_objetivo = getattr(objetivo, "perfil", None)
 
+    # Eliminamos el seguimiento si existe
     perfil_objetivo.seguidores.remove(request.user)
     return Response(
         {"ok": True, "mensaje": f"Has dejado de seguir a {objetivo.username}."}
@@ -366,6 +377,7 @@ def bloquear_usuario(request, username):
     if objetivo == request.user:
         return Response({"error": "No puedes bloquearte a ti mismo."}, status=400)
 
+    # Añadimos al usuario a la lista de bloqueados
     perfil_actual.bloqueados.add(objetivo)
     # Deja de seguir automáticamente
     objetivo.perfil.seguidores.remove(request.user)
@@ -381,5 +393,6 @@ def desbloquear_usuario(request, username):
     objetivo = get_object_or_404(User, username=username)
     perfil_actual = request.user.perfil
 
+    # Quitamos al usuario de la lista de bloqueados
     perfil_actual.bloqueados.remove(objetivo)
     return Response({"ok": True, "mensaje": f"Has desbloqueado a {objetivo.username}."})

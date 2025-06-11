@@ -93,12 +93,12 @@ export default function Biblioteca() {
     }
   };
 
-  // 🔍 Filtrado local
+  // Filtrado local
   const juegosFiltrados = juegosTotales.filter((j) =>
     j.name?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  // 📦 Paginación local
+  // Paginación local
   const juegosOrdenados = [...juegosFiltrados].sort(ordenarJuegos);
   const juegosPaginados = juegosOrdenados.slice(
     (pagina - 1) * porPagina,

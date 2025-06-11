@@ -54,6 +54,7 @@ ALLOWED_HOSTS = [
     "192.168.1.39",
     "gamesopa.duckdns.org",
     "192.168.56.1",
+    "0.0.0.0",
 ]
 
 # IGDB / Twitch API

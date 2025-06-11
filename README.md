@@ -18,10 +18,10 @@ Este proyecto utilizará tecnologías modernas para garantizar un desarrollo efi
 
 Este es el commit inicial del proyecto. Próximamente se añadirán más detalles sobre la estructura del repositorio y las funcionalidades.
 
-🚀 Configuración de Redis para Caché de Juegos
+Configuración de Redis para Caché de Juegos
 
 El sistema de caché utiliza Redis como backend para almacenar los juegos descargados desde IGDB y mejorar el rendimiento de búsqueda, filtrado y paginación.
-🧰 1. Instalación de Redis (local)
+1. Instalación de Redis (local)
 En Ubuntu:
 
 sudo apt update
@@ -34,11 +34,11 @@ Verifica que Redis está funcionando:
 redis-cli ping
 # Debería responder: PONG
 
-⚙️ 2. Instalar dependencias en el proyecto Django
+2. Instalar dependencias en el proyecto Django
 
 pip install django-redis
 
-🧠 3. Configuración en settings.py
+3. Configuración en settings.py
 
 Añade o modifica el bloque de configuración de caché:
 
@@ -52,13 +52,13 @@ CACHES = {
     }
 }
 
-✅ 4. Uso en el código
+4. Uso en el código
 
 Ya está integrado en el proyecto. El servidor comprueba la caché al iniciarse y,
 si está vacía, descarga automáticamente todos los juegos de IGDB. Además se 
 programa una actualización diaria a las 2:00 AM.
 
-🧪 5. Comprobación manual
+5. Comprobación manual
 
 Puedes ver lo que hay almacenado:
 
@@ -66,13 +66,13 @@ redis-cli
 > SELECT 1
 > KEYS *
 
-🧼 6. Limpieza de la caché manualmente
+6. Limpieza de la caché manualmente
 
 redis-cli
 > SELECT 1
 > FLUSHDB
 
-📌 Notas adicionales
+Notas adicionales
 
     El uso de Redis evita accesos innecesarios a IGDB y mejora la velocidad en producción.
 

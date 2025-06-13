@@ -21,6 +21,7 @@ Este es el commit inicial del proyecto. Próximamente se añadirán más detalle
 Configuración de Redis para Caché de Juegos
 
 El sistema de caché utiliza Redis como backend para almacenar los juegos descargados desde IGDB y mejorar el rendimiento de búsqueda, filtrado y paginación.
+
 1. Instalación de Redis (local)
 En Ubuntu:
 
@@ -32,7 +33,7 @@ sudo systemctl start redis
 Verifica que Redis está funcionando:
 
 redis-cli ping
-# Debería responder: PONG
+Debería responder: PONG
 
 2. Instalar dependencias en el proyecto Django
 

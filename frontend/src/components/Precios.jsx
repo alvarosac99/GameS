@@ -11,6 +11,33 @@ export default function Precios({ nombre }) {
   const abortRef = useRef(null);
   const CHUNK = 10;
 
+  const fallbackCopy = (text) => {
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.style.position = "fixed";
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    try {
+      document.execCommand("copy");
+    } catch (err) {
+      console.error("Error al copiar", err);
+    }
+    document.body.removeChild(el);
+  };
+
+  const copyToClipboard = async (text) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return;
+      } catch (err) {
+        console.error("Fallo al copiar", err);
+      }
+    }
+    fallbackCopy(text);
+  };
+
   const limpiarPrecio = (p) =>
     p ? p.replace(/no hidden fees/gi, "").trim() : "";
 
@@ -32,6 +59,10 @@ export default function Precios({ nombre }) {
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
+      const tipo = res.headers.get("content-type") || "";
+      if (!tipo.includes("application/json")) {
+        throw new Error("Respuesta no válida");
+      }
       const data = await res.json();
       setDatos(data.grouped_offers || {});
     } catch (e) {
@@ -149,7 +180,7 @@ export default function Precios({ nombre }) {
                             onClick={(e) => {
                               e.preventDefault();
                               const text = typeof o.coupon === "string" ? o.coupon : o.coupon.code;
-                              navigator.clipboard.writeText(text);
+                              copyToClipboard(text);
                             }}
                             className="ml-2 px-2 py-0.5 bg-naranja text-black rounded text-xs"
                           >

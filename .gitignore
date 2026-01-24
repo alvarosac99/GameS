@@ -28,3 +28,7 @@ media/avatares/*
 
 # Cache de apiPrecios
 apiPrecios/__pycache__/
+
+# Chrome
+chrome-win64
+chromedriver.exe

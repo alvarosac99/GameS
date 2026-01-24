@@ -16,7 +16,8 @@ import uvicorn
 import asyncio
 from selenium.webdriver.chrome.service import Service
 
-CHROMEDRIVER_PATH = os.path.join(os.path.dirname(__file__), "../chromedriver")
+_driver_base = os.path.join(os.path.dirname(__file__), "../chromedriver")
+CHROMEDRIVER_PATH = _driver_base + ".exe" if os.path.exists(_driver_base + ".exe") else _driver_base
 service = Service(executable_path=CHROMEDRIVER_PATH)
 
 CONFIG = dict(dotenv_values(".env") or dotenv_values(".env.example"))
@@ -118,6 +119,9 @@ async def check_price(game: str, platform: str = "pc") -> dict:
 
     options = Options()
     options.headless = True
+    chrome_bin = os.getenv("CHROME_BIN")
+    if chrome_bin and os.path.exists(chrome_bin):
+        options.binary_location = chrome_bin
     with webdriver.Chrome(service=service, options=options) as driver:
         driver.get(url)
         soup = bs(driver.page_source)
@@ -128,6 +132,9 @@ async def check_price(game: str, platform: str = "pc") -> dict:
         if search_url and search_url != url:
             options = Options()
             options.headless = True
+            chrome_bin = os.getenv("CHROME_BIN")
+            if chrome_bin and os.path.exists(chrome_bin):
+                options.binary_location = chrome_bin
             with webdriver.Chrome(service=service, options=options) as driver:
                 driver.get(search_url)
                 soup = bs(driver.page_source)
@@ -169,6 +176,9 @@ async def buscar_ofertas(game: str) -> dict:
 
     options = Options()
     options.headless = True
+    chrome_bin = os.getenv("CHROME_BIN")
+    if chrome_bin and os.path.exists(chrome_bin):
+        options.binary_location = chrome_bin
     with webdriver.Chrome(service=service, options=options) as driver:
         driver.get(url)
         soup = bs(driver.page_source, "html.parser")

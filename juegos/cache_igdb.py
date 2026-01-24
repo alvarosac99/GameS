@@ -3,6 +3,7 @@
 import pickle
 import threading
 import time
+from tqdm import tqdm
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -55,35 +56,72 @@ def _descargar_juegos():
 
         juegos, ids = [], []
         offset_loop = 0
-        while True:
-            query = f"""
-                fields {', '.join(fields)};
-                sort popularity desc;
-                limit 500;
-                offset {offset_loop};
-            """
-            res = safe_post(f"{IGDB_BASE_URL}/games", headers, query)
-            chunk = res.json()
-            if not chunk:
-                break
-            juegos.extend(chunk)
-            ids.extend([j["id"] for j in chunk])
-            offset_loop += 500
-            if len(chunk) < 500:
-                break
+        total_juegos = None
+        try:
+            count_res = safe_post(f"{IGDB_BASE_URL}/games/count", headers, "where id != null;")
+            if count_res.status_code == 200:
+                total_juegos = count_res.json().get("count")
+        except Exception:
+            total_juegos = None
+        juegos_bar = tqdm(
+            total=total_juegos,
+            desc="IGDB cache juegos",
+            unit="juegos",
+            dynamic_ncols=True,
+            ascii=True,
+        )
+        try:
+            while True:
+                query = f"""
+                    fields {", ".join(fields)};
+                    sort popularity desc;
+                    limit 500;
+                    offset {offset_loop};
+                """
+                res = safe_post(f"{IGDB_BASE_URL}/games", headers, query)
+                chunk = res.json()
+                if not chunk:
+                    break
+                juegos.extend(chunk)
+                ids.extend([j["id"] for j in chunk])
+                offset_loop += 500
+                juegos_bar.update(len(chunk))
+                if len(chunk) < 500:
+                    break
+        finally:
+            juegos_bar.close()
 
         popularidad_map = {}
-        for i in range(0, len(ids), 500):
-            ids_slice = ",".join(str(x) for x in ids[i:i + 500])
-            pop_query = (
-                f"fields game_id,value; where game_id = ({ids_slice}) & popularity_type = 1;"
+        pop_total = None
+        try:
+            count_pop_res = safe_post(
+                f"{IGDB_BASE_URL}/popularity_primitives/count",
+                headers,
+                "where popularity_type = 1;",
             )
-            pop_res = safe_post(
-                f"{IGDB_BASE_URL}/popularity_primitives", headers, pop_query
-            )
-            if pop_res.status_code == 200:
-                pop_data = pop_res.json()
-                popularidad_map.update({p["game_id"]: p["value"] for p in pop_data})
+            if count_pop_res.status_code == 200:
+                pop_total = count_pop_res.json().get("count")
+        except Exception:
+            pop_total = len(ids)
+        if pop_total is None:
+            pop_total = len(ids)
+        pop_bar = tqdm(total=pop_total, desc="IGDB cache popularidad", unit="juegos", dynamic_ncols=True, ascii=True)
+        try:
+            for i in range(0, len(ids), 500):
+                ids_slice = ",".join(str(x) for x in ids[i:i + 500])
+                pop_query = (
+                    f"fields game_id,value; where game_id = ({ids_slice}) & popularity_type = 1;"
+                )
+                pop_res = safe_post(
+                    f"{IGDB_BASE_URL}/popularity_primitives", headers, pop_query
+                )
+                if pop_res.status_code == 200:
+                    pop_data = pop_res.json()
+                    popularidad_map.update({p["game_id"]: p["value"] for p in pop_data})
+                pop_bar.update(min(500, len(ids) - i))
+
+        finally:
+            pop_bar.close()
 
         for juego in juegos:
             juego["popularidad"] = popularidad_map.get(juego["id"], None)

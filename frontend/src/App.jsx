@@ -223,7 +223,16 @@ function AppContent() {
           >
             <LogOut /> {t("menuLogout")}
           </button>
-        </nav>
+            {/* Enlaces adicionales en texto pequeño */}
+    <div className="mt-6 text-xs text-gray-400 space-y-1">
+      <Link to="/sobre-mi" className="hover:text-naranja">
+        Sobre mí
+      </Link>
+      <Link to="/manual" className="hover:text-naranja">
+        Manual de uso
+      </Link>
+    </div>
+  </nav>
       </aside>
 
       {/* CONTENIDO */}

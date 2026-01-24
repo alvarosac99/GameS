@@ -3,6 +3,7 @@
 import pickle
 import threading
 import time
+import sys
 from tqdm import tqdm
 from datetime import datetime, timedelta
 
@@ -58,7 +59,11 @@ def _descargar_juegos():
         offset_loop = 0
         total_juegos = None
         try:
-            count_res = safe_post(f"{IGDB_BASE_URL}/games/count", headers, "where id != null;")
+            count_query = (
+                "where cover.url != null "
+                "& first_release_date != null;"
+            )
+            count_res = safe_post(f"{IGDB_BASE_URL}/games/count", headers, count_query)
             if count_res.status_code == 200:
                 total_juegos = count_res.json().get("count")
         except Exception:
@@ -69,9 +74,12 @@ def _descargar_juegos():
             unit="juegos",
             dynamic_ncols=True,
             ascii=True,
+            file=sys.stderr,
+            mininterval=0.2,
         )
         try:
             while True:
+                tqdm.write(f"IGDB cache: solicitando juegos offset={offset_loop}", file=sys.stderr)
                 query = f"""
                     fields {", ".join(fields)};
                     sort popularity desc;
@@ -79,14 +87,30 @@ def _descargar_juegos():
                     offset {offset_loop};
                 """
                 res = safe_post(f"{IGDB_BASE_URL}/games", headers, query)
+                tqdm.write(
+                    f"IGDB cache: respuesta juegos status={res.status_code} offset={offset_loop}",
+                    file=sys.stderr,
+                )
                 chunk = res.json()
+                tqdm.write(
+                    f"IGDB cache: recibidos {len(chunk)} juegos en offset={offset_loop}",
+                    file=sys.stderr,
+                )
                 if not chunk:
+                    tqdm.write(
+                        "IGDB cache: sin mas juegos, finalizando descarga",
+                        file=sys.stderr,
+                    )
                     break
                 juegos.extend(chunk)
                 ids.extend([j["id"] for j in chunk])
                 offset_loop += 500
                 juegos_bar.update(len(chunk))
                 if len(chunk) < 500:
+                    tqdm.write(
+                        "IGDB cache: ultimo bloque parcial, finalizando descarga",
+                        file=sys.stderr,
+                    )
                     break
         finally:
             juegos_bar.close()
@@ -105,9 +129,21 @@ def _descargar_juegos():
             pop_total = len(ids)
         if pop_total is None:
             pop_total = len(ids)
-        pop_bar = tqdm(total=pop_total, desc="IGDB cache popularidad", unit="juegos", dynamic_ncols=True, ascii=True)
+        pop_bar = tqdm(
+            total=pop_total,
+            desc="IGDB cache popularidad",
+            unit="juegos",
+            dynamic_ncols=True,
+            ascii=True,
+            file=sys.stderr,
+            mininterval=0.2,
+        )
         try:
             for i in range(0, len(ids), 500):
+                tqdm.write(
+                    f"IGDB cache: solicitando popularidad {i}/{len(ids)}",
+                    file=sys.stderr,
+                )
                 ids_slice = ",".join(str(x) for x in ids[i:i + 500])
                 pop_query = (
                     f"fields game_id,value; where game_id = ({ids_slice}) & popularity_type = 1;"
@@ -115,8 +151,16 @@ def _descargar_juegos():
                 pop_res = safe_post(
                     f"{IGDB_BASE_URL}/popularity_primitives", headers, pop_query
                 )
+                tqdm.write(
+                    f"IGDB cache: respuesta popularidad status={pop_res.status_code} i={i}",
+                    file=sys.stderr,
+                )
                 if pop_res.status_code == 200:
                     pop_data = pop_res.json()
+                    tqdm.write(
+                        f"IGDB cache: recibidos {len(pop_data)} registros de popularidad",
+                        file=sys.stderr,
+                    )
                     popularidad_map.update({p["game_id"]: p["value"] for p in pop_data})
                 pop_bar.update(min(500, len(ids) - i))
 

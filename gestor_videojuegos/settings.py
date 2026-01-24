@@ -42,6 +42,7 @@ SECRET_KEY = "django-insecure-g%j5z$3ww3)o!=lzmb6#01k-==k)9l7rs02-abxn)d%fma#y(-
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    "127.0.0.1",
     "192.168.1.45",
     "10.0.2.15",
     "192.168.1.34",
@@ -106,7 +107,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [
+CSRF_TRUSTED_ORIGINS = [    
     "http://192.168.1.45:5173",
     "http://10.0.2.15:5173",
     "http://10.42.0.1:5173",
@@ -151,8 +152,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "gestor_db",
-        "USER": "sopa",
-        "PASSWORD": "Sopita@sopa",
+        "USER": "sebas",
+        "PASSWORD": "sopa@sopa",
         "HOST": "localhost",
         "PORT": "3306",
     }

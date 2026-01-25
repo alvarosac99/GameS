@@ -19,7 +19,7 @@
 .react-calendar__navigation button {
   background: none;
   border: none;
-  color: #f97316; /* naranja vivo */
+  color: hsl(var(--color-acento));
   font-weight: bold;
   font-size: 1rem;
 }
@@ -52,21 +52,21 @@
 
 /* Día seleccionado */
 .tile-seleccionada {
-  background-color: rgba(192, 91, 24, 0.678) !important;
-  border: 1px solid #f97316;
+  background-color: hsl(var(--color-acento) / 0.3) !important;
+  border: 1px solid hsl(var(--color-acento));
   border-radius: 8px;
-  color: #fff !important;
+  color: hsl(var(--primary-foreground)) !important;
 }
 
 /* Día con entrada (marcado) */
 .tile-marcada {
-  background-color: rgba(249, 115, 22, 0.15);
+  background-color: hsl(var(--color-acento) / 0.15);
   border-radius: 8px;
 }
 
 /* Día actual (hoy) */
 .react-calendar__tile--now {
-  background: rgba(255, 165, 0, 0.2) !important;
+  background: hsl(var(--color-acento) / 0.2) !important;
   color: hsl(var(--color-claro)) !important;
   border-radius: 8px;
 }
@@ -75,7 +75,7 @@
 .dot {
   width: 6px;
   height: 6px;
-  background-color: #f97316; /* naranja */
+  background-color: hsl(var(--color-acento));
   border-radius: 50%;
   margin: 2px auto 0;
 }

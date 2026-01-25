@@ -60,7 +60,7 @@ export default function PaginaPrincipal() {
       </div>
 
       {/* Descripción del proyecto */}
-      <div className="bg-[#23272f] rounded-2xl shadow-xl p-6 text-claro max-w-2xl text-center mb-6">
+      <div className="bg-fondo border border-black/15 rounded-2xl shadow-[0_12px_30px_rgba(15,23,42,0.12)] p-6 text-claro max-w-2xl text-center mb-6">
         <p className="text-lg md:text-xl mb-2 font-semibold">
           ¡Gestiona tu colección de videojuegos como nunca antes!
         </p>
@@ -123,7 +123,7 @@ export default function PaginaPrincipal() {
 
 function StatBox({ icon, label, value }) {
   return (
-    <div className="flex flex-col items-center justify-center bg-[#181b20] rounded-xl shadow-md px-8 py-4">
+    <div className="flex flex-col items-center justify-center bg-metal border border-black/20 rounded-xl shadow-[0_8px_20px_rgba(15,23,42,0.14)] px-8 py-4">
       <div className="mb-2">{icon}</div>
       <span className="text-2xl font-bold text-naranja">{value}</span>
       <span className="text-claro/80">{label}</span>

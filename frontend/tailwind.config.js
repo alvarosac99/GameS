@@ -13,8 +13,8 @@ export default {
                                 metal: "hsl(var(--color-metal))",
                                 borde: "hsl(var(--color-borde))",
                                 claro: "hsl(var(--color-claro))",
-				naranja: "#ff7b00",
-				naranjaHover: "#ffa94d",
+				naranja: "hsl(var(--color-acento))",
+				naranjaHover: "hsl(var(--color-acento-hover))",
 
 				// Paleta dinámica de ShadCN
 				background: 'hsl(var(--background))',

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g fill="none" stroke="#00d8a0" stroke-width="3" stroke-linecap="round" filter="url(#glow)" opacity="0.85">
+    <path id="c1" pathLength="1000" d="M-40 520 H 260 L 320 480 H 520 L 560 520 H 1064">
+      <animate attributeName="stroke-dasharray" dur="0.001s" repeatCount="1" values="40 960" />
+      <animate attributeName="stroke-dashoffset" dur="6.5s" repeatCount="indefinite" values="0;-1000" />
+    </path>
+    <path id="c2" pathLength="1000" d="M200 -40 V 260 L 260 320 V 560 L 220 620 V 1064">
+      <animate attributeName="stroke-dasharray" dur="0.001s" repeatCount="1" values="36 964" />
+      <animate attributeName="stroke-dashoffset" dur="7.5s" repeatCount="indefinite" values="-200;-1200" />
+    </path>
+    <path id="c3" pathLength="1000" d="M1064 380 H 740 L 680 420 H 520 L 460 380 H -40">
+      <animate attributeName="stroke-dasharray" dur="0.001s" repeatCount="1" values="34 966" />
+      <animate attributeName="stroke-dashoffset" dur="8.2s" repeatCount="indefinite" values="150;-850" />
+    </path>
+    <path id="c4" pathLength="1000" d="M820 1064 V 760 L 760 700 V 480 L 800 420 V -40">
+      <animate attributeName="stroke-dasharray" dur="0.001s" repeatCount="1" values="38 962" />
+      <animate attributeName="stroke-dashoffset" dur="7.1s" repeatCount="indefinite" values="-400;-1400" />
+    </path>
+  </g>
+</svg>

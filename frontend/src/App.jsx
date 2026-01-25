@@ -1,4 +1,4 @@
-import React, { useState, useRef, useLayoutEffect } from "react";
+import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
 import "./index.css";
 import {
   BrowserRouter as Router,
@@ -53,6 +53,7 @@ function AppContent() {
   const esDetalle = /^\/juego\/\d+/.test(pathname);
 
   const headerRef = useRef(null);
+  const menuFirstLinkRef = useRef(null);
   const [botonTop, setBotonTop] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(80);
 
@@ -69,15 +70,190 @@ function AppContent() {
     return () => window.removeEventListener("resize", calcularPosiciones);
   }, []);
 
+  useEffect(() => {
+    if (menuAbierto) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      if (menuFirstLinkRef.current) {
+        menuFirstLinkRef.current.focus();
+      }
+      return () => {
+        document.body.style.overflow = previousOverflow;
+      };
+    }
+    document.body.style.overflow = "";
+    return undefined;
+  }, [menuAbierto]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && menuAbierto) {
+        setMenuAbierto(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [menuAbierto]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    let rafId = null;
+
+    const updateCursor = (event) => {
+      if (rafId) return;
+      const { clientX, clientY } = event;
+      rafId = window.requestAnimationFrame(() => {
+        root.style.setProperty("--cursor-x", `${clientX}px`);
+        root.style.setProperty("--cursor-y", `${clientY}px`);
+        rafId = null;
+      });
+    };
+
+    window.addEventListener("pointermove", updateCursor, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", updateCursor);
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const beams = Array.from(document.querySelectorAll(".circuit-beam"));
+    if (!beams.length) {
+      return undefined;
+    }
+
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const snap = (value, step) => Math.round(value / step) * step;
+
+    const edgePoint = (width, height) => {
+      const side = Math.floor(Math.random() * 4);
+      if (side === 0) return { x: -40, y: snap(rand(60, height - 60), 40) };
+      if (side === 1) return { x: width + 40, y: snap(rand(60, height - 60), 40) };
+      if (side === 2) return { x: snap(rand(80, width - 80), 40), y: -40 };
+      return { x: snap(rand(80, width - 80), 40), y: height + 40 };
+    };
+
+    const buildPath = (width, height) => {
+      const start = edgePoint(width, height);
+      let end = edgePoint(width, height);
+      while (Math.abs(end.x - start.x) < 120 && Math.abs(end.y - start.y) < 120) {
+        end = edgePoint(width, height);
+      }
+
+      const bendX = snap(rand(120, width - 120), 40);
+      const bendY = snap(rand(120, height - 120), 40);
+      const useHorizontalFirst = Math.random() > 0.5;
+      const points = useHorizontalFirst
+        ? [start, { x: bendX, y: start.y }, { x: bendX, y: bendY }, { x: end.x, y: bendY }, end]
+        : [start, { x: start.x, y: bendY }, { x: bendX, y: bendY }, { x: bendX, y: end.y }, end];
+
+      return points.filter((point, index, arr) => {
+        if (index === 0) return true;
+        const prev = arr[index - 1];
+        return prev.x !== point.x || prev.y !== point.y;
+      });
+    };
+
+    const makeSegments = (points) => {
+      const segments = [];
+      let total = 0;
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const from = points[i];
+        const to = points[i + 1];
+        const length = Math.hypot(to.x - from.x, to.y - from.y);
+        total += length;
+        segments.push({ from, to, length });
+      }
+      return { segments, total };
+    };
+
+    const createBeamState = (width, height) => {
+      const points = buildPath(width, height);
+      const { segments, total } = makeSegments(points);
+      const duration = rand(3.6, 4.4);
+      return {
+        segments,
+        total,
+        progress: rand(-0.4 * total, 0),
+        speed: total / duration,
+        size: rand(6, 9),
+        opacity: rand(0.65, 0.9),
+        angle: 0,
+      };
+    };
+
+    let states = [];
+    let last = performance.now();
+    let rafId = null;
+
+    const resize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      states = beams.map(() => createBeamState(width, height));
+    };
+
+    const step = (now) => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const delta = (now - last) / 1000;
+      last = now;
+
+      if (!document.documentElement.classList.contains("dark")) {
+        states.forEach((state, index) => {
+          const beam = beams[index];
+          state.progress += state.speed * delta;
+          if (state.progress > state.total) {
+            states[index] = createBeamState(width, height);
+            return;
+          }
+
+          let remaining = Math.max(0, state.progress);
+          let segment = state.segments[0];
+          for (let i = 0; i < state.segments.length; i += 1) {
+            if (remaining <= state.segments[i].length) {
+              segment = state.segments[i];
+              break;
+            }
+            remaining -= state.segments[i].length;
+          }
+
+          const t = segment.length === 0 ? 0 : remaining / segment.length;
+          const x = segment.from.x + (segment.to.x - segment.from.x) * t;
+          const y = segment.from.y + (segment.to.y - segment.from.y) * t;
+          const life = state.progress / state.total;
+          const fade = life < 0.1 ? life / 0.1 : life > 0.9 ? (1 - life) / 0.1 : 1;
+
+          beam.style.opacity = `${state.opacity * fade}`;
+          beam.style.setProperty("--beam-size", `${state.size}px`);
+          beam.style.transform = `translate(${x}px, ${y}px)`;
+        });
+      }
+
+      rafId = window.requestAnimationFrame(step);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    rafId = window.requestAnimationFrame(step);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, []);
+
   return (
-    <div
-      className="flex flex-col min-h-screen text-claro"
-      style={{
-        backgroundImage: "var(--imagen-fondo)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="app-shell flex flex-col min-h-screen text-claro">
+      <div className="circuit-beams" aria-hidden="true">
+        <span className="circuit-beam"></span>
+        <span className="circuit-beam"></span>
+        <span className="circuit-beam"></span>
+        <span className="circuit-beam"></span>
+      </div>
       {/* Botón flotante del menú */}
       {autenticado && (
         <button
@@ -183,7 +359,11 @@ function AppContent() {
           }`}
       >
         <nav className="flex flex-col p-6 space-y-4">
-          <Link to="/jugar" className="flex items-center gap-2 hover:text-naranja">
+          <Link
+            to="/jugar"
+            ref={menuFirstLinkRef}
+            className="flex items-center gap-2 hover:text-naranja"
+          >
             <LayoutDashboard /> {t("menuPlay")}
           </Link>
           <Link to="/juegos" className="flex items-center gap-2 hover:text-naranja">

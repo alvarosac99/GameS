@@ -3,7 +3,7 @@ import LoaderCirculo from "@/components/LoaderCirculo";
 
 export default function Precios({ nombre }) {
   const [datos, setDatos] = useState(null);
-  const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [abiertas, setAbiertas] = useState({});
   const [cargas, setCargas] = useState({});
@@ -84,7 +84,9 @@ export default function Precios({ nombre }) {
     return () => observer.disconnect();
   }, [abiertas, datos, obtenerOfertas]);
 
-  if (cargando) return <LoaderCirculo texto="Buscando precios..." />;
+  if (cargando || (!datos && !error)) {
+    return <LoaderCirculo texto="Buscando precios..." />;
+  }
 
   if (error)
     return (

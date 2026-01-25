@@ -5,6 +5,7 @@ import DropLoader from "@/components/DropLoader";
 import Carrusel from "@/components/Carrusel";
 import Comentarios from "@/components/Comentarios";
 import Precios from "@/components/Precios";
+import GameCard from "@/components/GameCard";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LangContext";
 import ValoracionEstrellas from "@/components/ValoracionEstrellas";
@@ -84,6 +85,39 @@ function getYoutubeEmbedUrl(url) {
   return m ? `https://www.youtube.com/embed/${m[1]}` : null;
 }
 
+function extractMediaUrls(game) {
+  if (!game) return [];
+  const items = [...(game.screenshots || []), ...(game.artworks || [])];
+  return items
+    .map((img) => img?.url)
+    .filter(Boolean)
+    .map((url) => `https:${url.replace("t_thumb", "t_screenshot_huge")}`);
+}
+
+function readFavoritesCache(username) {
+  try {
+    const raw = localStorage.getItem(`fav_bg_${username}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.images || !Array.isArray(parsed.images)) return null;
+    const ageMs = Date.now() - (parsed.ts || 0);
+    if (ageMs > 1000 * 60 * 60 * 24) return null;
+    return parsed.images;
+  } catch {
+    return null;
+  }
+}
+
+function writeFavoritesCache(username, images) {
+  try {
+    const payload = {
+      ts: Date.now(),
+      images: images.slice(0, 140),
+    };
+    localStorage.setItem(`fav_bg_${username}`, JSON.stringify(payload));
+  } catch {}
+}
+
 function hashString(input) {
   let hash = 0;
   for (let i = 0; i < input.length; i += 1) {
@@ -116,15 +150,79 @@ export default function JuegoUnico() {
   const [descripcionNextIndex, setDescripcionNextIndex] = useState(null);
   const [descripcionDirection, setDescripcionDirection] = useState(1);
   const [descripcionPhase, setDescripcionPhase] = useState("idle");
+  const [favoritosImages, setFavoritosImages] = useState([]);
+  const [similarIndex, setSimilarIndex] = useState(0);
+  const [videoIndex, setVideoIndex] = useState(0);
   const igdbVideosRef = useRef(null);
   const igdbPhotosRef = useRef(null);
   const descripcionIntervalRef = useRef(null);
   const descripcionPauseUntilRef = useRef(0);
   const descripcionIndexRef = useRef(0);
   const descripcionPhaseRef = useRef("idle");
+  const favoritosAbortRef = useRef(null);
 
-  const { autenticado, fetchAuth } = useAuth();
+  const { autenticado, fetchAuth, usuario } = useAuth();
   const { t, lang } = useLang();
+
+  useEffect(() => {
+    favoritosAbortRef.current?.abort();
+    if (!autenticado || !usuario?.username) {
+      setFavoritosImages([]);
+      return undefined;
+    }
+    const controller = new AbortController();
+    favoritosAbortRef.current = controller;
+    const cached = readFavoritesCache(usuario.username);
+    if (cached?.length) {
+      setFavoritosImages(cached);
+    }
+
+    const cargarFavoritosFondo = async () => {
+      try {
+        const perfilRes = await fetch(
+          `/api/usuarios/perfil-publico/${usuario.username}/`,
+          { credentials: "include", signal: controller.signal }
+        );
+        if (!perfilRes.ok) throw new Error("perfil");
+        const perfil = await perfilRes.json();
+        const ids = (perfil.favoritos || []).filter(Boolean).slice(0, 5);
+        if (ids.length === 0) {
+          setFavoritosImages([]);
+          return;
+        }
+        const res = await fetch(`/api/juegos/populares/?ids=${ids.join(",")}`, {
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        const juegos = ids.map((gid) => data.juegos?.find((j) => j.id === gid) || null);
+        for (let i = 0; i < ids.length; i += 1) {
+          if (!juegos[i] && ids[i]) {
+            try {
+              const resJuego = await fetch(`/api/juegos/buscar_id/?id=${ids[i]}`, {
+                signal: controller.signal,
+              });
+              if (resJuego.ok) {
+                juegos[i] = await resJuego.json();
+              }
+            } catch {}
+          }
+        }
+        const allImages = juegos.flatMap((j) => extractMediaUrls(j));
+        const unique = Array.from(new Set(allImages));
+        setFavoritosImages(unique);
+        if (unique.length > 0) {
+          writeFavoritesCache(usuario.username, unique);
+        }
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          setFavoritosImages([]);
+        }
+      }
+    };
+
+    cargarFavoritosFondo();
+    return () => controller.abort();
+  }, [autenticado, usuario?.username]);
 
   // Carga la info del juego por ID
   useEffect(() => {
@@ -199,6 +297,14 @@ export default function JuegoUnico() {
     setDescripcionNextIndex(null);
     descripcionPhaseRef.current = "idle";
     setDescripcionPhase("idle");
+  }, [juego?.id]);
+
+  useEffect(() => {
+    setSimilarIndex(0);
+  }, [juego?.id]);
+
+  useEffect(() => {
+    setVideoIndex(0);
   }, [juego?.id]);
 
   useEffect(() => {
@@ -402,18 +508,19 @@ export default function JuegoUnico() {
     }
   });
 
-  const mediaImages = [
-    ...(juego.screenshots || []),
-    ...(juego.artworks || []),
-  ]
-    .map((img) => img?.url)
-    .filter(Boolean)
-    .map((url) => `https:${url.replace("t_thumb", "t_screenshot_huge")}`);
-
+  const mediaImages = extractMediaUrls(juego);
+  const baseBackgroundImages =
+    favoritosImages.length > 0 ? favoritosImages : mediaImages;
   const backgroundImages =
-    mediaImages.length > 0
-      ? Array.from({ length: 96 }, (_, i) => mediaImages[i % mediaImages.length])
+    baseBackgroundImages.length > 0
+      ? Array.from({ length: 96 }, (_, i) => baseBackgroundImages[i % baseBackgroundImages.length])
       : [];
+  const useSingleBackground =
+    baseBackgroundImages.length > 0 && baseBackgroundImages.length < 5;
+  const singleBackgroundImage = baseBackgroundImages[0];
+  const heroCover = juego.cover?.url
+    ? `https:${juego.cover.url.replace("t_thumb", "t_cover_big")}`
+    : null;
 
   const igdbVideos = (juego.videos || [])
     .map((v) => ({
@@ -422,6 +529,7 @@ export default function JuegoUnico() {
       embed: v.video_id ? `https://www.youtube.com/embed/${v.video_id}` : null,
     }))
     .filter((v) => v.embed);
+  const similarGames = juego.similar_games || [];
 
   function scrollCarousel(ref, dir) {
     const el = ref.current;
@@ -492,96 +600,204 @@ export default function JuegoUnico() {
 
   return (
     <div className="relative w-full min-h-screen bg-transparent text-claro overflow-hidden">
+      <style>{`
+        @keyframes gameFadeUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .game-enter { opacity: 0; animation: gameFadeUp 700ms ease-out forwards; }
+        .game-delay-1 { animation-delay: 60ms; }
+        .game-delay-2 { animation-delay: 120ms; }
+        .game-delay-3 { animation-delay: 180ms; }
+        .game-delay-4 { animation-delay: 240ms; }
+        .game-delay-5 { animation-delay: 300ms; }
+        .game-delay-6 { animation-delay: 360ms; }
+        @keyframes heroRise {
+          from { opacity: 0; transform: translateY(48px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .hero-rise {
+          opacity: 0;
+          animation: heroRise 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation-delay: 120ms;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .game-enter { animation: none; opacity: 1; transform: none; }
+          .hero-rise { animation: none; opacity: 1; transform: none; }
+        }
+      `}</style>
       {backgroundImages.length > 0 && (
         <div className="fixed inset-0 z-0 pointer-events-none">
-          <div
-            className="grid grid-cols-4 md:grid-cols-6 gap-2 opacity-90 w-full h-full overflow-hidden"
-            style={{
-              gridAutoRows: "minmax(140px, 22vh)",
-              gridAutoFlow: "dense",
-            }}
-          >
-            {backgroundImages.map((img, idx) => (
-              <div
-                key={`${img}-${idx}`}
-                className="w-full h-full overflow-hidden"
-                style={{
-                  gridColumn:
-                    idx % 5 === 0
-                      ? "span 2 / span 2"
-                      : idx % 11 === 0
-                        ? "span 3 / span 3"
-                        : "span 1 / span 1",
-                  gridRow:
-                    idx % 7 === 0
-                      ? "span 2 / span 2"
-                      : idx % 13 === 0
-                        ? "span 3 / span 3"
-                        : "span 1 / span 1",
-                }}
-              >
-                <img
-                  src={img}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: getRandomObjectPosition(`${img}-${idx}`) }}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/60" />
+          {useSingleBackground ? (
+            <div className="w-full h-full game-enter">
+              <img
+                src={singleBackgroundImage}
+                alt=""
+                className="w-full h-full object-cover"
+                style={{ objectPosition: "50% 35%" }}
+              />
+            </div>
+          ) : (
+            <div
+              className="grid grid-cols-4 md:grid-cols-6 gap-2 opacity-90 w-full h-full overflow-hidden game-enter"
+              style={{
+                gridAutoRows: "minmax(140px, 22vh)",
+                gridAutoFlow: "dense",
+              }}
+            >
+              {backgroundImages.map((img, idx) => (
+                <div
+                  key={`${img}-${idx}`}
+                  className="w-full h-full overflow-hidden"
+                  style={{
+                    gridColumn:
+                      idx % 5 === 0
+                        ? "span 2 / span 2"
+                        : idx % 11 === 0
+                          ? "span 3 / span 3"
+                          : "span 1 / span 1",
+                    gridRow:
+                      idx % 7 === 0
+                        ? "span 2 / span 2"
+                        : idx % 13 === 0
+                          ? "span 3 / span 3"
+                          : "span 1 / span 1",
+                  }}
+                >
+                  <img
+                    src={img}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: getRandomObjectPosition(`${img}-${idx}`) }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/65 to-black/90" />
         </div>
       )}
-      <div className="w-full px-4 md:px-8 relative z-10 py-10">
-        <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-black/50">
+      <div className="w-full px-4 md:px-8 relative z-10 pt-4 md:pt-6 pb-10">
+        <div className="relative overflow-hidden mb-10 game-enter -mx-4 md:-mx-8">
+          <div className="relative z-10 min-h-[55vh] md:min-h-[62vh] flex items-end">
+            <div className="w-full px-6 md:px-12 pb-8 pt-12 md:pt-16">
+              <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 hero-rise">
+                {heroCover && (
+                  <div className="w-36 sm:w-44 md:w-56 shrink-0">
+                    <div className="bg-black/55 border border-black/60 rounded-2xl p-2 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+                      <img
+                        src={heroCover}
+                        alt="Portada"
+                        className="w-full rounded-xl object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="max-w-3xl">
+                  <p className="text-xs uppercase tracking-[0.35em] text-gray-300/90">
+                    {juego.first_release_date
+                      ? `${t("gameReleasedOn")} ${new Date(
+                        juego.first_release_date * 1000
+                      ).toLocaleDateString("es-ES")}`
+                      : t("gameReleaseUnknown")}
+                  </p>
+                  <h1
+                    className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mt-2"
+                    style={{ textShadow: "0 16px 40px rgba(0,0,0,0.55)" }}
+                  >
+                    {juego.name}
+                  </h1>
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                    {autenticado ? (
+                      <>
+                        {inLibrary ? (
+                          <button
+                            className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-full shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
+                            onClick={handleRemove}
+                          >
+                            <FaMinus /> {t("gameRemoveLibrary")}
+                          </button>
+                        ) : (
+                          <button
+                            className="inline-flex items-center justify-center gap-2 bg-naranja hover:bg-naranjaHover text-black font-bold px-6 py-3 rounded-full shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
+                            onClick={handleAdd}
+                          >
+                            <FaPlus /> {t("gameAddLibrary")}
+                          </button>
+                        )}
+                        <button
+                          className="inline-flex items-center justify-center gap-2 bg-black/50 hover:bg-black/70 text-naranja font-bold px-6 py-3 rounded-full border border-borde/60 backdrop-blur-sm"
+                          onClick={handleWishlist}
+                        >
+                          {inWishlist ? <FaBookmark /> : <FaRegBookmark />}
+                          {inWishlist ? t("gameInWishlist") : t("gameAddWishlist")}
+                        </button>
+                      </>
+                    ) : (
+                      <Link
+                        to="/login"
+                        className="inline-flex items-center justify-center bg-black/60 hover:bg-black/75 text-naranja font-bold px-6 py-3 rounded-full border border-borde/60 backdrop-blur-sm"
+                      >
+                        {t("gameLoginManage")}
+                      </Link>
+                    )}
+                  </div>
+                  {autenticado && (
+                    <div className="mt-4 flex flex-col gap-2 md:hidden">
+                      <div className="w-full">
+                        <ValoracionEstrellas juegoId={juego.id} />
+                      </div>
+                      {inLibrary && (
+                        <div className="w-full">
+                          <select
+                            value={estado}
+                            onChange={(e) => {
+                              const nuevo = e.target.value;
+                              setEstado(nuevo);
+                              fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
+                                method: "PATCH",
+                                body: JSON.stringify({ estado: nuevo }),
+                              });
+                            }}
+                            className="w-full mt-1 p-2 rounded bg-[#181818] border border-borde/50"
+                          >
+                            <option value="jugando">{t("statusPlaying")}</option>
+                            <option value="completado">{t("statusCompleted")}</option>
+                            <option value="abandonado">{t("statusAbandoned")}</option>
+                            <option value="en_espera">{t("statusOnHold")}</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-black/50 game-enter">
           <div className="grid grid-cols-1 xl:grid-cols-[320px,minmax(0,1fr),320px] gap-8 items-start">
             {/* Columna izquierda */}
-            <div className="flex flex-col items-center xl:items-stretch">
+            <div className="flex flex-col items-center xl:items-stretch game-enter game-delay-1 order-3 xl:order-1">
               <div className="w-full bg-black/50 border border-black/40 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
-                {juego.cover?.url && (
-                  <img
-                    src={`https:${juego.cover.url.replace(
-                      "t_thumb",
-                      "t_cover_big"
-                    )}`}
-                    alt="Portada"
-                    className="w-full rounded-lg shadow-lg"
-                  />
+                {tiempo?.main && (
+                  <div className="w-full rounded-lg bg-[#1b1b1b]/80 border border-borde/60 px-3 py-2 text-sm text-gray-200">
+                    <div className="text-[11px] uppercase tracking-widest text-gray-400">
+                      {t("gameDuration")}
+                    </div>
+                    <div className="text-lg font-semibold text-white">
+                      {tiempo.main}h
+                    </div>
+                  </div>
                 )}
 
                 {autenticado ? (
                   <div className="mt-4 w-full flex flex-col gap-3 items-center xl:items-stretch">
-                    <div className="w-full flex gap-3">
-                      {inLibrary ? (
-                        <button
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded flex items-center justify-center gap-2"
-                          onClick={handleRemove}
-                        >
-                          <FaMinus /> {t("gameRemoveLibrary")}
-                        </button>
-                      ) : (
-                        <button
-                          className="flex-1 bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded flex items-center justify-center gap-2"
-                          onClick={handleAdd}
-                        >
-                          <FaPlus /> {t("gameAddLibrary")}
-                        </button>
-                      )}
-                    </div>
-                    <div className="w-full flex gap-3">
-                      <button
-                        className="flex-1 bg-[#232323] hover:bg-[#2a2a2a] text-naranja font-bold py-2 rounded flex items-center justify-center gap-2 border border-borde/60"
-                        onClick={handleWishlist}
-                      >
-                        {inWishlist ? <FaBookmark /> : <FaRegBookmark />}
-                        {inWishlist ? t("gameInWishlist") : t("gameAddWishlist")}
-                      </button>
-                    </div>
-                    <div className="w-full">
+                    <div className="hidden md:block w-full">
                       <ValoracionEstrellas juegoId={juego.id} />
                     </div>
                     {inLibrary && (
-                      <div className="w-full">
+                      <div className="hidden md:block w-full">
                         <select
                           value={estado}
                           onChange={(e) => {
@@ -603,40 +819,60 @@ export default function JuegoUnico() {
                     )}
                   </div>
                 ) : (
-                  <>
-                    <Link
-                      to="/login"
-                      className="mt-4 text-sm text-naranja hover:underline block"
-                    >
-                      {t("gameLoginManage")}
-                    </Link>
-                    <div className="w-full flex justify-center mt-2">
-                      <ValoracionEstrellas juegoId={juego.id} />
-                    </div>
-                  </>
+                  <div className="mt-4 w-full flex justify-center">
+                    <ValoracionEstrellas juegoId={juego.id} />
+                  </div>
                 )}
               </div>
+              {similarGames.length > 0 && (
+                <div className="mt-6 bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm game-enter game-delay-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm uppercase tracking-widest text-gray-400">
+                      {t("gameSimilar")}
+                    </h3>
+                    {similarGames.length > 1 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSimilarIndex((prev) =>
+                              prev === 0 ? similarGames.length - 1 : prev - 1
+                            )
+                          }
+                          className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                          aria-label="Anterior"
+                        >
+                          <span aria-hidden="true">&lt;</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSimilarIndex((prev) =>
+                              prev === similarGames.length - 1 ? 0 : prev + 1
+                            )
+                          }
+                          className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                          aria-label="Siguiente"
+                        >
+                          <span aria-hidden="true">&gt;</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <GameCard
+                    juego={similarGames[similarIndex]}
+                    onClick={() =>
+                      navigate(`/juego/${similarGames[similarIndex].id}`)
+                    }
+                  />
+                </div>
+              )}
             </div>
 
             {/* Columna central */}
-            <div className="flex flex-col gap-6">
-              <div>
-                <h1
-                  className="text-5xl md:text-6xl font-extrabold tracking-tight text-white"
-                  style={{ textShadow: "0 8px 24px rgba(0,0,0,0.45)" }}
-                >
-                  {juego.name}
-                </h1>
-                <p className="text-gray-300 mt-3 text-sm uppercase tracking-widest">
-                  {juego.first_release_date
-                    ? `${t("gameReleasedOn")} ${new Date(
-                      juego.first_release_date * 1000
-                    ).toLocaleDateString("es-ES")}`
-                    : t("gameReleaseUnknown")}
-                </p>
-              </div>
+            <div className="flex flex-col gap-6 game-enter game-delay-2 order-1 xl:order-2">
               <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr),320px] gap-6">
-                <div>
+                <div className="game-enter game-delay-4">
                   <h2 className="text-xl font-semibold mb-1">{t("gameDescription")}</h2>
                   <p className="text-gray-200 leading-relaxed">{descripcion}</p>
                   {descripcionImages.length > 0 && (
@@ -722,8 +958,56 @@ export default function JuegoUnico() {
                       </div>
                     </div>
                   )}
+                  {igdbVideos.length > 0 && (
+                    <div className="mt-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <h2 className="text-xl font-semibold">Videos</h2>
+                        {igdbVideos.length > 1 && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setVideoIndex((prev) =>
+                                  prev === 0 ? igdbVideos.length - 1 : prev - 1
+                                )
+                              }
+                              className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                              aria-label="Anterior"
+                            >
+                              <span aria-hidden="true">&lt;</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setVideoIndex((prev) =>
+                                  prev === igdbVideos.length - 1 ? 0 : prev + 1
+                                )
+                              }
+                              className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                              aria-label="Siguiente"
+                            >
+                              <span aria-hidden="true">&gt;</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="aspect-video rounded-2xl overflow-hidden border border-black/50 bg-[#1f1f1f]">
+                        <iframe
+                          src={igdbVideos[videoIndex].embed}
+                          className="w-full h-full"
+                          allowFullScreen
+                          title={igdbVideos[videoIndex].name || "Video"}
+                        />
+                      </div>
+                      {igdbVideos[videoIndex].name && (
+                        <p className="mt-2 text-xs text-gray-400">
+                          {igdbVideos[videoIndex].name}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="bg-black/45 border border-black/50 rounded-xl p-4 h-fit backdrop-blur-sm">
+                <div className="bg-black/45 border border-black/50 rounded-xl p-4 h-fit backdrop-blur-sm game-enter game-delay-5">
                   <h3 className="text-sm uppercase tracking-widest text-gray-400 mb-3">
                     {t("gameTechSheet")}
                   </h3>
@@ -817,7 +1101,7 @@ export default function JuegoUnico() {
                 </div>
               </div>
               {ytEmbed && (
-                <div>
+                <div className="game-enter game-delay-6">
                   <h2 className="text-xl font-semibold mb-1">{t("gameTrailer")}</h2>
                   <div className="aspect-video">
                     <iframe
@@ -832,7 +1116,7 @@ export default function JuegoUnico() {
             </div>
 
             {/* Columna derecha */}
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 game-enter game-delay-3 order-3 xl:order-3">
               {enlacesTiendas.length > 0 && (
                 <div className="w-full bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm">
                   <h2 className="text-lg font-semibold mb-2">{t("gameWhereBuy")}</h2>
@@ -902,21 +1186,10 @@ export default function JuegoUnico() {
             </div>
           </div>
 
-          
-
-          {juego.similar_games?.length > 0 && (
-            <div className="mt-10">
-              <h2 className="text-xl font-semibold mb-4">{t("gameSimilar")}</h2>
-              <Carrusel
-                juegos={juego.similar_games}
-                onSelect={(j) => navigate(`/juego/${j.id}`)}
-              />
-            </div>
-          )}
         </div>
 
         {/* Comentarios */}
-        <div className="w-full my-10">
+        <div className="w-full my-10 game-enter game-delay-5">
           <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-black/50">
             <Comentarios juegoId={juego.id} isAuth={autenticado} />
           </div>

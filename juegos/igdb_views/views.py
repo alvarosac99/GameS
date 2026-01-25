@@ -203,7 +203,7 @@ def tiempo_juego(request):
     try:
         resultados = HowLongToBeat().search(nombre)
         if not resultados:
-            return Response({"found": False}, status=404)
+            return Response({"found": False}, status=200)
         mejor = max(resultados, key=lambda r: r.similarity)
         return Response(
             {
@@ -214,7 +214,8 @@ def tiempo_juego(request):
             }
         )
     except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        print("Error tiempo_juego:", e)
+        return Response({"found": False, "error": "hl2b_unavailable"}, status=200)
 
 
 @api_view(["GET"])

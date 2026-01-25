@@ -1,0 +1,18 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+{{ block.super }}
+<div class="app-igdb module">
+    <table>
+        <caption>
+            <a href="{% url 'admin:igdb-cache' %}" class="section">IGDB Cache</a>
+        </caption>
+        <tr>
+            <th scope="row">
+                <a href="{% url 'admin:igdb-cache' %}">Panel de cache IGDB</a>
+            </th>
+            <td>Estado y acciones</td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

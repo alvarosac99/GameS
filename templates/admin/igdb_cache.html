@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="content">
+    <h1>IGDB Cache</h1>
+
+    <div class="module">
+        <h2>Estado</h2>
+        <table>
+            <tr><th>Descargando</th><td>{{ estado.descargando }}</td></tr>
+            <tr><th>Completado</th><td>{{ estado.completado }}</td></tr>
+            <tr><th>Stop solicitado</th><td>{{ estado.stop_requested }}</td></tr>
+            <tr><th>Fase</th><td>{{ estado.status.fase|default:"-" }}</td></tr>
+            <tr><th>Estado</th><td>{{ estado.status.estado|default:"-" }}</td></tr>
+            <tr><th>Offset</th><td>{{ estado.status.offset|default:"-" }}</td></tr>
+            <tr><th>Total</th><td>{{ estado.status.total|default:"-" }}</td></tr>
+            <tr><th>Items en cache</th><td>{{ estado.cache_count|default:"-" }}</td></tr>
+            <tr><th>Ultima actualizacion</th><td>{{ estado.last_update|default:"-" }}</td></tr>
+            <tr><th>Ultimo error</th><td>{{ estado.last_error|default:"-" }}</td></tr>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Acciones</h2>
+        <form method="post">
+            {% csrf_token %}
+            <p>
+                <button class="button" name="action" value="start" type="submit">Iniciar actualizacion</button>
+                <button class="button" name="action" value="stop" type="submit">Detener extraccion</button>
+                <button class="button" name="action" value="clear" type="submit">Limpiar cache</button>
+            </p>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -21,6 +21,39 @@ from .igdb_views.utils import (
 
 # Marca si la tarea de actualización ya se ha iniciado
 _CACHE_THREAD_STARTED = False
+_STOP_KEY = "igdb_cache_stop"
+_STATUS_KEY = "igdb_cache_status"
+_LAST_UPDATE_KEY = "igdb_cache_last_update"
+_LAST_ERROR_KEY = "igdb_cache_last_error"
+_COUNT_KEY = "igdb_cache_juegos_count"
+
+def solicitar_detener_descarga():
+    """Solicita detener la descarga en el proximo punto seguro."""
+    cache.set(_STOP_KEY, True, timeout=3600)
+
+def limpiar_cache_igdb():
+    """Limpia la cache de IGDB y estado asociado."""
+    cache.delete("igdb_cache_juegos_masivos")
+    cache.delete("igdb_token")
+    cache.delete(DESCARGANDO_KEY)
+    cache.delete(DESCARGANDO_COMPLETADO_KEY)
+    cache.delete(_STOP_KEY)
+    cache.delete(_STATUS_KEY)
+    cache.delete(_LAST_UPDATE_KEY)
+    cache.delete(_LAST_ERROR_KEY)
+    cache.delete(_COUNT_KEY)
+
+def obtener_estado_cache():
+    """Devuelve el estado actual de la cache de IGDB para administracion."""
+    return {
+        "descargando": bool(cache.get(DESCARGANDO_KEY)),
+        "completado": bool(cache.get(DESCARGANDO_COMPLETADO_KEY)),
+        "stop_requested": bool(cache.get(_STOP_KEY)),
+        "status": cache.get(_STATUS_KEY) or {},
+        "last_update": cache.get(_LAST_UPDATE_KEY),
+        "last_error": cache.get(_LAST_ERROR_KEY),
+        "cache_count": cache.get(_COUNT_KEY),
+    }
 
 
 def _descargar_juegos():
@@ -68,6 +101,11 @@ def _descargar_juegos():
                 total_juegos = count_res.json().get("count")
         except Exception:
             total_juegos = None
+        cache.set(
+            _STATUS_KEY,
+            {"estado": "en progreso", "fase": "Descargando juegos", "offset": 0, "total": total_juegos},
+            timeout=86400,
+        )
         juegos_bar = tqdm(
             total=total_juegos,
             desc="IGDB cache juegos",
@@ -79,6 +117,13 @@ def _descargar_juegos():
         )
         try:
             while True:
+                if cache.get(_STOP_KEY):
+                    cache.set(
+                        _STATUS_KEY,
+                        {"estado": "detenido", "fase": "Descargando juegos", "offset": offset_loop, "total": total_juegos},
+                        timeout=86400,
+                    )
+                    return
                 tqdm.write(f"IGDB cache: solicitando juegos offset={offset_loop}", file=sys.stderr)
                 query = f"""
                     fields {", ".join(fields)};
@@ -106,6 +151,17 @@ def _descargar_juegos():
                 ids.extend([j["id"] for j in chunk])
                 offset_loop += 500
                 juegos_bar.update(len(chunk))
+                cache.set(_COUNT_KEY, len(juegos), timeout=86400)
+                cache.set(
+                    _STATUS_KEY,
+                    {
+                        "estado": "en progreso",
+                        "fase": "Descargando juegos",
+                        "offset": offset_loop,
+                        "total": total_juegos,
+                    },
+                    timeout=86400,
+                )
                 if len(chunk) < 500:
                     tqdm.write(
                         "IGDB cache: ultimo bloque parcial, finalizando descarga",
@@ -115,6 +171,11 @@ def _descargar_juegos():
         finally:
             juegos_bar.close()
 
+        cache.set(
+            _STATUS_KEY,
+            {"estado": "en progreso", "fase": "Descargando popularidad", "offset": 0, "total": len(ids)},
+            timeout=86400,
+        )
         popularidad_map = {}
         pop_total = None
         try:
@@ -140,6 +201,13 @@ def _descargar_juegos():
         )
         try:
             for i in range(0, len(ids), 500):
+                if cache.get(_STOP_KEY):
+                    cache.set(
+                        _STATUS_KEY,
+                        {"estado": "detenido", "fase": "Descargando popularidad", "offset": i, "total": pop_total},
+                        timeout=86400,
+                    )
+                    return
                 tqdm.write(
                     f"IGDB cache: solicitando popularidad {i}/{len(ids)}",
                     file=sys.stderr,
@@ -163,6 +231,16 @@ def _descargar_juegos():
                     )
                     popularidad_map.update({p["game_id"]: p["value"] for p in pop_data})
                 pop_bar.update(min(500, len(ids) - i))
+                cache.set(
+                    _STATUS_KEY,
+                    {
+                        "estado": "en progreso",
+                        "fase": "Descargando popularidad",
+                        "offset": i + 500,
+                        "total": pop_total,
+                    },
+                    timeout=86400,
+                )
 
         finally:
             pop_bar.close()
@@ -180,10 +258,23 @@ def _descargar_juegos():
 
         cache.set("igdb_cache_juegos_masivos", pickle.dumps(juegos), timeout=24 * 3600)
         cache.set(DESCARGANDO_COMPLETADO_KEY, True, timeout=24 * 3600)
+        cache.set(_LAST_UPDATE_KEY, datetime.utcnow().isoformat(), timeout=86400)
+        cache.set(
+            _STATUS_KEY,
+            {"estado": "completado", "fase": "Completado", "offset": len(juegos), "total": len(juegos)},
+            timeout=86400,
+        )
     except Exception as e:
         print("Error al actualizar caché IGDB:", e)
+        cache.set(_LAST_ERROR_KEY, str(e), timeout=86400)
+        cache.set(
+            _STATUS_KEY,
+            {"estado": "error", "fase": "Error", "offset": 0, "total": 0},
+            timeout=86400,
+        )
     finally:
         cache.delete(DESCARGANDO_KEY)
+        cache.delete(_STOP_KEY)
 
 
 def actualizar_cache_ahora():

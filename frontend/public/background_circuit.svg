@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#071c28" />
+  <rect width="1024" height="1024" fill="url(#vignette)" />
+  <g stroke="#19f0ff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+    <rect x="356" y="356" width="312" height="312" rx="20" opacity="0.35" />
+    <rect x="392" y="392" width="240" height="240" rx="18" opacity="0.6" />
+    <rect x="424" y="424" width="176" height="176" rx="16" />
+    <path d="M512 356 V 140" />
+    <path d="M480 356 V 190" />
+    <path d="M544 356 V 170" />
+    <path d="M512 668 V 884" />
+    <path d="M480 668 V 834" />
+    <path d="M544 668 V 854" />
+    <path d="M356 512 H 140" />
+    <path d="M356 480 H 190" />
+    <path d="M356 544 H 170" />
+    <path d="M668 512 H 884" />
+    <path d="M668 480 H 834" />
+    <path d="M668 544 H 854" />
+    <path d="M356 448 L 260 400 L 140 400" />
+    <path d="M356 576 L 260 624 L 140 624" />
+    <path d="M668 448 L 764 400 L 884 400" />
+    <path d="M668 576 L 764 624 L 884 624" />
+  </g>
+  <g fill="#19f0ff" opacity="0.9">
+    <circle cx="512" cy="140" r="6" />
+    <circle cx="480" cy="190" r="5" />
+    <circle cx="544" cy="170" r="5" />
+    <circle cx="512" cy="884" r="6" />
+    <circle cx="480" cy="834" r="5" />
+    <circle cx="544" cy="854" r="5" />
+    <circle cx="140" cy="512" r="6" />
+    <circle cx="190" cy="480" r="5" />
+    <circle cx="170" cy="544" r="5" />
+    <circle cx="884" cy="512" r="6" />
+    <circle cx="834" cy="480" r="5" />
+    <circle cx="854" cy="544" r="5" />
+    <circle cx="140" cy="400" r="5" />
+    <circle cx="140" cy="624" r="5" />
+    <circle cx="884" cy="400" r="5" />
+    <circle cx="884" cy="624" r="5" />
+  </g>
+  <rect x="456" y="456" width="112" height="112" rx="14" fill="#12e8f6" opacity="0.85" />
+  <rect x="468" y="468" width="88" height="88" rx="12" fill="#0dd7e7" opacity="0.7" />
+  <defs>
+    <radialGradient id="vignette" cx="50%" cy="45%" r="70%">
+      <stop offset="0%" stop-color="#0a2a3a" stop-opacity="0.35" />
+      <stop offset="70%" stop-color="#071c28" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#061520" stop-opacity="1" />
+    </radialGradient>
+  </defs>
+</svg>

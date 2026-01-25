@@ -7,8 +7,6 @@ import Comentarios from "@/components/Comentarios";
 import Precios from "@/components/Precios";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LangContext";
-
-
 import ValoracionEstrellas from "@/components/ValoracionEstrellas";
 import {
   SiSteam,
@@ -21,7 +19,22 @@ import {
   SiYoutube,
   SiTwitch,
 } from "react-icons/si";
-import { FaPlaystation, FaXbox, FaPlus, FaMinus, FaRegBookmark, FaBookmark } from "react-icons/fa";
+import {
+  FaPlaystation,
+  FaXbox,
+  FaPlus,
+  FaMinus,
+  FaRegBookmark,
+  FaBookmark,
+  FaWikipediaW,
+  FaDiscord,
+  FaRedditAlien,
+  FaInstagram,
+  FaTwitter,
+  FaFacebookF,
+  FaGlobe,
+  FaBookOpen,
+} from "react-icons/fa";
 
 // Mapa de tiendas con sus iconos y nombres
 const SHOP_ICONS = {
@@ -32,16 +45,35 @@ const SHOP_ICONS = {
   gog: { key: "gog", Icon: SiGogdotcom, name: "GOG.com" },
   nintendo: { key: "nintendo", Icon: SiNintendoswitch, name: "Nintendo" },
   ubisoft: { key: "ubisoft", Icon: SiUbisoft, name: "Ubisoft" },
-  itch: { key: "itch", Icon: SiTwitch, name: "Twitch" },
   apple: { key: "apple", Icon: SiAppstore, name: "App Store" },
   google: { key: "google", Icon: SiGoogleplay, name: "Google Play" },
   youtube: { key: "youtube", Icon: SiYoutube, name: "YouTube" },
 };
 
+const LINK_ICONS = [
+  { key: "wikipedia.org", Icon: FaWikipediaW, name: "Wikipedia" },
+  { key: "minecraft.wiki", Icon: FaBookOpen, name: "Minecraft Wiki" },
+  { key: "minecraft.net", Icon: FaGlobe, name: "Minecraft" },
+  { key: "discordapp.com", Icon: FaDiscord, name: "Discord" },
+  { key: "discord.gg", Icon: FaDiscord, name: "Discord" },
+  { key: "reddit.com", Icon: FaRedditAlien, name: "Reddit" },
+  { key: "instagram.com", Icon: FaInstagram, name: "Instagram" },
+  { key: "twitter.com", Icon: FaTwitter, name: "Twitter" },
+  { key: "x.com", Icon: FaTwitter, name: "X (Twitter)" },
+  { key: "facebook.com", Icon: FaFacebookF, name: "Facebook" },
+  { key: "youtube.com", Icon: SiYoutube, name: "YouTube" },
+  { key: "twitch.tv", Icon: SiTwitch, name: "Twitch" },
+];
+
 // Función para obtener info de tienda desde la URL
 function getShopInfo(url) {
   const domain = url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0].toLowerCase();
   return Object.values(SHOP_ICONS).find((s) => domain.includes(s.key)) || null;
+}
+
+function getLinkInfo(url) {
+  const domain = url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0].toLowerCase();
+  return LINK_ICONS.find((item) => domain.includes(item.key)) || null;
 }
 
 // Extrae URL embed de YouTube si existe
@@ -256,6 +288,41 @@ export default function JuegoUnico() {
     }
   });
 
+  if (juego.name?.toLowerCase().includes("minecraft")) {
+    const minecraftLinks = [
+      "https://en.wikipedia.org/wiki/Minecraft",
+      "https://minecraft.wiki/w/Java_Edition",
+      "https://minecraft.net/",
+      "https://discordapp.com/invite/minecraft",
+      "https://www.reddit.com/r/Minecraft",
+      "https://www.instagram.com/minecraft",
+      "https://twitter.com/Minecraft",
+      "https://www.facebook.com/minecraft",
+      "https://www.youtube.com/user/TeamMojang",
+    ];
+    minecraftLinks.forEach((link) => {
+      if (!otrosEnlaces.includes(link)) {
+        otrosEnlaces.push(link);
+      }
+    });
+    const twitchLink = "https://www.twitch.tv/directory/game/Minecraft";
+    if (!otrosEnlaces.includes(twitchLink)) {
+      otrosEnlaces.push(twitchLink);
+    }
+  }
+
+  const enlacesUtilesConIcono = [];
+  const enlacesUtilesOtros = [];
+  otrosEnlaces.forEach((url) => {
+    const info = getLinkInfo(url);
+    if (info) {
+      enlacesUtilesConIcono.push({ ...info, url });
+    } else {
+      enlacesUtilesOtros.push(url);
+    }
+  });
+
+
   return (
     <div className="relative w-full min-h-screen bg-transparent text-claro">
       {juego.screenshots?.[0]?.url && (
@@ -275,12 +342,11 @@ export default function JuegoUnico() {
           />
         </div>
       )}
-
       <div
         className={`max-w-7xl mx-auto ${juego.screenshots?.[0]?.url ? "-mt-32" : "mt-8"
           } px-4 md:px-8 relative z-20`}
       >
-        <div className="bg-metal/30 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-10 flex flex-col lg:flex-row gap-8 border border-borde/40">
+        <div className="bg-metal/30 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-10 flex flex-col lg:flex-row gap-8 border border-black/40">
           {/* Columna izquierda */}
           <div className="flex-shrink-0 flex flex-col items-center">
             {juego.cover?.url && (
@@ -302,14 +368,14 @@ export default function JuegoUnico() {
                       className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded flex items-center justify-center gap-2"
                       onClick={handleRemove}
                     >
-                      <FaMinus /> Quitar de mi biblioteca
+                      <FaMinus /> {t("gameRemoveLibrary")}
                     </button>
                   ) : (
                     <button
                       className="flex-1 bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded flex items-center justify-center gap-2"
                       onClick={handleAdd}
                     >
-                      <FaPlus /> Añadir a mi biblioteca
+                      <FaPlus /> {t("gameAddLibrary")}
                     </button>
                   )}
                 </div>
@@ -319,7 +385,7 @@ export default function JuegoUnico() {
                     onClick={handleWishlist}
                   >
                     {inWishlist ? <FaBookmark /> : <FaRegBookmark />}
-                    {inWishlist ? "En wishlist" : "Añadir a wishlist"}
+                    {inWishlist ? t("gameInWishlist") : t("gameAddWishlist")}
                   </button>
                 </div>
                 {inLibrary && (
@@ -336,10 +402,10 @@ export default function JuegoUnico() {
                       }}
                       className="w-full mt-2 p-2 rounded bg-fondo border border-borde"
                     >
-                      <option value="jugando">Jugando</option>
-                      <option value="completado">Completado</option>
-                      <option value="abandonado">Abandonado</option>
-                      <option value="en_espera">En espera</option>
+                      <option value="jugando">{t("statusPlaying")}</option>
+                      <option value="completado">{t("statusCompleted")}</option>
+                      <option value="abandonado">{t("statusAbandoned")}</option>
+                      <option value="en_espera">{t("statusOnHold")}</option>
                     </select>
                   </div>
                 )}
@@ -353,7 +419,7 @@ export default function JuegoUnico() {
                   to="/login"
                   className="mt-6 text-sm text-naranja hover:underline"
                 >
-                  Inicia sesión para gestionar tu biblioteca
+                  {t("gameLoginManage")}
                 </Link>
                 <div className="w-full flex justify-center mt-2">
                   <ValoracionEstrellas juegoId={juego.id} />
@@ -363,7 +429,7 @@ export default function JuegoUnico() {
 
             {enlacesTiendas.length > 0 && (
               <div className="mt-6 w-full">
-                <h2 className="text-lg font-semibold mb-2">Dónde comprar</h2>
+                <h2 className="text-lg font-semibold mb-2">{t("gameWhereBuy")}</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {enlacesTiendas.map((ti) => (
                     <a
@@ -390,23 +456,41 @@ export default function JuegoUnico() {
                 </button>
               </div>
             )}
-            {otrosEnlaces.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold mt-3">Enlaces útiles</h2>
-                <ul className="list-disc ml-6 text-sm text-gray-300">
-                  {otrosEnlaces.map((u) => (
-                    <li key={u} className="break-words">
+            {(enlacesUtilesConIcono.length > 0 || enlacesUtilesOtros.length > 0) && (
+              <div className="w-full">
+                <h2 className="text-xl font-semibold mt-3">{t("gameUsefulLinks")}</h2>
+                {enlacesUtilesConIcono.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {enlacesUtilesConIcono.map((link) => (
                       <a
-                        href={u}
-                        className="text-naranja hover:underline break-all"
+                        key={link.url}
+                        href={link.url}
                         target="_blank"
                         rel="noreferrer"
+                        className="flex flex-col items-center gap-1 bg-metal/60 hover:bg-borde/80 border border-borde rounded-lg px-3 py-2 text-xs text-center"
                       >
-                        {u}
+                        <link.Icon size={22} />
+                        <span className="font-semibold">{link.name}</span>
                       </a>
-                    </li>
-                  ))}
-                </ul>
+                    ))}
+                  </div>
+                )}
+                {enlacesUtilesOtros.length > 0 && (
+                  <ul className="list-disc ml-6 text-sm text-gray-300 mt-3">
+                    {enlacesUtilesOtros.map((u) => (
+                      <li key={u} className="break-words">
+                        <a
+                          href={u}
+                          className="text-naranja hover:underline break-all"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {u}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>
@@ -416,10 +500,10 @@ export default function JuegoUnico() {
             <h1 className="text-4xl md:text-5xl font-extrabold">{juego.name}</h1>
             <p className="text-gray-300">
               {juego.first_release_date
-                ? `Lanzado el ${new Date(
+                ? `${t("gameReleasedOn")} ${new Date(
                   juego.first_release_date * 1000
                 ).toLocaleDateString("es-ES")}`
-                : "Fecha de lanzamiento desconocida"}
+                : t("gameReleaseUnknown")}
             </p>
             <div className="flex flex-wrap gap-2">
               {plataformas.map((p) => (
@@ -444,7 +528,7 @@ export default function JuegoUnico() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <p>
-                  <strong>Desarrolladoras:</strong>{" "}
+                  <strong>{t("gameDevelopers")}:</strong>{" "}
                   {desarrolladoras.length > 0
                     ? desarrolladoras.map((d, i) => (
                       <Link
@@ -458,30 +542,32 @@ export default function JuegoUnico() {
                     ))
                     : "Desconocida"}
                 </p>
-                <p>
-                  <strong>Publisher:</strong>{" "}
-                  {juego.involved_companies
-                    ?.filter((c) => c.publisher)
-                    .map((c) => c.company?.name)
-                    .join(", ") || "Desconocido"}
-                </p>
-                <p>
-                  <strong>Duración:</strong>{" "}
-                  {tiempo ? `${tiempo.main}h historia` : "Desconocida"}
-                </p>
-                <p>
-                  <strong>Duración:</strong>{" "}
-                  {tiempo ? `${tiempo.main}h historia` : "Desconocida"}
-                </p>
-                <p>
-                  <strong>Saga:</strong> {juego.collection?.name || "Desconocida"}
-                </p>
+                {juego.involved_companies?.some((c) => c.publisher) && (
+                  <p>
+                    <strong>{t("gamePublisher")}:</strong>{" "}
+                    {juego.involved_companies
+                      .filter((c) => c.publisher)
+                      .map((c) => c.company?.name)
+                      .filter(Boolean)
+                      .join(", ")}
+                  </p>
+                )}
+                {tiempo?.main && (
+                  <p>
+                    <strong>{t("gameDuration")}:</strong> {tiempo.main}h historia
+                  </p>
+                )}
+                {juego.collection?.name && (
+                  <p>
+                    <strong>{t("gameSaga")}:</strong> {juego.collection.name}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
-                <p>
-                  <strong>Modos de juego:</strong>{" "}
-                  {modos.length > 0
-                    ? modos.map((m) => (
+                {modos.length > 0 && (
+                  <p>
+                    <strong>{t("gameModes")}:</strong>{" "}
+                    {modos.map((m) => (
                       <Link
                         key={m.id}
                         to={`/juegos?modo=${m.id}`}
@@ -489,28 +575,30 @@ export default function JuegoUnico() {
                       >
                         {m.name}
                       </Link>
-                    ))
-                    : "N/A"}
-                </p>
-                <p>
-                  <strong>Perspectivas:</strong>{" "}
-                  {juego.player_perspectives
-                    ?.map((p) => p.name)
-                    .join(", ") || "N/A"}
-                </p>
-                <p>
-                  <strong>Temas:</strong>{" "}
-                  {juego.themes?.map((t) => t.name).join(", ") || "N/A"}
-                </p>
+                    ))}
+                  </p>
+                )}
+                {juego.player_perspectives?.length > 0 && (
+                  <p>
+                    <strong>{t("gamePerspectives")}:</strong>{" "}
+                    {juego.player_perspectives.map((p) => p.name).join(", ")}
+                  </p>
+                )}
+                {juego.themes?.length > 0 && (
+                  <p>
+                    <strong>{t("gameThemes")}:</strong>{" "}
+                    {juego.themes.map((t) => t.name).join(", ")}
+                  </p>
+                )}
               </div>
             </div>
             <div>
-              <h2 className="text-xl font-semibold mb-1">Descripción</h2>
+              <h2 className="text-xl font-semibold mb-1">{t("gameDescription")}</h2>
               <p className="text-gray-200">{descripcion}</p>
             </div>
             {ytEmbed && (
               <div>
-                <h2 className="text-xl font-semibold mb-1">Tráiler / Gameplay</h2>
+                <h2 className="text-xl font-semibold mb-1">{t("gameTrailer")}</h2>
                 <div className="aspect-w-16 aspect-h-9">
                   <iframe
                     src={ytEmbed}
@@ -523,7 +611,7 @@ export default function JuegoUnico() {
             )}
             {juego.similar_games?.length > 0 && (
               <div className="mt-8">
-                <h2 className="text-xl font-semibold mb-4">Juegos similares</h2>
+                <h2 className="text-xl font-semibold mb-4">{t("gameSimilar")}</h2>
                 <Carrusel
                   juegos={juego.similar_games}
                   onSelect={(j) => navigate(`/juego/${j.id}`)}

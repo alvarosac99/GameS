@@ -2,135 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
-
-@keyframes shimmer {
-  100% {
-    background-position: 400% 0;
-  }
-}
-
-body {
-  background-image: var(--imagen-fondo);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, #2d2d2d 25%, #393939 50%, #2d2d2d 75%);
-  background-size: 400% 100%;
-  animation: shimmer 5s infinite;
-}
-
-
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: hsl(var(--color-metal));
-  color: hsl(var(--color-claro));
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-
-button:hover {
-  border-color: #646cff;
-}
-
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-
-  a:hover {
-    color: #747bff;
-  }
-
-  button {
-    background-color: hsl(var(--color-metal));
-    color: hsl(var(--color-claro));
-  }
-}
-
-
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
+    --background: 210 30% 94%;
+    --foreground: 220 15% 20%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 220 15% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220.9 39.3% 11%;
+    --popover-foreground: 220 15% 20%;
+    --primary: 205 90% 45%;
     --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
+    --secondary: 210 25% 95%;
+    --secondary-foreground: 220 15% 22%;
+    --muted: 210 25% 95%;
+    --muted-foreground: 220 10% 40%;
+    --accent: 210 25% 96%;
+    --accent-foreground: 220 15% 22%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 224 71.4% 4.1%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-  --radius: 0.5rem;
-  --color-fondo: 0 0% 100%;
-  --color-metal: 0 0% 96%;
-  --color-borde: 0 0% 88%;
-  --color-claro: 0 0% 20%;
-  --imagen-fondo: url('/background_claro.png');
+    --border: 210 18% 90%;
+    --input: 210 18% 90%;
+    --ring: 205 90% 45%;
+    --chart-1: 200 75% 50%;
+    --chart-2: 190 65% 45%;
+    --chart-3: 210 55% 40%;
+    --chart-4: 185 70% 55%;
+    --chart-5: 215 65% 50%;
+    --radius: 0.5rem;
+    --color-fondo: 0 0% 100%;
+    --color-metal: 210 22% 97%;
+    --color-borde: 210 18% 80%;
+    --color-claro: 220 12% 24%;
+    --color-acento: 205 90% 45%;
+    --color-acento-hover: 205 90% 55%;
+    --imagen-fondo: radial-gradient(
+      circle at 50% 35%,
+      rgba(245, 249, 252, 1) 0%,
+      rgba(232, 240, 246, 1) 60%,
+      rgba(224, 234, 242, 1) 100%
+    );
+    --bg-anim-image: none;
+    --bg-anim-size: 100% 100%;
+    --bg-anim-name: none;
+    --bg-anim-duration: 0s;
+    --bg-anim-ease: linear;
+    --bg-anim-opacity: 0;
+    --cursor-glow-color: rgba(60, 185, 255, 0.35);
+    --cursor-glow-soft: rgba(60, 185, 255, 0.12);
+    --cursor-glow-opacity: 1;
+    --circuit-line-color: rgba(60, 185, 255, 0.25);
+    --circuit-line-spacing: 56px;
   }
 
   .dark {
@@ -152,33 +73,284 @@ button:focus-visible {
     --destructive-foreground: 210 20% 98%;
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-  --ring: 216 12.2% 83.9%;
-  --color-fondo: 0 0% 12%;
-  --color-metal: 0 0% 16%;
-  --color-borde: 0 0% 23%;
-  --color-claro: 0 0% 88%;
-  --imagen-fondo: url('/background.png');
-  --chart-1: 220 70% 50%;
+    --ring: 216 12.2% 83.9%;
+    --color-fondo: 0 0% 12%;
+    --color-metal: 0 0% 16%;
+    --color-borde: 0 0% 23%;
+    --color-claro: 0 0% 88%;
+    --color-acento: 28 100% 50%;
+    --color-acento-hover: 28 100% 60%;
+    --imagen-fondo: url('/background.png');
+    --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --bg-anim-image:
+      radial-gradient(circle at 8% 110%, rgba(255, 140, 0, 0.35) 0 2px, transparent 3px),
+      radial-gradient(circle at 22% 112%, rgba(255, 90, 30, 0.28) 0 1px, transparent 2px),
+      radial-gradient(circle at 40% 115%, rgba(255, 190, 70, 0.25) 0 2px, transparent 3px),
+      radial-gradient(circle at 62% 111%, rgba(255, 120, 20, 0.3) 0 1px, transparent 2px),
+      radial-gradient(circle at 78% 114%, rgba(255, 180, 80, 0.22) 0 2px, transparent 3px),
+      linear-gradient(180deg, rgba(6, 7, 9, 0.3), rgba(6, 7, 9, 0.6));
+    --bg-anim-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    --bg-anim-name: embersRise;
+    --bg-anim-duration: 14s;
+    --bg-anim-ease: linear;
+    --bg-anim-opacity: 0.8;
+    --cursor-glow-color: rgba(255, 140, 0, 0.18);
+    --cursor-glow-soft: rgba(255, 140, 0, 0.08);
+    --cursor-glow-opacity: 0.9;
+    --circuit-line-color: rgba(0, 0, 0, 0);
   }
-}
 
-
-
-@layer base {
   * {
     @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground;
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    font-family: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    overflow-x: hidden;
+    background-color: hsl(var(--background));
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: hsl(var(--primary));
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
   }
 }
 
-/* 1. Animación de la gota cayendo */
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+  background-color: hsl(var(--background));
+  background-image: var(--imagen-fondo);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+  .app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--bg-anim-image);
+  background-size: var(--bg-anim-size);
+  background-position: center;
+    background-repeat: no-repeat;
+    animation: var(--bg-anim-name) var(--bg-anim-duration) var(--bg-anim-ease, linear) infinite;
+    opacity: var(--bg-anim-opacity, 0.8);
+    pointer-events: none;
+  }
+
+.app-shell::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    radial-gradient(
+      240px circle at var(--cursor-x, 50%) var(--cursor-y, 45%),
+      var(--cursor-glow-color),
+      var(--cursor-glow-soft) 45%,
+      transparent 70%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      var(--circuit-line-color) 0 1px,
+      transparent 1px var(--circuit-line-spacing)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      var(--circuit-line-color) 0 1px,
+      transparent 1px var(--circuit-line-spacing)
+    );
+  background-size: 100% 100%, 100% 100%, 100% 100%;
+  background-position: center;
+  -webkit-mask-image: radial-gradient(
+    260px circle at var(--cursor-x, 50%) var(--cursor-y, 45%),
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 255, 255, 0.75) 45%,
+    rgba(255, 255, 255, 0) 75%
+  );
+  mask-image: radial-gradient(
+    260px circle at var(--cursor-x, 50%) var(--cursor-y, 45%),
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 255, 255, 0.75) 45%,
+    rgba(255, 255, 255, 0) 75%
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  opacity: var(--cursor-glow-opacity);
+  pointer-events: none;
+}
+
+.circuit-beams {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dark .circuit-beams {
+  display: none;
+}
+
+.circuit-beam {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--beam-size, 8px);
+  height: var(--beam-size, 8px);
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(60, 195, 255, 0.95) 0%,
+    rgba(60, 195, 255, 0.35) 50%,
+    transparent 72%
+  );
+  box-shadow: 0 0 12px rgba(60, 195, 255, 0.55);
+  opacity: 0;
+  transform-origin: 0 50%;
+  will-change: transform, opacity;
+}
+
+@keyframes shimmer {
+  100% {
+    background-position: 400% 0;
+  }
+}
+
+@keyframes embersDrift {
+  0% {
+    background-position: 0% 0%, 100% 0%, 50% 50%, 20% 80%, 0% 0%;
+    opacity: 0.85;
+  }
+  50% {
+    background-position: 40% 60%, 60% 40%, 55% 45%, 30% 70%, 0% 0%;
+    opacity: 1;
+  }
+  100% {
+    background-position: 0% 0%, 100% 0%, 50% 50%, 20% 80%, 0% 0%;
+    opacity: 0.85;
+  }
+}
+
+@keyframes embersRise {
+  0% {
+    background-position:
+      0% 120%,
+      0% 140%,
+      0% 160%,
+      0% 130%,
+      0% 150%,
+      0% 0%;
+    opacity: 0.35;
+  }
+  60% {
+    opacity: 0.6;
+  }
+  100% {
+    background-position:
+      10% -20%,
+      -12% -30%,
+      8% -40%,
+      -6% -25%,
+      12% -35%,
+      0% 0%;
+    opacity: 0.2;
+  }
+}
+
+@keyframes microchipPulse {
+  0% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 50% 50%, 50% 50%;
+    opacity: 0.6;
+  }
+  50% {
+    background-position: 0% 0%, 20% 10%, -10% -20%, 55% 48%, 46% 52%;
+    opacity: 0.85;
+  }
+  100% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 50% 50%, 50% 50%;
+    opacity: 0.6;
+  }
+}
+
+@keyframes circuitSweep {
+  0% {
+    background-position: -10% 55%, 0% 0%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  50% {
+    background-position: 50% 55%, 0% 0%;
+    opacity: 0.75;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    background-position: 110% 55%, 0% 0%;
+    opacity: 0;
+  }
+}
+
+@keyframes circuitLightFlow {
+  0% {
+    background-position:
+      -30% 38%,
+      -40% 68%,
+      35% -35%,
+      72% -45%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  90% {
+    opacity: 0.7;
+  }
+  100% {
+    background-position:
+      130% 38%,
+      140% 68%,
+      35% 135%,
+      72% 145%;
+    opacity: 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #2d2d2d 25%, #393939 50%, #2d2d2d 75%);
+  background-size: 400% 100%;
+  animation: shimmer 5s infinite;
+}
+
 @keyframes dropFall {
   0% {
     transform: translateY(-150%) scale(0.4);
@@ -195,7 +367,6 @@ button:focus-visible {
   }
 }
 
-/* 2. Animación del círculo (ripple) */
 @keyframes rippleExpand {
   0% {
     transform: translateX(-50%) scale(0);
@@ -212,24 +383,21 @@ button:focus-visible {
   }
 }
 
-/* 3. Estilo de la gota */
 .gota {
   width: 12px;
   height: 20px;
-  background: #FFA500;
-  /* forma de gota ligeramente alargada */
+  background: hsl(var(--color-acento));
   border-radius: 50% 50% 60% 60% / 45% 45% 50% 50%;
   animation: dropFall 1s ease-in-out infinite;
 }
 
-/* 4. Estilo del ripple */
 .ripple {
   position: absolute;
   bottom: 0;
   left: 50%;
   width: 24px;
   height: 24px;
-  border: 2px solid #FFA500;
+  border: 2px solid hsl(var(--color-acento));
   border-radius: 50%;
   transform: translateX(-50%) scale(0);
   animation: rippleExpand 1s ease-out infinite;
@@ -254,7 +422,7 @@ button:focus-visible {
 .react-calendar__navigation button {
   background: none;
   border: none;
-  color: #ff7f11;
+  color: hsl(var(--color-acento));
   font-weight: bold;
   font-size: 1rem;
   padding: 0.2rem 0.6rem;
@@ -288,23 +456,23 @@ button:focus-visible {
 }
 
 .react-calendar__tile--now {
-  background-color: #ff7f1133;
-  color: #fff;
+  background-color: hsl(var(--color-acento) / 0.2);
+  color: hsl(var(--color-claro));
   border-radius: 0.5rem;
   font-weight: bold;
 }
 
 .react-calendar__tile--active {
-  background-color: #ff7f11 !important;
-  color: #fff;
+  background-color: hsl(var(--color-acento)) !important;
+  color: hsl(var(--primary-foreground));
 }
 
 .react-calendar__tile--marked {
-  background-color: #ff7f11 !important;
-  color: #fff;
+  background-color: hsl(var(--color-acento)) !important;
+  color: hsl(var(--primary-foreground));
   font-weight: bold;
 }
 
 .react-calendar__month-view__days__day--weekend {
-  color: #ff7f11;
+  color: hsl(var(--color-acento));
 }

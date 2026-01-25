@@ -77,5 +77,9 @@
   "gameThemes": "Themes",
   "gameDescription": "Description",
   "gameTrailer": "Trailer / Gameplay",
-  "gameSimilar": "Similar games"
+  "gameSimilar": "Similar games",
+  "gameIgdbVideos": "IGDB videos",
+  "gameIgdbPhotos": "IGDB photos",
+  "gameTechSheet": "Technical sheet"
 }
+

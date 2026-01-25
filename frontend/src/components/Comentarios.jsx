@@ -155,12 +155,12 @@ export default function Comentarios({ juegoId }) {
     return (
       <div
         onClick={() => navigate(`/perfil/${c.user.username}`)}
-        className="bg-[#2b2b2b] hover:bg-[#3c3c3c] rounded-xl p-4 shadow-md border border-borde/40 text-white transition-all duration-300 flex gap-4 cursor-pointer group"
+        className="bg-[#1f1f1f] hover:bg-[#262626] rounded-xl p-4 shadow-md border border-black/50 text-white transition-all duration-300 flex gap-4 cursor-pointer group"
       >
         <img
           src={c.foto}
           alt="Avatar"
-          className="w-10 h-10 rounded-full object-cover border border-borde"
+          className="w-12 h-12 rounded-full object-cover border border-borde/60"
         />
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -220,12 +220,12 @@ export default function Comentarios({ juegoId }) {
 
   return (
     <div className="mt-8" ref={comentariosRef}>
-      <h2 className="text-xl font-bold mb-4 text-white">Comentarios</h2>
+      <h2 className="text-2xl font-bold mb-4 text-white">Comentarios</h2>
 
       <div className="flex items-center gap-4 mb-2">
         <label className="text-xs text-gray-400 font-semibold">Ordenar por:</label>
         <select
-          className="bg-metal border-borde rounded-xl px-2 py-1 text-naranja font-bold"
+          className="bg-[#1f1f1f] border border-borde/50 rounded-xl px-2 py-1 text-naranja font-bold"
           value={orden}
           onChange={(e) => {
             setOrden(e.target.value);
@@ -244,7 +244,7 @@ export default function Comentarios({ juegoId }) {
         <textarea
           ref={textareaRef}
           id="comentario-nuevo"
-          className="rounded-xl border border-naranja px-3 py-2 bg-metal text-white resize-none transition focus:outline-none focus:border-naranja"
+          className="rounded-xl border border-borde/60 px-4 py-3 bg-[#1f1f1f] text-white resize-none transition focus:outline-none focus:border-naranja"
           value={nuevo}
           onChange={(e) => setNuevo(e.target.value)}
           maxLength={1000}
@@ -256,7 +256,7 @@ export default function Comentarios({ juegoId }) {
         <div className="flex gap-2 items-center">
           <button
             type="submit"
-            className={`bg-naranja px-4 py-2 rounded-xl text-black font-semibold transition ${
+            className={`bg-naranja px-5 py-2.5 rounded-xl text-black font-semibold shadow-lg shadow-orange-500/20 transition ${
               publicando ? "opacity-60 cursor-not-allowed" : ""
             }`}
             disabled={!nuevo.trim() || publicando}

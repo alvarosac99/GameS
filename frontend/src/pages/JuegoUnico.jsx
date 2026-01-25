@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import "react-loading-skeleton/dist/skeleton.css";
 import DropLoader from "@/components/DropLoader";
@@ -84,6 +84,22 @@ function getYoutubeEmbedUrl(url) {
   return m ? `https://www.youtube.com/embed/${m[1]}` : null;
 }
 
+function hashString(input) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash << 5) - hash + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function getRandomObjectPosition(value) {
+  const hash = hashString(value);
+  const x = 10 + (hash % 81);
+  const y = 10 + (Math.floor(hash / 97) % 81);
+  return `${x}% ${y}%`;
+}
+
 export default function JuegoUnico() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -96,6 +112,16 @@ export default function JuegoUnico() {
   const [mostrarCompra, setMostrarCompra] = useState(false);
   const [tiempo, setTiempo] = useState(null);
   const [descripcion, setDescripcion] = useState("");
+  const [descripcionImgIndex, setDescripcionImgIndex] = useState(0);
+  const [descripcionNextIndex, setDescripcionNextIndex] = useState(null);
+  const [descripcionDirection, setDescripcionDirection] = useState(1);
+  const [descripcionPhase, setDescripcionPhase] = useState("idle");
+  const igdbVideosRef = useRef(null);
+  const igdbPhotosRef = useRef(null);
+  const descripcionIntervalRef = useRef(null);
+  const descripcionPauseUntilRef = useRef(0);
+  const descripcionIndexRef = useRef(0);
+  const descripcionPhaseRef = useRef("idle");
 
   const { autenticado, fetchAuth } = useAuth();
   const { t, lang } = useLang();
@@ -158,6 +184,60 @@ export default function JuegoUnico() {
       })
       .catch(() => {});
   }, [juego?.name]);
+
+  const igdbPhotos = [
+    ...(juego?.artworks || []),
+    ...(juego?.screenshots || []),
+  ].filter((img) => img?.url);
+
+  const descripcionImages = igdbPhotos.map(
+    (img) => `https:${img.url.replace("t_thumb", "t_screenshot_huge")}`
+  );
+
+  useEffect(() => {
+    setDescripcionImgIndex(0);
+    setDescripcionNextIndex(null);
+    descripcionPhaseRef.current = "idle";
+    setDescripcionPhase("idle");
+  }, [juego?.id]);
+
+  useEffect(() => {
+    descripcionIndexRef.current = descripcionImgIndex;
+  }, [descripcionImgIndex]);
+
+  useEffect(() => {
+    descripcionPhaseRef.current = descripcionPhase;
+  }, [descripcionPhase]);
+
+  useEffect(() => {
+    if (descripcionPhase !== "prepare") return;
+    const raf = requestAnimationFrame(() => {
+      setDescripcionPhase("animating");
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [descripcionPhase]);
+
+  useEffect(() => {
+    if (descripcionImages.length <= 1) return;
+    if (descripcionIntervalRef.current) {
+      clearInterval(descripcionIntervalRef.current);
+    }
+    descripcionIntervalRef.current = setInterval(() => {
+      if (Date.now() < descripcionPauseUntilRef.current) return;
+      if (descripcionPhaseRef.current !== "idle") return;
+      const baseIndex = descripcionIndexRef.current;
+      const nextIndex =
+        baseIndex === descripcionImages.length - 1 ? 0 : baseIndex + 1;
+      startDescripcionTransition(nextIndex, 1);
+    }, 3000);
+
+    return () => {
+      if (descripcionIntervalRef.current) {
+        clearInterval(descripcionIntervalRef.current);
+        descripcionIntervalRef.current = null;
+      }
+    };
+  }, [descripcionImages.length]);
 
   // Comprueba si el juego está en la biblioteca del usuario
   useEffect(() => {
@@ -322,308 +402,522 @@ export default function JuegoUnico() {
     }
   });
 
+  const mediaImages = [
+    ...(juego.screenshots || []),
+    ...(juego.artworks || []),
+  ]
+    .map((img) => img?.url)
+    .filter(Boolean)
+    .map((url) => `https:${url.replace("t_thumb", "t_screenshot_huge")}`);
+
+  const backgroundImages =
+    mediaImages.length > 0
+      ? Array.from({ length: 96 }, (_, i) => mediaImages[i % mediaImages.length])
+      : [];
+
+  const igdbVideos = (juego.videos || [])
+    .map((v) => ({
+      id: v.id || v.video_id,
+      name: v.name || "Video",
+      embed: v.video_id ? `https://www.youtube.com/embed/${v.video_id}` : null,
+    }))
+    .filter((v) => v.embed);
+
+  function scrollCarousel(ref, dir) {
+    const el = ref.current;
+    if (!el) return;
+    const amount = Math.max(el.clientWidth * 0.8, 260);
+    el.scrollBy({ left: dir * amount, behavior: "smooth" });
+  }
+
+  const estadoLabel = {
+    jugando: t("statusPlaying"),
+    completado: t("statusCompleted"),
+    abandonado: t("statusAbandoned"),
+    en_espera: t("statusOnHold"),
+  }[estado] || t("statusPlaying");
+
+  function startDescripcionTransition(nextIndex, direction) {
+    if (descripcionImages.length <= 1) return;
+    if (descripcionPhaseRef.current !== "idle") return;
+    if (nextIndex === descripcionImgIndex) return;
+    setDescripcionDirection(direction);
+    setDescripcionNextIndex(nextIndex);
+    descripcionPhaseRef.current = "prepare";
+    setDescripcionPhase("prepare");
+  }
+
+  function pauseDescripcionAuto() {
+    descripcionPauseUntilRef.current = Date.now() + 10000;
+  }
+
+  function forceFinishDescripcionTransition() {
+    if (descripcionPhaseRef.current === "idle") return;
+    const nextIndex =
+      descripcionNextIndex !== null ? descripcionNextIndex : descripcionImgIndex;
+    setDescripcionImgIndex(nextIndex);
+    setDescripcionNextIndex(null);
+    descripcionPhaseRef.current = "idle";
+    setDescripcionPhase("idle");
+    descripcionIndexRef.current = nextIndex;
+  }
+
+  function handleDescripcionPrev() {
+    if (descripcionImages.length === 0) return;
+    if (descripcionPhaseRef.current !== "idle") {
+      forceFinishDescripcionTransition();
+    }
+    const baseIndex = descripcionIndexRef.current;
+    const nextIndex =
+      baseIndex === 0
+        ? descripcionImages.length - 1
+        : baseIndex - 1;
+    pauseDescripcionAuto();
+    startDescripcionTransition(nextIndex, -1);
+  }
+
+  function handleDescripcionNext() {
+    if (descripcionImages.length === 0) return;
+    if (descripcionPhaseRef.current !== "idle") {
+      forceFinishDescripcionTransition();
+    }
+    const baseIndex = descripcionIndexRef.current;
+    const nextIndex =
+      baseIndex === descripcionImages.length - 1
+        ? 0
+        : baseIndex + 1;
+    pauseDescripcionAuto();
+    startDescripcionTransition(nextIndex, 1);
+  }
 
   return (
-    <div className="relative w-full min-h-screen bg-transparent text-claro">
-      {juego.screenshots?.[0]?.url && (
-        <div className="relative w-full overflow-hidden z-0">
-          <img
-            src={`https:${juego.screenshots[0].url.replace("t_thumb", "t_screenshot_huge")}`}
-            alt="Banner"
-            className="w-full h-[50vh] min-h-[300px] object-cover"
-          />
+    <div className="relative w-full min-h-screen bg-transparent text-claro overflow-hidden">
+      {backgroundImages.length > 0 && (
+        <div className="fixed inset-0 z-0 pointer-events-none">
           <div
-            className="absolute inset-0 pointer-events-none backdrop-blur-sm"
+            className="grid grid-cols-4 md:grid-cols-6 gap-2 opacity-90 w-full h-full overflow-hidden"
             style={{
-              background:
-                "linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.5) 70%, rgba(0,0,0,0.7) 85%, rgba(0,0,0,0.85) 95%, rgba(0,0,0,1) 100%)",
-              mixBlendMode: "multiply",
+              gridAutoRows: "minmax(140px, 22vh)",
+              gridAutoFlow: "dense",
             }}
-          />
+          >
+            {backgroundImages.map((img, idx) => (
+              <div
+                key={`${img}-${idx}`}
+                className="w-full h-full overflow-hidden"
+                style={{
+                  gridColumn:
+                    idx % 5 === 0
+                      ? "span 2 / span 2"
+                      : idx % 11 === 0
+                        ? "span 3 / span 3"
+                        : "span 1 / span 1",
+                  gridRow:
+                    idx % 7 === 0
+                      ? "span 2 / span 2"
+                      : idx % 13 === 0
+                        ? "span 3 / span 3"
+                        : "span 1 / span 1",
+                }}
+              >
+                <img
+                  src={img}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: getRandomObjectPosition(`${img}-${idx}`) }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/60" />
         </div>
       )}
-      <div
-        className={`max-w-7xl mx-auto ${juego.screenshots?.[0]?.url ? "-mt-32" : "mt-8"
-          } px-4 md:px-8 relative z-20`}
-      >
-        <div className="bg-metal/30 backdrop-blur-md rounded-2xl shadow-xl p-8 mb-10 flex flex-col lg:flex-row gap-8 border border-black/40">
-          {/* Columna izquierda */}
-          <div className="flex-shrink-0 flex flex-col items-center">
-            {juego.cover?.url && (
-              <img
-                src={`https:${juego.cover.url.replace(
-                  "t_thumb",
-                  "t_cover_big"
-                )}`}
-                alt="Portada"
-                className="w-64 rounded-lg shadow-lg"
-              />
-            )}
+      <div className="w-full px-4 md:px-8 relative z-10 py-10">
+        <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-black/50">
+          <div className="grid grid-cols-1 xl:grid-cols-[320px,minmax(0,1fr),320px] gap-8 items-start">
+            {/* Columna izquierda */}
+            <div className="flex flex-col items-center xl:items-stretch">
+              <div className="w-full bg-black/50 border border-black/40 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
+                {juego.cover?.url && (
+                  <img
+                    src={`https:${juego.cover.url.replace(
+                      "t_thumb",
+                      "t_cover_big"
+                    )}`}
+                    alt="Portada"
+                    className="w-full rounded-lg shadow-lg"
+                  />
+                )}
 
-            {autenticado ? (
-              <div className="mt-6 w-full flex flex-col gap-3 items-center">
-                <div className="w-full flex gap-3">
-                  {inLibrary ? (
-                    <button
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded flex items-center justify-center gap-2"
-                      onClick={handleRemove}
+                {autenticado ? (
+                  <div className="mt-4 w-full flex flex-col gap-3 items-center xl:items-stretch">
+                    <div className="w-full flex gap-3">
+                      {inLibrary ? (
+                        <button
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded flex items-center justify-center gap-2"
+                          onClick={handleRemove}
+                        >
+                          <FaMinus /> {t("gameRemoveLibrary")}
+                        </button>
+                      ) : (
+                        <button
+                          className="flex-1 bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded flex items-center justify-center gap-2"
+                          onClick={handleAdd}
+                        >
+                          <FaPlus /> {t("gameAddLibrary")}
+                        </button>
+                      )}
+                    </div>
+                    <div className="w-full flex gap-3">
+                      <button
+                        className="flex-1 bg-[#232323] hover:bg-[#2a2a2a] text-naranja font-bold py-2 rounded flex items-center justify-center gap-2 border border-borde/60"
+                        onClick={handleWishlist}
+                      >
+                        {inWishlist ? <FaBookmark /> : <FaRegBookmark />}
+                        {inWishlist ? t("gameInWishlist") : t("gameAddWishlist")}
+                      </button>
+                    </div>
+                    <div className="w-full">
+                      <ValoracionEstrellas juegoId={juego.id} />
+                    </div>
+                    {inLibrary && (
+                      <div className="w-full">
+                        <select
+                          value={estado}
+                          onChange={(e) => {
+                            const nuevo = e.target.value;
+                            setEstado(nuevo);
+                            fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
+                              method: "PATCH",
+                              body: JSON.stringify({ estado: nuevo }),
+                            });
+                          }}
+                          className="w-full mt-2 p-2 rounded bg-[#181818] border border-borde/50"
+                        >
+                          <option value="jugando">{t("statusPlaying")}</option>
+                          <option value="completado">{t("statusCompleted")}</option>
+                          <option value="abandonado">{t("statusAbandoned")}</option>
+                          <option value="en_espera">{t("statusOnHold")}</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="mt-4 text-sm text-naranja hover:underline block"
                     >
-                      <FaMinus /> {t("gameRemoveLibrary")}
-                    </button>
-                  ) : (
-                    <button
-                      className="flex-1 bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded flex items-center justify-center gap-2"
-                      onClick={handleAdd}
-                    >
-                      <FaPlus /> {t("gameAddLibrary")}
-                    </button>
+                      {t("gameLoginManage")}
+                    </Link>
+                    <div className="w-full flex justify-center mt-2">
+                      <ValoracionEstrellas juegoId={juego.id} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Columna central */}
+            <div className="flex flex-col gap-6">
+              <div>
+                <h1
+                  className="text-5xl md:text-6xl font-extrabold tracking-tight text-white"
+                  style={{ textShadow: "0 8px 24px rgba(0,0,0,0.45)" }}
+                >
+                  {juego.name}
+                </h1>
+                <p className="text-gray-300 mt-3 text-sm uppercase tracking-widest">
+                  {juego.first_release_date
+                    ? `${t("gameReleasedOn")} ${new Date(
+                      juego.first_release_date * 1000
+                    ).toLocaleDateString("es-ES")}`
+                    : t("gameReleaseUnknown")}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr),320px] gap-6">
+                <div>
+                  <h2 className="text-xl font-semibold mb-1">{t("gameDescription")}</h2>
+                  <p className="text-gray-200 leading-relaxed">{descripcion}</p>
+                  {descripcionImages.length > 0 && (
+                    <div className="mt-5">
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={handleDescripcionPrev}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-10 h-10 flex items-center justify-center"
+                          aria-label="Anterior"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDescripcionNext}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-10 h-10 flex items-center justify-center"
+                          aria-label="Siguiente"
+                        >
+                          ›
+                        </button>
+                        <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-black/50 bg-[#1f1f1f]">
+                          {descripcionNextIndex === null ? (
+                            <img
+                              src={descripcionImages[descripcionImgIndex]}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div
+                              className="absolute inset-0 flex"
+                              style={{
+                                width: "200%",
+                                transform:
+                                  descripcionPhase === "animating"
+                                    ? descripcionDirection === 1
+                                      ? "translateX(-50%)"
+                                      : "translateX(0%)"
+                                    : descripcionDirection === 1
+                                      ? "translateX(0%)"
+                                      : "translateX(-50%)",
+                                transition:
+                                  descripcionPhase === "animating"
+                                    ? "transform 500ms ease-out"
+                                    : "none",
+                              }}
+                              onTransitionEnd={() => {
+                                if (descripcionPhase !== "animating") return;
+                                setDescripcionImgIndex(descripcionNextIndex);
+                                setDescripcionNextIndex(null);
+                                descripcionPhaseRef.current = "idle";
+                                setDescripcionPhase("idle");
+                              }}
+                            >
+                              <div className="w-1/2 h-full">
+                                <img
+                                  src={
+                                    descripcionDirection === 1
+                                      ? descripcionImages[descripcionImgIndex]
+                                      : descripcionImages[descripcionNextIndex]
+                                  }
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="w-1/2 h-full">
+                                <img
+                                  src={
+                                    descripcionDirection === 1
+                                      ? descripcionImages[descripcionNextIndex]
+                                      : descripcionImages[descripcionImgIndex]
+                                  }
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-400">
+                        {descripcionImgIndex + 1}/{descripcionImages.length}
+                      </div>
+                    </div>
                   )}
                 </div>
-                <div className="w-full flex gap-3">
-                  <button
-                    className="flex-1 bg-metal hover:bg-borde text-naranja font-bold py-2 rounded flex items-center justify-center gap-2 border"
-                    onClick={handleWishlist}
-                  >
-                    {inWishlist ? <FaBookmark /> : <FaRegBookmark />}
-                    {inWishlist ? t("gameInWishlist") : t("gameAddWishlist")}
-                  </button>
-                </div>
-                {inLibrary && (
-                  <div className="w-full">
-                    <select
-                      value={estado}
-                      onChange={(e) => {
-                        const nuevo = e.target.value;
-                        setEstado(nuevo);
-                        fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
-                          method: "PATCH",
-                          body: JSON.stringify({ estado: nuevo }),
-                        });
-                      }}
-                      className="w-full mt-2 p-2 rounded bg-fondo border border-borde"
-                    >
-                      <option value="jugando">{t("statusPlaying")}</option>
-                      <option value="completado">{t("statusCompleted")}</option>
-                      <option value="abandonado">{t("statusAbandoned")}</option>
-                      <option value="en_espera">{t("statusOnHold")}</option>
-                    </select>
+                <div className="bg-black/45 border border-black/50 rounded-xl p-4 h-fit backdrop-blur-sm">
+                  <h3 className="text-sm uppercase tracking-widest text-gray-400 mb-3">
+                    {t("gameTechSheet")}
+                  </h3>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {plataformas.map((p) => (
+                      <Link
+                        key={p.id}
+                        to={`/juegos?plataforma=${p.id}`}
+                        className="bg-[#232323] hover:bg-[#2a2a2a] text-xs px-3 py-1 rounded-full text-gray-200"
+                      >
+                        {p.name}
+                      </Link>
+                    ))}
+                    {generos.map((g) => (
+                      <Link
+                        key={g.id}
+                        to={`/juegos?genero=${g.id}`}
+                        className="bg-[#2a2a2a] hover:bg-[#333333] text-xs px-3 py-1 rounded-full text-gray-200"
+                      >
+                        {g.name}
+                      </Link>
+                    ))}
                   </div>
-                )}
-                <div className="w-full flex justify-center">
-                  <ValoracionEstrellas juegoId={juego.id} />
+                  <div className="grid grid-cols-1 gap-3 text-sm text-gray-300">
+                    <div className="space-y-2">
+                      <p>
+                        <strong>{t("gameDevelopers")}:</strong>{" "}
+                        {desarrolladoras.length > 0
+                          ? desarrolladoras.map((d, i) => (
+                            <Link
+                              key={d.id}
+                              to={`/juegos?desarrolladora=${d.id}`}
+                              className="text-naranja hover:underline mr-2"
+                            >
+                              {d.name}
+                              {i < desarrolladoras.length - 1 && ","}
+                            </Link>
+                          ))
+                          : "Desconocida"}
+                      </p>
+                      {juego.involved_companies?.some((c) => c.publisher) && (
+                        <p>
+                          <strong>{t("gamePublisher")}:</strong>{" "}
+                          {juego.involved_companies
+                            .filter((c) => c.publisher)
+                            .map((c) => c.company?.name)
+                            .filter(Boolean)
+                            .join(", ")}
+                        </p>
+                      )}
+                      {tiempo?.main && (
+                        <p>
+                          <strong>{t("gameDuration")}:</strong> {tiempo.main}h historia
+                        </p>
+                      )}
+                      {juego.collection?.name && (
+                        <p>
+                          <strong>{t("gameSaga")}:</strong> {juego.collection.name}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {modos.length > 0 && (
+                        <p>
+                          <strong>{t("gameModes")}:</strong>{" "}
+                          {modos.map((m) => (
+                            <Link
+                              key={m.id}
+                              to={`/juegos?modo=${m.id}`}
+                              className="text-naranja hover:underline mr-2"
+                            >
+                              {m.name}
+                            </Link>
+                          ))}
+                        </p>
+                      )}
+                      {juego.player_perspectives?.length > 0 && (
+                        <p>
+                          <strong>{t("gamePerspectives")}:</strong>{" "}
+                          {juego.player_perspectives.map((p) => p.name).join(", ")}
+                        </p>
+                      )}
+                      {juego.themes?.length > 0 && (
+                        <p>
+                          <strong>{t("gameThemes")}:</strong>{" "}
+                          {juego.themes.map((t) => t.name).join(", ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="mt-6 text-sm text-naranja hover:underline"
-                >
-                  {t("gameLoginManage")}
-                </Link>
-                <div className="w-full flex justify-center mt-2">
-                  <ValoracionEstrellas juegoId={juego.id} />
+              {ytEmbed && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-1">{t("gameTrailer")}</h2>
+                  <div className="aspect-video">
+                    <iframe
+                      src={ytEmbed}
+                      className="w-full h-full rounded-xl min-h-[220px]"
+                      allowFullScreen
+                      title="Video"
+                    />
+                  </div>
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
-            {enlacesTiendas.length > 0 && (
-              <div className="mt-6 w-full">
-                <h2 className="text-lg font-semibold mb-2">{t("gameWhereBuy")}</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {enlacesTiendas.map((ti) => (
-                    <a
-                      key={ti.url}
-                      href={ti.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex flex-col items-center bg-metal hover:bg-naranja px-4 py-3 rounded-lg"
-                    >
-                      <ti.Icon size={28} />
-                      <span className="mt-1 text-sm font-bold">{ti.name}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-            {plataformasPrecios.length > 0 && (
-              <div className="mt-6 w-full">
-                <button
-                  onClick={() => setMostrarCompra(true)}
-                  className="w-full bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded"
-                >
-                  {t("openPriceComparator")}
-                </button>
-              </div>
-            )}
-            {(enlacesUtilesConIcono.length > 0 || enlacesUtilesOtros.length > 0) && (
-              <div className="w-full">
-                <h2 className="text-xl font-semibold mt-3">{t("gameUsefulLinks")}</h2>
-                {enlacesUtilesConIcono.length > 0 && (
-                  <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-3">
-                    {enlacesUtilesConIcono.map((link) => (
+            {/* Columna derecha */}
+            <div className="flex flex-col gap-6">
+              {enlacesTiendas.length > 0 && (
+                <div className="w-full bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm">
+                  <h2 className="text-lg font-semibold mb-2">{t("gameWhereBuy")}</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {enlacesTiendas.map((ti) => (
                       <a
-                        key={link.url}
-                        href={link.url}
+                        key={ti.url}
+                        href={ti.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex flex-col items-center gap-1 bg-metal/60 hover:bg-borde/80 border border-borde rounded-lg px-3 py-2 text-xs text-center"
+                        className="flex flex-col items-center bg-metal hover:bg-naranja px-4 py-3 rounded-lg"
                       >
-                        <link.Icon size={22} />
-                        <span className="font-semibold">{link.name}</span>
+                        <ti.Icon size={28} />
+                        <span className="mt-1 text-sm font-bold">{ti.name}</span>
                       </a>
                     ))}
                   </div>
-                )}
-                {enlacesUtilesOtros.length > 0 && (
-                  <ul className="list-disc ml-6 text-sm text-gray-300 mt-3">
-                    {enlacesUtilesOtros.map((u) => (
-                      <li key={u} className="break-words">
+                </div>
+              )}
+              {plataformasPrecios.length > 0 && (
+                <div className="w-full bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm">
+                  <button
+                    onClick={() => setMostrarCompra(true)}
+                    className="w-full bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded"
+                  >
+                    {t("openPriceComparator")}
+                  </button>
+                </div>
+              )}
+              {(enlacesUtilesConIcono.length > 0 || enlacesUtilesOtros.length > 0) && (
+                <div className="w-full bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm">
+                  <h2 className="text-xl font-semibold mt-3">{t("gameUsefulLinks")}</h2>
+                  {enlacesUtilesConIcono.length > 0 && (
+                    <div className="mt-3 grid grid-cols-3 gap-3">
+                      {enlacesUtilesConIcono.map((link) => (
                         <a
-                          href={u}
-                          className="text-naranja hover:underline break-all"
+                          key={link.url}
+                          href={link.url}
                           target="_blank"
                           rel="noreferrer"
+                          className="flex flex-col items-center gap-1 bg-[#232323] hover:bg-[#2a2a2a] border border-borde/60 rounded-lg px-3 py-2 text-xs text-center"
                         >
-                          {u}
+                          <link.Icon size={22} />
+                          <span className="font-semibold">{link.name}</span>
                         </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
+                      ))}
+                    </div>
+                  )}
+                  {enlacesUtilesOtros.length > 0 && (
+                    <ul className="list-disc ml-6 text-sm text-gray-300 mt-3">
+                      {enlacesUtilesOtros.map((u) => (
+                        <li key={u} className="break-words">
+                          <a
+                            href={u}
+                            className="text-naranja hover:underline break-all"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {u}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Columna derecha */}
-          <div className="flex-1 flex flex-col gap-6">
-            <h1 className="text-4xl md:text-5xl font-extrabold">{juego.name}</h1>
-            <p className="text-gray-300">
-              {juego.first_release_date
-                ? `${t("gameReleasedOn")} ${new Date(
-                  juego.first_release_date * 1000
-                ).toLocaleDateString("es-ES")}`
-                : t("gameReleaseUnknown")}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {plataformas.map((p) => (
-                <Link
-                  key={p.id}
-                  to={`/juegos?plataforma=${p.id}`}
-                  className="bg-borde/50 hover:bg-borde text-xs px-3 py-1 rounded-full"
-                >
-                  {p.name}
-                </Link>
-              ))}
-              {generos.map((g) => (
-                <Link
-                  key={g.id}
-                  to={`/juegos?genero=${g.id}`}
-                  className="bg-naranja/40 hover:bg-naranja text-xs px-3 py-1 rounded-full"
-                >
-                  {g.name}
-                </Link>
-              ))}
+          
+
+          {juego.similar_games?.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-xl font-semibold mb-4">{t("gameSimilar")}</h2>
+              <Carrusel
+                juegos={juego.similar_games}
+                onSelect={(j) => navigate(`/juego/${j.id}`)}
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <p>
-                  <strong>{t("gameDevelopers")}:</strong>{" "}
-                  {desarrolladoras.length > 0
-                    ? desarrolladoras.map((d, i) => (
-                      <Link
-                        key={d.id}
-                        to={`/juegos?desarrolladora=${d.id}`}
-                        className="text-naranja hover:underline mr-2"
-                      >
-                        {d.name}
-                        {i < desarrolladoras.length - 1 && ","}
-                      </Link>
-                    ))
-                    : "Desconocida"}
-                </p>
-                {juego.involved_companies?.some((c) => c.publisher) && (
-                  <p>
-                    <strong>{t("gamePublisher")}:</strong>{" "}
-                    {juego.involved_companies
-                      .filter((c) => c.publisher)
-                      .map((c) => c.company?.name)
-                      .filter(Boolean)
-                      .join(", ")}
-                  </p>
-                )}
-                {tiempo?.main && (
-                  <p>
-                    <strong>{t("gameDuration")}:</strong> {tiempo.main}h historia
-                  </p>
-                )}
-                {juego.collection?.name && (
-                  <p>
-                    <strong>{t("gameSaga")}:</strong> {juego.collection.name}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                {modos.length > 0 && (
-                  <p>
-                    <strong>{t("gameModes")}:</strong>{" "}
-                    {modos.map((m) => (
-                      <Link
-                        key={m.id}
-                        to={`/juegos?modo=${m.id}`}
-                        className="text-naranja hover:underline mr-2"
-                      >
-                        {m.name}
-                      </Link>
-                    ))}
-                  </p>
-                )}
-                {juego.player_perspectives?.length > 0 && (
-                  <p>
-                    <strong>{t("gamePerspectives")}:</strong>{" "}
-                    {juego.player_perspectives.map((p) => p.name).join(", ")}
-                  </p>
-                )}
-                {juego.themes?.length > 0 && (
-                  <p>
-                    <strong>{t("gameThemes")}:</strong>{" "}
-                    {juego.themes.map((t) => t.name).join(", ")}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold mb-1">{t("gameDescription")}</h2>
-              <p className="text-gray-200">{descripcion}</p>
-            </div>
-            {ytEmbed && (
-              <div>
-                <h2 className="text-xl font-semibold mb-1">{t("gameTrailer")}</h2>
-                <div className="aspect-w-16 aspect-h-9">
-                  <iframe
-                    src={ytEmbed}
-                    className="w-full h-64 rounded-xl"
-                    allowFullScreen
-                    title="Video"
-                  />
-                </div>
-              </div>
-            )}
-            {juego.similar_games?.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-xl font-semibold mb-4">{t("gameSimilar")}</h2>
-                <Carrusel
-                  juegos={juego.similar_games}
-                  onSelect={(j) => navigate(`/juego/${j.id}`)}
-                />
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Comentarios */}
-        <div className="max-w-3xl mx-auto my-10">
-          <div className="bg-metal/30 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-borde/40">
+        <div className="w-full my-10">
+          <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-black/50">
             <Comentarios juegoId={juego.id} isAuth={autenticado} />
           </div>
         </div>

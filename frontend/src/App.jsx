@@ -274,7 +274,7 @@ function AppContent() {
       {/* HEADER */}
       <header
         ref={headerRef}
-        className="sticky top-0 z-50 bg-metal/90 backdrop-blur-sm px-4 py-3 shadow-md border-b border-borde grid grid-cols-3 items-center"
+        className="sticky top-0 z-50 bg-metal/60 dark:bg-metal/90 backdrop-blur-sm px-4 py-3 shadow-md border-b border-borde grid grid-cols-3 items-center"
       >
         <div className="flex items-center">
           {autenticado && (
@@ -334,7 +334,7 @@ function AppContent() {
       {/* Buscador móvil debajo del header */}
       <div
         className={` 
-          fixed left-0 w-full px-4 py-2 bg-metal/95 border-b border-borde z-40 shadow-md
+          fixed left-0 w-full px-4 py-2 bg-metal/70 dark:bg-metal/95 border-b border-borde z-40 shadow-md
           transition-all duration-300 backdrop-blur-sm origin-top
           ${mostrarBuscador ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 pointer-events-none"}
         `}
@@ -439,7 +439,7 @@ function AppContent() {
         </Routes>
       </main>
 
-      <footer className="bg-metal py-2 text-center text-sm text-gray-400 border-t border-borde">
+      <footer className="relative z-20 bg-[hsl(var(--color-metal))] py-2 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-borde shadow-[0_-10px_30px_rgba(0,0,0,0.25)]">
         GameS © 2025
       </footer>
     </div>

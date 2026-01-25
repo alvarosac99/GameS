@@ -59,15 +59,15 @@ export default function ActividadReciente({ actividades }) {
   if (!actividadesFinales.length) return null;
 
   return (
-    <div className="bg-black/30 backdrop-blur-md border border-borde rounded-2xl shadow px-6 py-5">
-      <h2 className="font-bold text-naranja text-lg mb-2">Actividad reciente</h2>
+    <div className="bg-white/70 text-gray-900 border border-gray-200 shadow-sm backdrop-blur-sm dark:bg-black/30 dark:text-claro dark:border-borde dark:shadow dark:backdrop-blur-md rounded-2xl px-6 py-5">
+      <h2 className="font-bold text-gray-900 dark:text-naranja text-lg mb-2">Actividad reciente</h2>
       <ul className="flex flex-col gap-3">
         {actividadesFinales.map((act, i) => (
-          <li key={i} className="flex items-start gap-3 text-claro">
+          <li key={i} className="flex items-start gap-3 text-gray-900 dark:text-claro">
             <span className="mt-1">{obtenerIcono(act.tipo)}</span>
             <div>
               <p className="text-sm">{formatearDescripcion(act.descripcion)}</p>
-              <p className="text-xs text-borde">{formatearFecha(act.fecha)}</p>
+              <p className="text-xs text-gray-500 dark:text-borde">{formatearFecha(act.fecha)}</p>
             </div>
           </li>
         ))}

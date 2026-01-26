@@ -1,6 +1,7 @@
 // src/pages/ListaUsuarios.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useLang } from "../context/LangContext";
 
 export default function ListaUsuarios() {
     const [usuarios, setUsuarios] = useState([]);
@@ -9,6 +10,7 @@ export default function ListaUsuarios() {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useLang();
 
     // Si la búsqueda viene de la ruta, úsala (ej: /perfiles?q=juan)
     useEffect(() => {
@@ -48,7 +50,7 @@ export default function ListaUsuarios() {
             <form onSubmit={handleSubmit} className="flex mb-6">
                 <input
                     type="text"
-                    placeholder="Busca por nombre o usuario..."
+                    placeholder={t("searchUsersPlaceholder")}
                     className="flex-1 px-3 py-2 rounded-l border border-borde bg-fondo text-claro focus:outline-none"
                     value={busqueda}
                     onChange={e => setBusqueda(e.target.value)}

@@ -3,10 +3,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
+import { useLang } from "@/context/LangContext";
 
 export default function Jugar() {
   const { fetchAuth } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLang();
 
   const [busqueda, setBusqueda] = useState("");
   const [sugerencias, setSugerencias] = useState([]);
@@ -122,7 +124,7 @@ export default function Jugar() {
       <div className="relative">
         <input
           type="text"
-          placeholder="Buscar juego en tu biblioteca..."
+          placeholder={t("searchGameInLibraryPlaceholder")}
           value={busqueda}
           onChange={(e) => {
             setBusqueda(e.target.value);

@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
+import { useLang } from "@/context/LangContext";
 
 export default function Planificar() {
   const { fetchAuth } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLang();
   const [biblioteca, setBiblioteca] = useState([]);
   const [lista, setLista] = useState([]);
   const [busqueda, setBusqueda] = useState("");
@@ -60,14 +62,14 @@ export default function Planificar() {
       <div className="space-y-2">
         <input
           type="text"
-          placeholder="Nombre del plan"
+          placeholder={t("planNamePlaceholder")}
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           className="w-full p-2 rounded bg-fondo border border-borde"
         />
         <input
           type="text"
-          placeholder="Buscar en tu biblioteca..."
+          placeholder={t("searchLibrary")}
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           className="w-full p-2 rounded bg-fondo border border-borde"

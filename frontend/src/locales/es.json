@@ -80,6 +80,19 @@
   "gameSimilar": "Juegos similares",
   "gameIgdbVideos": "Videos de IGDB",
   "gameIgdbPhotos": "Fotos de IGDB",
-  "gameTechSheet": "Ficha técnica"
+  "gameTechSheet": "Ficha técnica",
+  "searchGamesPlaceholder": "Buscar juegos...",
+  "searchPeoplePlaceholder": "Buscar personas...",
+  "searchGameInLibraryPlaceholder": "Buscar juego en tu biblioteca...",
+  "searchFavoriteGamePlaceholder": "Busca tu juego favorito...",
+  "searchUsersPlaceholder": "Busca por nombre o usuario...",
+  "sessionNotesPlaceholder": "Notas sobre la sesión",
+  "sessionDurationPlaceholder": "Duración (ej. 01:30:00 o 90 minutos)",
+  "commentPlaceholder": "Escribe tu comentario...",
+  "reportTitlePlaceholder": "Título",
+  "reportDescriptionPlaceholder": "Describe el problema",
+  "newGameNamePlaceholder": "Nombre",
+  "newGameDescriptionPlaceholder": "Descripción",
+  "planNamePlaceholder": "Nombre del plan"
 }
 

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useLang } from "@/context/LangContext";
 
 export default function NuevoJuego() {
   const { fetchAuth, usuario } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLang();
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState("");
@@ -38,7 +40,7 @@ export default function NuevoJuego() {
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           className="w-full p-2 rounded bg-metal border border-borde"
-          placeholder="Nombre"
+          placeholder={t("newGameNamePlaceholder")}
           required
         />
         <textarea
@@ -46,7 +48,7 @@ export default function NuevoJuego() {
           onChange={(e) => setDescripcion(e.target.value)}
           className="w-full p-2 rounded bg-metal border border-borde"
           rows={5}
-          placeholder="Descripción"
+          placeholder={t("newGameDescriptionPlaceholder")}
         />
         <button
           type="submit"

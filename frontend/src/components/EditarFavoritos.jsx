@@ -1,8 +1,10 @@
 import React, { useState, useRef } from "react";
 import GameCard from "@/components/GameCard";
 import LoaderCirculo from "@/components/LoaderCirculo";
+import { useLang } from "@/context/LangContext";
 
 export default function EditarFavoritos({ favoritos, onGuardar, onCerrar }) {
+  const { t } = useLang();
   const [seleccionados, setSeleccionados] = useState([...favoritos]);
   const [buscando, setBuscando] = useState(null); // índice a editar
   const [resultados, setResultados] = useState([]);
@@ -92,7 +94,7 @@ export default function EditarFavoritos({ favoritos, onGuardar, onCerrar }) {
                 type="text"
                 value={query}
                 onChange={e => buscar(e.target.value)}
-                placeholder="Busca tu juego favorito..."
+                placeholder={t("searchFavoriteGamePlaceholder")}
                 className="w-full mb-4 p-2 rounded bg-[#181b20] border border-borde text-claro text-lg"
                 autoFocus
               />

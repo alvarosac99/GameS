@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { FaStar, FaRegStar, FaStarHalfAlt, FaTimes } from "react-icons/fa";
 import Reportar from "./Reportar";
+import { useLang } from "@/context/LangContext";
 
 // Formato de fecha
 const fechaCorta = (iso) => {
@@ -36,6 +37,7 @@ const ORDENES = [
 export default function Comentarios({ juegoId }) {
   const { usuario, autenticado, fetchAuth } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLang();
 
   const [comentarios, setComentarios] = useState([]);
   const [nuevo, setNuevo] = useState("");
@@ -249,7 +251,7 @@ export default function Comentarios({ juegoId }) {
           onChange={(e) => setNuevo(e.target.value)}
           maxLength={1000}
           rows={3}
-          placeholder="Escribe tu comentario..."
+          placeholder={t("commentPlaceholder")}
           required
           disabled={publicando}
         />

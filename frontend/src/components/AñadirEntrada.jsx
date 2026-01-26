@@ -1,9 +1,11 @@
 // src/components/AñadirEntrada.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLang } from "@/context/LangContext";
 
 export default function AñadirEntrada({ onEntradaCreada }) {
   const { fetchAuth } = useAuth();
+  const { t } = useLang();
   const [juegos, setJuegos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [seleccionado, setSeleccionado] = useState(null);
@@ -74,7 +76,7 @@ export default function AñadirEntrada({ onEntradaCreada }) {
 
       <input
         type="text"
-        placeholder="Buscar juego en tu biblioteca..."
+        placeholder={t("searchGameInLibraryPlaceholder")}
         value={busqueda}
         onChange={(e) => {
           setBusqueda(e.target.value);
@@ -123,7 +125,7 @@ export default function AñadirEntrada({ onEntradaCreada }) {
 
           <textarea
             rows={3}
-            placeholder="Notas sobre la sesión"
+            placeholder={t("sessionNotesPlaceholder")}
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             className="w-full p-2 rounded bg-fondo border border-borde"
@@ -131,7 +133,7 @@ export default function AñadirEntrada({ onEntradaCreada }) {
 
           <input
             type="text"
-            placeholder="Duración (ej. 01:30:00 o 90 minutos)"
+            placeholder={t("sessionDurationPlaceholder")}
             value={duracion}
             onChange={(e) => setDuracion(e.target.value)}
             className="w-full p-2 rounded bg-fondo border border-borde"

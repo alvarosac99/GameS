@@ -3,9 +3,11 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { useLang } from "@/context/LangContext";
 
 export default function Reportar({ modelo, objectId }) {
   const { fetchAuth } = useAuth();
+  const { t } = useLang();
   const [abierto, setAbierto] = useState(false);
   const [titulo, setTitulo] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -50,14 +52,14 @@ export default function Reportar({ modelo, objectId }) {
             <h2 className="text-xl font-bold text-naranja">Enviar reporte</h2>
             {mensaje && <div className="text-red-500">{mensaje}</div>}
             <Input
-              placeholder="Título"
+              placeholder={t("reportTitlePlaceholder")}
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               className="bg-fondo border-borde text-claro"
               required
             />
             <Textarea
-              placeholder="Describe el problema"
+              placeholder={t("reportDescriptionPlaceholder")}
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
               className="bg-fondo border-borde text-claro"

@@ -124,7 +124,6 @@ def _descargar_juegos():
                         timeout=86400,
                     )
                     return
-                tqdm.write(f"IGDB cache: solicitando juegos offset={offset_loop}", file=sys.stderr)
                 query = f"""
                     fields {", ".join(fields)};
                     sort popularity desc;
@@ -132,20 +131,8 @@ def _descargar_juegos():
                     offset {offset_loop};
                 """
                 res = safe_post(f"{IGDB_BASE_URL}/games", headers, query)
-                tqdm.write(
-                    f"IGDB cache: respuesta juegos status={res.status_code} offset={offset_loop}",
-                    file=sys.stderr,
-                )
                 chunk = res.json()
-                tqdm.write(
-                    f"IGDB cache: recibidos {len(chunk)} juegos en offset={offset_loop}",
-                    file=sys.stderr,
-                )
                 if not chunk:
-                    tqdm.write(
-                        "IGDB cache: sin mas juegos, finalizando descarga",
-                        file=sys.stderr,
-                    )
                     break
                 juegos.extend(chunk)
                 ids.extend([j["id"] for j in chunk])
@@ -163,10 +150,6 @@ def _descargar_juegos():
                     timeout=86400,
                 )
                 if len(chunk) < 500:
-                    tqdm.write(
-                        "IGDB cache: ultimo bloque parcial, finalizando descarga",
-                        file=sys.stderr,
-                    )
                     break
         finally:
             juegos_bar.close()
@@ -208,10 +191,6 @@ def _descargar_juegos():
                         timeout=86400,
                     )
                     return
-                tqdm.write(
-                    f"IGDB cache: solicitando popularidad {i}/{len(ids)}",
-                    file=sys.stderr,
-                )
                 ids_slice = ",".join(str(x) for x in ids[i:i + 500])
                 pop_query = (
                     f"fields game_id,value; where game_id = ({ids_slice}) & popularity_type = 1;"
@@ -219,16 +198,8 @@ def _descargar_juegos():
                 pop_res = safe_post(
                     f"{IGDB_BASE_URL}/popularity_primitives", headers, pop_query
                 )
-                tqdm.write(
-                    f"IGDB cache: respuesta popularidad status={pop_res.status_code} i={i}",
-                    file=sys.stderr,
-                )
                 if pop_res.status_code == 200:
                     pop_data = pop_res.json()
-                    tqdm.write(
-                        f"IGDB cache: recibidos {len(pop_data)} registros de popularidad",
-                        file=sys.stderr,
-                    )
                     popularidad_map.update({p["game_id"]: p["value"] for p in pop_data})
                 pop_bar.update(min(500, len(ids) - i))
                 cache.set(
@@ -265,7 +236,6 @@ def _descargar_juegos():
             timeout=86400,
         )
     except Exception as e:
-        print("Error al actualizar caché IGDB:", e)
         cache.set(_LAST_ERROR_KEY, str(e), timeout=86400)
         cache.set(
             _STATUS_KEY,

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiSearch, FiUsers } from "react-icons/fi";
 import { FaGamepad } from "react-icons/fa";
 import DropLoader from "@/components/DropLoader";
+import { useLang } from "@/context/LangContext";
 
 export default function BuscadorGlobal({ className = "" }) {
   const [modo, setModo] = useState("juegos"); // juegos | personas
@@ -14,6 +15,7 @@ export default function BuscadorGlobal({ className = "" }) {
   const debounceRef = useRef();
   const navigate = useNavigate();
   const contenedorRef = useRef();
+  const { t } = useLang();
 
   useEffect(() => {
     const manejarClickFuera = (e) => {
@@ -76,7 +78,7 @@ export default function BuscadorGlobal({ className = "" }) {
       <form onSubmit={submitBusqueda} className="flex gap-2 items-center w-full">
         <input
           type="text"
-          placeholder={`Buscar ${modo === "juegos" ? "juegos" : "personas"}...`}
+          placeholder={modo === "juegos" ? t("searchGamesPlaceholder") : t("searchPeoplePlaceholder")}
           value={query}
           onChange={(e) => buscar(e.target.value)}
           onFocus={() => setShowSug(true)}

@@ -5,7 +5,6 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from howlongtobeatpy import HowLongToBeat
 
 from .services import (
     cargar_cache_juegos,
@@ -18,7 +17,7 @@ from .services import (
     valorar_juego_service,
     calcular_recomendaciones_usuario,
 )
-from .utils import DESCARGANDO_KEY
+from .utils import DESCARGANDO_KEY, buscar_hltb
 
 
 @api_view(["GET"])
@@ -201,7 +200,7 @@ def tiempo_juego(request):
     if not nombre:
         return Response({"error": "nombre requerido"}, status=400)
     try:
-        resultados = HowLongToBeat().search(nombre)
+        resultados = buscar_hltb(nombre)
         if not resultados:
             return Response({"found": False}, status=200)
         mejor = max(resultados, key=lambda r: r.similarity)

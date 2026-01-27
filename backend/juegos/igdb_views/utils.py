@@ -1,16 +1,27 @@
 """Funciones auxiliares usadas por los servicios de IGDB."""
 
+import time
 import requests
 from datetime import timedelta
 from django.conf import settings
 from django.core.cache import cache
 from utils.http import safe_post
 from howlongtobeatpy import HowLongToBeat
+from howlongtobeatpy.JSONResultParser import JSONResultParser
 from ..models import Juego, DuracionJuego
 
 IGDB_BASE_URL = "https://api.igdb.com/v4"
 DESCARGANDO_KEY = "igdb_descargando_todo"
 DESCARGANDO_COMPLETADO_KEY = "igdb_descarga_completa"
+HLTB_BASE_URL = "https://howlongtobeat.com"
+HLTB_GAME_URL = f"{HLTB_BASE_URL}/game/"
+HLTB_TOKEN_CACHE_KEY = "hltb_search_token"
+HLTB_TOKEN_TTL = 10 * 60
+HLTB_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0 Safari/537.36"
+)
 
 def obtener_token_igdb():
     """Recupera y cachea el token de autenticación de IGDB."""
@@ -35,6 +46,124 @@ def chunked(iterable, size):
     """Divide un iterable en porciones de tamaño ``size``."""
     for i in range(0, len(iterable), size):
         yield iterable[i : i + size]
+
+
+def _hltb_headers():
+    return {
+        "User-Agent": HLTB_USER_AGENT,
+        "Referer": HLTB_BASE_URL,
+        "Origin": HLTB_BASE_URL,
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+    }
+
+
+def _hltb_fetch_token():
+    params = {"t": int(time.time() * 1000)}
+    resp = requests.get(
+        f"{HLTB_BASE_URL}/api/search/init",
+        headers=_hltb_headers(),
+        params=params,
+        timeout=20,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("token")
+
+
+def _hltb_get_token(force_refresh=False):
+    if not force_refresh:
+        token = cache.get(HLTB_TOKEN_CACHE_KEY)
+        if token:
+            return token
+    token = _hltb_fetch_token()
+    if token:
+        cache.set(HLTB_TOKEN_CACHE_KEY, token, timeout=HLTB_TOKEN_TTL)
+    return token
+
+
+def _hltb_payload(game_name, page=1):
+    return {
+        "searchType": "games",
+        "searchTerms": game_name.split(),
+        "searchPage": page,
+        "size": 20,
+        "searchOptions": {
+            "games": {
+                "userId": 0,
+                "platform": "",
+                "sortCategory": "popular",
+                "rangeCategory": "main",
+                "rangeTime": {"min": 0, "max": 0},
+                "gameplay": {"perspective": "", "flow": "", "genre": "", "difficulty": ""},
+                "rangeYear": {"min": "", "max": ""},
+                "modifier": "",
+            },
+            "users": {"sortCategory": "postcount"},
+            "lists": {"sortCategory": "follows"},
+            "filter": "",
+            "sort": 0,
+            "randomizer": 0,
+        },
+        "useCache": True,
+    }
+
+
+def _hltb_search_api(game_name):
+    payload = _hltb_payload(game_name)
+    token = _hltb_get_token()
+    if not token:
+        return None
+    headers = _hltb_headers()
+    headers["x-auth-token"] = token
+    resp = requests.post(
+        f"{HLTB_BASE_URL}/api/search",
+        headers=headers,
+        json=payload,
+        timeout=20,
+    )
+    if resp.status_code == 403:
+        token = _hltb_get_token(force_refresh=True)
+        if not token:
+            return None
+        headers["x-auth-token"] = token
+        resp = requests.post(
+            f"{HLTB_BASE_URL}/api/search",
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
+    if resp.status_code != 200:
+        return None
+    return resp.text
+
+
+def buscar_hltb(nombre, minimum_similarity=0.4, similarity_case_sensitive=True, auto_filter_times=False):
+    if not nombre:
+        return None
+    try:
+        json_text = _hltb_search_api(nombre)
+        if json_text:
+            parser = JSONResultParser(
+                nombre,
+                HLTB_GAME_URL,
+                minimum_similarity,
+                input_similarity_case_sensitive=similarity_case_sensitive,
+                input_auto_filter_times=auto_filter_times,
+            )
+            parser.parse_json_result(json_text)
+            return parser.results
+    except requests.RequestException:
+        pass
+    except Exception:
+        pass
+    try:
+        return HowLongToBeat(minimum_similarity, auto_filter_times).search(
+            nombre,
+            similarity_case_sensitive=similarity_case_sensitive,
+        )
+    except Exception:
+        return None
 
 
 def obtener_nombre_juego(juego_id):
@@ -70,7 +199,7 @@ def obtener_duracion_juego(juego_id):
     if not nombre:
         return None
     try:
-        resultados = HowLongToBeat().search(nombre)
+        resultados = buscar_hltb(nombre)
         if not resultados:
             duracion = None
         else:

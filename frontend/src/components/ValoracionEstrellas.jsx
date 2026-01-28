@@ -14,7 +14,7 @@ export default function ValoracionEstrellas({ juegoId }) {
 
   useEffect(() => {
     setCargando(true);
-    fetchAuth(`/api/juegos/valoracion/${juegoId}/`, { method: "GET" })
+    fetchAuth(`/juegos/valoracion/${juegoId}/`, { method: "GET" })
       .then(res => res.json())
       .then(data => {
         setMiValoracion(data.mi_valoracion ?? null);
@@ -30,7 +30,7 @@ export default function ValoracionEstrellas({ juegoId }) {
       return;
     }
     setPublicando(true);
-    fetchAuth(`/api/juegos/valoracion/${juegoId}/`, {
+    fetchAuth(`/juegos/valoracion/${juegoId}/`, {
       method: "POST",
       body: JSON.stringify({ valor }),
     })

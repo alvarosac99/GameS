@@ -13,14 +13,14 @@ export default function NotificacionesProvider({ children }) {
 
   const cargar = () => {
     if (!autenticado) return;
-    fetchAuth("/api/notificaciones/")
+    fetchAuth("/notificaciones/")
       .then(r => r.json())
       .then(setNotificaciones)
       .catch(() => {});
   };
 
   const marcarLeida = id => {
-    fetchAuth(`/api/notificaciones/${id}/`, { method: "PATCH", body: JSON.stringify({ leida: true }) })
+    fetchAuth(`/notificaciones/${id}/`, { method: "PATCH", body: JSON.stringify({ leida: true }) })
       .then(r => r.json())
       .then(n => setNotificaciones(notificaciones.map(x => x.id === id ? n : x)));
   };

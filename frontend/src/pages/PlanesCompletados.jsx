@@ -10,7 +10,7 @@ export default function PlanesCompletados() {
     const cargar = async () => {
       setCargando(true);
       try {
-        const res = await fetchAuth("/api/juegos/planificaciones_completadas/");
+        const res = await fetchAuth("/juegos/planificaciones_completadas/");
         const data = await res.json();
         setPlanes(data);
       } catch (e) {

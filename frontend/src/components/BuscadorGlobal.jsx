@@ -5,6 +5,7 @@ import { FiSearch, FiUsers } from "react-icons/fi";
 import { FaGamepad } from "react-icons/fa";
 import DropLoader from "@/components/DropLoader";
 import { useLang } from "@/context/LangContext";
+import { apiFetch } from "../lib/api";
 
 export default function BuscadorGlobal({ className = "" }) {
   const [modo, setModo] = useState("juegos"); // juegos | personas
@@ -40,11 +41,11 @@ export default function BuscadorGlobal({ className = "" }) {
     setCargando(true);
 
     let endpoint = modo === "juegos"
-      ? `/api/juegos/populares/?q=${encodeURIComponent(q)}&por_pagina=5`
-      : `/api/usuarios/buscar/?q=${encodeURIComponent(q)}`;
+      ? `/juegos/populares/?q=${encodeURIComponent(q)}&por_pagina=5`
+      : `/usuarios/buscar/?q=${encodeURIComponent(q)}`;
 
     debounceRef.current = setTimeout(() => {
-      fetch(endpoint)
+      apiFetch(endpoint)
         .then((res) => res.json())
         .then((data) => {
           if (modo === "juegos") {

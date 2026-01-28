@@ -14,7 +14,7 @@ export default function NuevoJuego() {
   const crear = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetchAuth("/api/juegos/dev/", {
+      const res = await fetchAuth("/juegos/dev/", {
         method: "POST",
         body: JSON.stringify({ nombre, descripcion }),
       });

@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import TarjetaSkeleton from "@/components/TarjetaSkeleton";
 import GameCard from "@/components/GameCard";
 import LoaderCirculo from "@/components/LoaderCirculo";
+import { apiFetch } from "../lib/api";
 
 const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
 
@@ -43,7 +44,7 @@ export default function Juegos() {
   const busquedaRef = useRef(terminoBusqueda);
 
   useEffect(() => {
-    fetch("/api/juegos/filtros/")
+    apiFetch("/juegos/filtros/")
       .then(res => res.json())
       .then(data => {
         setGenres(data.genres || []);
@@ -101,7 +102,7 @@ export default function Juegos() {
       params.set("adult", usuario.filtro_adulto ? "1" : "0");
     }
 
-    fetch(`/api/juegos/populares/?${params.toString()}`)
+    apiFetch(`/juegos/populares/?${params.toString()}`)
       .then(res => res.json())
       .then(data => {
         if (data?.error === "descargando") {

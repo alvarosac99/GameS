@@ -27,7 +27,7 @@ export default function AñadirEntrada({ onEntradaCreada }) {
         return;
       }
 
-      fetchAuth(`/api/juegos/buscar_en_biblioteca/?q=${encodeURIComponent(busqueda)}`)
+      fetchAuth(`/juegos/buscar_en_biblioteca/?q=${encodeURIComponent(busqueda)}`)
         .then((res) => res.json())
         .then((data) => {
           console.log("Resultados recibidos:", data);
@@ -53,7 +53,7 @@ export default function AñadirEntrada({ onEntradaCreada }) {
       duracion: duracion.includes(":") ? duracion : `0:${duracion}:00`,
     };
 
-    await fetchAuth("/api/diario/", {
+    await fetchAuth("/diario/", {
       method: "POST",
       body: JSON.stringify(datos),
     });

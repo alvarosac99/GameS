@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import { useLang } from "@/context/LangContext";
+import { apiFetch } from "../lib/api";
 
 export default function Jugar() {
   const { fetchAuth } = useAuth();
@@ -24,7 +25,7 @@ export default function Jugar() {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("juego");
     if (id) {
-      fetch(`/api/juegos/buscar_id/?id=${id}`)
+      apiFetch(`/juegos/buscar_id/?id=${id}`)
         .then((r) => r.json())
         .then((j) => {
           setSeleccionado(j);
@@ -36,14 +37,14 @@ export default function Jugar() {
 
   // Cargar sesión activa si existe
   useEffect(() => {
-    fetchAuth("/api/sesiones/activa/")
+    fetchAuth("/sesiones/activa/")
       .then((res) => (res.status === 200 ? res.json() : null))
       .then((data) => {
         if (data && data.id) {
           setSesionId(data.id);
           setInicio(new Date(data.inicio).getTime());
           setEnCurso(true);
-          fetch(`/api/juegos/buscar_id/?id=${data.juego}`)
+          apiFetch(`/juegos/buscar_id/?id=${data.juego}`)
             .then((r) => r.json())
             .then((j) => setSeleccionado(j))
             .catch(() => {});
@@ -71,7 +72,7 @@ export default function Jugar() {
         return;
       }
       fetchAuth(
-        `/api/juegos/buscar_en_biblioteca/?q=${encodeURIComponent(busqueda)}`
+        `/juegos/buscar_en_biblioteca/?q=${encodeURIComponent(busqueda)}`
       )
         .then((r) => r.json())
         .then((data) => {
@@ -101,7 +102,7 @@ export default function Jugar() {
 
   const comenzar = () => {
     if (!seleccionado) return;
-    fetchAuth("/api/sesiones/iniciar/", {
+    fetchAuth("/sesiones/iniciar/", {
       method: "POST",
       body: JSON.stringify({ juego: seleccionado.id }),
     })
@@ -201,7 +202,7 @@ export default function Jugar() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={async () => {
-                  await fetchAuth("/api/sesiones/finalizar/", {
+                  await fetchAuth("/sesiones/finalizar/", {
                     method: "POST",
                     body: JSON.stringify({
                       sesion: sesionId,
@@ -220,7 +221,7 @@ export default function Jugar() {
               </button>
               <button
                 onClick={() => {
-                  fetchAuth("/api/sesiones/finalizar/", {
+                  fetchAuth("/sesiones/finalizar/", {
                     method: "POST",
                     body: JSON.stringify({ sesion: sesionId, guardar: false }),
                   });

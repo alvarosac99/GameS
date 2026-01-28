@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { apiFetch } from "../lib/api";
 
 // Utilidad para obtener la cookie del CSRF token
 function getCookie(name) {
@@ -28,13 +29,13 @@ export default function AuthProvider({ children }) {
   const [cargando, setCargando] = useState(true);
 
   // Fetch seguro con CSRF y sesión incluida
-  const fetchAuth = (url, options = {}) => {
+  const fetchAuth = (endpoint, options = {}) => {
     const headers = options.headers || {};
     if (["POST", "PUT", "PATCH", "DELETE"].includes((options.method || "GET").toUpperCase())) {
       headers["X-CSRFToken"] = getCookie("csrftoken");
       headers["Content-Type"] = "application/json";
     }
-    return fetch(url, {
+    return apiFetch(endpoint, {
       ...options,
       credentials: "include",
       headers,
@@ -44,11 +45,11 @@ export default function AuthProvider({ children }) {
   // Carga el usuario y su filtro_adulto
   useEffect(() => {
     // Esto asegura que la cookie CSRF esté presente
-    fetch("/api/usuarios/session/", { credentials: "include" })
+    fetchAuth("/usuarios/session/", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) {
-          fetch("/api/usuarios/me/", { credentials: "include" })
+          fetchAuth("/usuarios/me/", { credentials: "include" })
             .then(r => r.json())
             .then(userdata => {
               setUsuario({
@@ -71,7 +72,7 @@ export default function AuthProvider({ children }) {
   }, []);
 
   const login = (token, datos) => {
-    fetch("/api/usuarios/me/", { credentials: "include" })
+    fetchAuth("/usuarios/me/", { credentials: "include" })
       .then(r => r.json())
       .then(userdata => {
         setUsuario({

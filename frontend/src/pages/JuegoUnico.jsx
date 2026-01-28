@@ -9,6 +9,7 @@ import GameCard from "@/components/GameCard";
 import { useAuth } from "@/context/AuthContext";
 import { useLang } from "@/context/LangContext";
 import ValoracionEstrellas from "@/components/ValoracionEstrellas";
+import { apiFetch } from "../lib/api";
 import {
   SiSteam,
   SiEpicgames,
@@ -179,8 +180,8 @@ export default function JuegoUnico() {
 
     const cargarFavoritosFondo = async () => {
       try {
-        const perfilRes = await fetch(
-          `/api/usuarios/perfil-publico/${usuario.username}/`,
+        const perfilRes = await apiFetch(
+          `/usuarios/perfil-publico/${usuario.username}/`,
           { credentials: "include", signal: controller.signal }
         );
         if (!perfilRes.ok) throw new Error("perfil");
@@ -190,7 +191,7 @@ export default function JuegoUnico() {
           setFavoritosImages([]);
           return;
         }
-        const res = await fetch(`/api/juegos/populares/?ids=${ids.join(",")}`, {
+        const res = await apiFetch(`/juegos/populares/?ids=${ids.join(",")}`, {
           signal: controller.signal,
         });
         const data = await res.json();
@@ -198,7 +199,7 @@ export default function JuegoUnico() {
         for (let i = 0; i < ids.length; i += 1) {
           if (!juegos[i] && ids[i]) {
             try {
-              const resJuego = await fetch(`/api/juegos/buscar_id/?id=${ids[i]}`, {
+              const resJuego = await apiFetch(`/juegos/buscar_id/?id=${ids[i]}`, {
                 signal: controller.signal,
               });
               if (resJuego.ok) {
@@ -231,7 +232,7 @@ export default function JuegoUnico() {
     setEntryId(null);
     setCargando(true);
 
-    fetch(`/api/juegos/detalle/${id}/`, { credentials: "include" })
+    apiFetch(`/juegos/detalle/${id}/`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         setJuego(data);
@@ -275,7 +276,7 @@ export default function JuegoUnico() {
   useEffect(() => {
     if (!juego) return;
     setTiempo(null);
-    fetch(`/api/juegos/tiempo/?nombre=${encodeURIComponent(juego.name)}`)
+    apiFetch(`/juegos/tiempo/?nombre=${encodeURIComponent(juego.name)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.found) setTiempo(data);
@@ -349,7 +350,7 @@ export default function JuegoUnico() {
   useEffect(() => {
     if (!juego || !autenticado) return;
 
-    fetch(`/api/juegos/biblioteca/?game_id=${juego.id}`, {
+    apiFetch(`/juegos/biblioteca/?game_id=${juego.id}`, {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -373,7 +374,7 @@ export default function JuegoUnico() {
 
   // Añade juego a biblioteca
   function handleAdd() {
-    fetchAuth("/api/juegos/biblioteca/", {
+    fetchAuth("/juegos/biblioteca/", {
       method: "POST",
       body: JSON.stringify({ game_id: juego.id, estado }),
     })
@@ -391,7 +392,7 @@ export default function JuegoUnico() {
   // Quita juego de biblioteca
   function handleRemove() {
     if (!entryId) return;
-    fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
+    fetchAuth(`/juegos/biblioteca/${entryId}/`, {
       method: "DELETE",
     })
       .then((res) => {
@@ -754,7 +755,7 @@ export default function JuegoUnico() {
                             onChange={(e) => {
                               const nuevo = e.target.value;
                               setEstado(nuevo);
-                              fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
+                              fetchAuth(`/juegos/biblioteca/${entryId}/`, {
                                 method: "PATCH",
                                 body: JSON.stringify({ estado: nuevo }),
                               });
@@ -803,7 +804,7 @@ export default function JuegoUnico() {
                           onChange={(e) => {
                             const nuevo = e.target.value;
                             setEstado(nuevo);
-                            fetchAuth(`/api/juegos/biblioteca/${entryId}/`, {
+                              fetchAuth(`/juegos/biblioteca/${entryId}/`, {
                               method: "PATCH",
                               body: JSON.stringify({ estado: nuevo }),
                             });

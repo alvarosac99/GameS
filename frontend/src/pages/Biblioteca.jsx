@@ -4,6 +4,7 @@ import GameCard from "@/components/GameCard";
 import TarjetaSkeleton from "../components/TarjetaSkeleton";
 import { FaSort, FaSortAmountUp, FaSortAmountDown } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
+import { apiFetch } from "../lib/api";
 
 const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
 
@@ -26,13 +27,13 @@ export default function Biblioteca() {
 
   useEffect(() => {
     setCargando(true);
-    fetch(`/api/juegos/biblioteca/?pagina=1&por_pagina=1000`, {
+    apiFetch(`/juegos/biblioteca/?pagina=1&por_pagina=1000`, {
       credentials: "include",
     })
       .then((res) => res.json())
       .then(async (data) => {
         const juegos = data.juegos || [];
-        const resTiempos = await fetch("/api/sesiones/tiempos/", {
+        const resTiempos = await apiFetch("/sesiones/tiempos/", {
           credentials: "include",
         });
         const tiemposData = resTiempos.ok ? await resTiempos.json() : {};
@@ -40,7 +41,7 @@ export default function Biblioteca() {
         const valores = {};
         await Promise.all(
           juegos.map(async (j) => {
-            const r = await fetch(`/api/juegos/valoracion/${j.id}/`, {
+            const r = await apiFetch(`/juegos/valoracion/${j.id}/`, {
               credentials: "include",
             }).then((x) => (x.ok ? x.json() : null));
             if (r && r.mi_valoracion != null) valores[j.id] = r.mi_valoracion;

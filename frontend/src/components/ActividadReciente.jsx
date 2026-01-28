@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaGamepad, FaStar, FaTrophy, FaComment, FaUserPlus } from "react-icons/fa"; // ⬅ nuevo ícono
+import { apiFetch } from "../lib/api";
 
 function formatearFecha(iso) {
   const date = new Date(iso);
@@ -34,7 +35,7 @@ async function reemplazarIdsPorNombres(descripciones) {
   const idToNombre = {};
   await Promise.all([...juegosIds].map(async id => {
     try {
-      const res = await fetch(`/api/juegos/buscar_id/?id=${id}`);
+      const res = await apiFetch(`/juegos/buscar_id/?id=${id}`);
       const data = await res.json();
       idToNombre[id] = data.name || `Juego ${id}`;
     } catch {

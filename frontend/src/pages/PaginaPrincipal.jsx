@@ -10,6 +10,7 @@ import {
   FaBolt,
   FaArrowRight,
 } from "react-icons/fa";
+import { apiFetch } from "../lib/api";
 
 export default function PaginaPrincipal() {
   const [usuario, setUsuario] = useState("");
@@ -25,18 +26,18 @@ export default function PaginaPrincipal() {
 
   // Solo consulta la API de stats y la sesión de usuario
   useEffect(() => {
-    fetch("/api/usuarios/session/", { credentials: "include" })
+    apiFetch("/usuarios/session/", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) setUsuario(data.username);
         else navigate("/"); // Redirige si no está autenticado
       });
 
-    fetch("/api/juegos/stats_bienvenida/", { credentials: "include" })
+    apiFetch("/juegos/stats_bienvenida/", { credentials: "include" })
       .then(res => res.json())
       .then(data => setStats(data));
 
-    fetch("/api/juegos/recomendados/", { credentials: "include" })
+    apiFetch("/juegos/recomendados/", { credentials: "include" })
       .then(res => (res.ok ? res.json() : { recomendaciones: [] }))
       .then(data => setRecomendados(data.recomendaciones || []));
   }, [navigate]);

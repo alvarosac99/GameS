@@ -208,13 +208,6 @@ export default function PaginaPrincipal() {
                 />
               </SectionCard>
             )}
-
-            <div className="rounded-2xl border border-black/10 bg-fondo/80 p-6 text-center shadow-[0_10px_24px_rgba(15,23,42,0.1)]">
-              <p className="text-base text-claro/80">
-                Este proyecto evoluciona con cada feedback. Si tienes ideas o
-                detectas algún fallo, ¡participa!
-              </p>
-            </div>
           </div>
         </section>
       </div>

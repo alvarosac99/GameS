@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Pencil, X } from "lucide-react"
+import { apiFetch } from "../lib/api"
 // <-- ¡NO IMPORTES SWITCH!
 
 function getCookie(name) {
@@ -28,9 +29,9 @@ export default function Perfil({ cerrar }) {
   })
 
   useEffect(() => {
-    fetch("/api/usuarios/session/", { credentials: "include" })
+    apiFetch("/usuarios/session/", { credentials: "include" })
 
-    fetch("/api/usuarios/me/", { credentials: "include" })
+    apiFetch("/usuarios/me/", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         setPerfil((prev) => ({
@@ -58,7 +59,7 @@ export default function Perfil({ cerrar }) {
   // Usamos checked, no value
   const handleFiltroAdultoChange = (e) => {
     setPerfil((prev) => ({ ...prev, filtro_adulto: e.target.checked }))
-    fetch("/api/usuarios/me/filtro_adulto/", {
+    apiFetch("/usuarios/me/filtro_adulto/", {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
@@ -81,7 +82,7 @@ export default function Perfil({ cerrar }) {
       formData.append("foto", perfil.foto)
     }
 
-    fetch("/api/usuarios/me/", {
+    apiFetch("/usuarios/me/", {
       method: "PATCH",
       credentials: "include",
       headers: {

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../context/LangContext";
+import { apiFetch } from "../lib/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function Register() {
   const [mensaje, setMensaje] = useState("");
 
   useEffect(() => {
-    fetch("/api/usuarios/session/", { credentials: "include" })
+    apiFetch("/usuarios/session/", { credentials: "include" })
       .then(res => {
         function getCookie(name) {
           const value = `; ${document.cookie}`;
@@ -39,7 +40,7 @@ export default function Register() {
       return;
     }
 
-    const res = await fetch("/api/usuarios/register/", {
+    const res = await apiFetch("/usuarios/register/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

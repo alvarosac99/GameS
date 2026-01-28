@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import Planificar from "./Planificar";
 import { FaTimes } from "react-icons/fa";
+import { apiFetch } from "../lib/api";
 
 export default function Planificaciones() {
   const { fetchAuth } = useAuth();
@@ -18,8 +19,8 @@ export default function Planificaciones() {
     setCargando(true);
     try {
       const [resPend, resComp] = await Promise.all([
-        fetchAuth("/api/juegos/planificaciones/"),
-        fetchAuth("/api/juegos/planificaciones_completadas/")
+        fetchAuth("/juegos/planificaciones/"),
+        fetchAuth("/juegos/planificaciones_completadas/")
       ]);
       const dataPend = await resPend.json();
       const dataComp = await resComp.json();
@@ -27,7 +28,7 @@ export default function Planificaciones() {
         dataPend.map(async (p) => {
           const juegosDet = await Promise.all(
             p.juegos.slice(0, 4).map(async (gid) => {
-              const j = await fetch(`/api/juegos/buscar_id/?id=${gid}`)
+              const j = await apiFetch(`/juegos/buscar_id/?id=${gid}`)
                 .then((r) => r.json())
                 .catch(() => null);
               return j;
@@ -62,7 +63,7 @@ export default function Planificaciones() {
   const eliminarPlan = async (id) => {
     if (!window.confirm("¿Eliminar esta planificación?")) return;
     try {
-      const res = await fetchAuth(`/api/juegos/planificaciones/${id}/`, {
+      const res = await fetchAuth(`/juegos/planificaciones/${id}/`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Error al eliminar");
@@ -75,15 +76,15 @@ export default function Planificaciones() {
   const cargarAuto = async () => {
     setCargando(true);
     try {
-      const resBib = await fetchAuth("/api/juegos/biblioteca/?por_pagina=1000");
+      const resBib = await fetchAuth("/juegos/biblioteca/?por_pagina=1000");
       const dataBib = await resBib.json();
       const juegos = (dataBib.juegos || []).filter((j) => j.estado !== "completado");
-      const resTimes = await fetchAuth("/api/sesiones/tiempos/");
+      const resTimes = await fetchAuth("/sesiones/tiempos/");
       const tiempos = await resTimes.json();
 
       const detallados = await Promise.all(
         juegos.map(async (j) => {
-          const t = await fetch(`/api/juegos/tiempo/?nombre=${encodeURIComponent(j.name)}`)
+          const t = await apiFetch(`/juegos/tiempo/?nombre=${encodeURIComponent(j.name)}`)
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null);
           const jugado = tiempos[j.id] || 0;
@@ -107,7 +108,7 @@ export default function Planificaciones() {
   }, [vista]);
 
   const guardarAuto = async () => {
-    await fetchAuth("/api/juegos/planificaciones/", {
+    await fetchAuth("/juegos/planificaciones/", {
       method: "POST",
       body: JSON.stringify({ nombre: "Plan automático", juegos: autoPlan.map((j) => j.id) }),
     });

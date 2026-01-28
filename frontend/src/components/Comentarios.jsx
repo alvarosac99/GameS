@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaStar, FaRegStar, FaStarHalfAlt, FaTimes } from "react-icons/fa";
 import Reportar from "./Reportar";
 import { useLang } from "@/context/LangContext";
+import { apiFetch } from "../lib/api";
 
 // Formato de fecha
 const fechaCorta = (iso) => {
@@ -81,14 +82,14 @@ export default function Comentarios({ juegoId }) {
   async function cargarComentarios() {
     setCargando(true);
     try {
-      const res = await fetch(`/api/comentarios/juego/${juegoId}/`);
+      const res = await apiFetch(`/comentarios/juego/${juegoId}/`);
       const data = await res.json();
 
       const comentariosOrdenados = ordenarLista(data || []);
       const comentariosConFoto = await Promise.all(
         comentariosOrdenados.map(async (comentario) => {
           try {
-            const resFoto = await fetch(`/api/usuarios/perfil-publico/${comentario.user.username}/`);
+            const resFoto = await apiFetch(`/usuarios/perfil-publico/${comentario.user.username}/`);
             const perfil = await resFoto.json();
             return {
               ...comentario,
@@ -124,7 +125,7 @@ export default function Comentarios({ juegoId }) {
     }
 
     setPublicando(true);
-    fetchAuth(`/api/comentarios/juego/${juegoId}/`, {
+    fetchAuth(`/comentarios/juego/${juegoId}/`, {
       method: "POST",
       body: JSON.stringify({ texto }),
     })
@@ -148,7 +149,7 @@ export default function Comentarios({ juegoId }) {
 
   function borrarComentario(id) {
     if (!window.confirm("¿Eliminar este comentario?")) return;
-    fetchAuth(`/api/comentarios/borrar/${id}/`, { method: "DELETE" }).then(() =>
+    fetchAuth(`/comentarios/borrar/${id}/`, { method: "DELETE" }).then(() =>
       cargarComentarios()
     );
   }

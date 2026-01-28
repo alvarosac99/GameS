@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLang } from "../context/LangContext";
+import { apiFetch } from "../lib/api";
 
 export default function ListaUsuarios() {
     const [usuarios, setUsuarios] = useState([]);
@@ -26,7 +27,7 @@ export default function ListaUsuarios() {
             return;
         }
         setCargando(true);
-        fetch(`/api/usuarios/buscar/?q=${encodeURIComponent(q)}`)
+        apiFetch(`/usuarios/buscar/?q=${encodeURIComponent(q)}`)
             .then((r) => r.json())
             .then((data) => {
                 setUsuarios(data.resultados || []);

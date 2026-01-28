@@ -7,7 +7,7 @@ export default function NuestrosJuegos() {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    fetchAuth("/api/juegos/dev/")
+    fetchAuth("/juegos/dev/")
       .then((res) => res.json())
       .then((data) => setJuegos(data))
       .finally(() => setCargando(false));

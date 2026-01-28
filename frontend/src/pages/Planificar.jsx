@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import { useLang } from "@/context/LangContext";
+import { apiFetch } from "../lib/api";
 
 export default function Planificar() {
   const { fetchAuth } = useAuth();
@@ -18,15 +19,15 @@ export default function Planificar() {
     const cargar = async () => {
       setCargando(true);
       try {
-        const resBib = await fetchAuth("/api/juegos/biblioteca/?por_pagina=1000");
+        const resBib = await fetchAuth("/juegos/biblioteca/?por_pagina=1000");
         const dataBib = await resBib.json();
         const juegos = (dataBib.juegos || []).filter((j) => j.estado !== "completado");
-        const resTimes = await fetchAuth("/api/sesiones/tiempos/");
+        const resTimes = await fetchAuth("/sesiones/tiempos/");
         const tiempos = await resTimes.json();
 
         const detallados = await Promise.all(
           juegos.map(async (j) => {
-            const t = await fetch(`/api/juegos/tiempo/?nombre=${encodeURIComponent(j.name)}`)
+            const t = await apiFetch(`/juegos/tiempo/?nombre=${encodeURIComponent(j.name)}`)
               .then((r) => (r.ok ? r.json() : null))
               .catch(() => null);
             const jugado = tiempos[j.id] || 0;
@@ -118,7 +119,7 @@ export default function Planificar() {
       {!cargando && lista.length > 0 && (
         <button
           onClick={async () => {
-            await fetchAuth("/api/juegos/planificaciones/", {
+            await fetchAuth("/juegos/planificaciones/", {
               method: "POST",
               body: JSON.stringify({ nombre: nombre || "Plan", juegos: lista.map((j) => j.id) }),
             });

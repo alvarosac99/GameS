@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import GameCard from "@/components/GameCard";
 import LoaderCirculo from "@/components/LoaderCirculo";
 import { useLang } from "@/context/LangContext";
+import { apiFetch } from "../lib/api";
 
 export default function EditarFavoritos({ favoritos, onGuardar, onCerrar }) {
   const { t } = useLang();
@@ -26,7 +27,7 @@ export default function EditarFavoritos({ favoritos, onGuardar, onCerrar }) {
     }
     setCargando(true);
     debounceRef.current = setTimeout(() => {
-      fetch(`/api/juegos/populares/?q=${encodeURIComponent(q)}&por_pagina=10`)
+      apiFetch(`/juegos/populares/?q=${encodeURIComponent(q)}&por_pagina=10`)
         .then(res => res.json())
         .then(data => setResultados(data.juegos || []))
         .finally(() => setCargando(false));

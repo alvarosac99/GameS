@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import LoaderCirculo from "@/components/LoaderCirculo";
+import { apiFetch } from "../lib/api";
 
 export default function Precios({ nombre }) {
   const [datos, setDatos] = useState(null);
@@ -28,7 +29,7 @@ export default function Precios({ nombre }) {
     setError(null);
     try {
       const params = new URLSearchParams({ game: nombre });
-      const res = await fetch(`/api/precios/consultar/?${params.toString()}`, {
+      const res = await apiFetch(`/precios/consultar/?${params.toString()}`, {
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);

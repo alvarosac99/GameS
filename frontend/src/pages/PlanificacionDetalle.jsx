@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import GameCard from "@/components/GameCard";
+import { apiFetch } from "../lib/api";
 
 export default function PlanificacionDetalle() {
   const { id } = useParams();
@@ -16,7 +17,7 @@ export default function PlanificacionDetalle() {
     const cargar = async () => {
       setCargando(true);
       try {
-        const res = await fetchAuth(`/api/juegos/planificaciones/${id}/`);
+        const res = await fetchAuth(`/juegos/planificaciones/${id}/`);
         const data = await res.ok ? await res.json() : null;
         if (!data) {
           setPlan(null);
@@ -25,7 +26,7 @@ export default function PlanificacionDetalle() {
         }
         const juegosDet = await Promise.all(
           data.juegos.map(async (gid) => {
-            const j = await fetch(`/api/juegos/buscar_id/?id=${gid}`)
+            const j = await apiFetch(`/juegos/buscar_id/?id=${gid}`)
               .then((r) => r.json())
               .catch(() => null);
             return j;
@@ -47,7 +48,7 @@ export default function PlanificacionDetalle() {
         for (const j of juegosFinal) {
           try {
             const resBib = await fetchAuth(
-              `/api/juegos/biblioteca/?game_id=${j.id}`
+              `/juegos/biblioteca/?game_id=${j.id}`
             );
             const datos = await resBib.json();
             if (Array.isArray(datos) && datos.length > 0) {
@@ -93,7 +94,7 @@ export default function PlanificacionDetalle() {
               <button
                 onClick={async () => {
                   if (bibIds[j.id]) {
-                    await fetchAuth(`/api/juegos/biblioteca/${bibIds[j.id]}/`, {
+                    await fetchAuth(`/juegos/biblioteca/${bibIds[j.id]}/`, {
                       method: "PATCH",
                       body: JSON.stringify({ estado: "completado" }),
                     });
@@ -129,7 +130,7 @@ export default function PlanificacionDetalle() {
       {plan.juegos.length > 0 && (
         <button
           onClick={async () => {
-            const res = await fetchAuth(`/api/juegos/planificaciones/${id}/finalizar/`, {
+            const res = await fetchAuth(`/juegos/planificaciones/${id}/finalizar/`, {
               method: "POST",
               body: JSON.stringify({ juegos: estatus }),
             });

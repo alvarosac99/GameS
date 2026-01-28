@@ -6,6 +6,7 @@ import ListaEntradasDiario from "@/components/ListaEntradasDiario";
 import AñadirEntrada from "@/components/AñadirEntrada";
 import { Link } from "react-router-dom";
 import { useLang } from "../context/LangContext";
+import { apiFetch } from "../lib/api";
 
 export default function Diario() {
   const { fetchAuth } = useAuth();
@@ -16,13 +17,13 @@ export default function Diario() {
   const cargarEntradas = async () => {
     setCargando(true);
     try {
-      const res = await fetchAuth("/api/diario/");
+      const res = await fetchAuth("/diario/");
       const data = await res.json();
       if (Array.isArray(data)) {
         const ids = [...new Set(data.map((e) => e.juego))];
         const detalles = await Promise.all(
           ids.map((id) =>
-            fetch(`/api/juegos/buscar_id/?id=${id}`)
+          apiFetch(`/juegos/buscar_id/?id=${id}`)
               .then((r) => r.json())
               .catch(() => null)
           )

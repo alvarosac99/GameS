@@ -19,7 +19,7 @@ export default function Reportar({ modelo, objectId }) {
     setEnviando(true);
     setMensaje("");
     try {
-      const res = await fetchAuth(`/api/reportes/${modelo}/${objectId}/`, {
+      const res = await fetchAuth(`/reportes/${modelo}/${objectId}/`, {
         method: "POST",
         body: JSON.stringify({ titulo, motivo }),
       });

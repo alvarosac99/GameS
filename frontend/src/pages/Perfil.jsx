@@ -9,6 +9,7 @@ import LoaderCirculo from "@/components/LoaderCirculo";
 import { Pencil } from "lucide-react";
 import ActividadReciente from "@/components/ActividadReciente";
 import Reportar from "@/components/Reportar";
+import { apiFetch } from "../lib/api";
 
 const extraerMediaUrls = (juego) => {
   if (!juego) return [];
@@ -68,7 +69,7 @@ export default function Perfil() {
     setBloqueadoPorEl(false);
     setBloqueadoPorMi(false);
     setPerfil(null);
-    fetch(`/api/usuarios/perfil-publico/${nombre}/`, { credentials: "include" })
+    apiFetch(`/usuarios/perfil-publico/${nombre}/`, { credentials: "include" })
       .then(res => {
         if (res.status === 403) {
           setBloqueadoPorEl(true);
@@ -118,7 +119,7 @@ export default function Perfil() {
 
     const cargarDetalle = async (id) => {
       try {
-        const res = await fetch(`/api/juegos/detalle/${id}/`);
+        const res = await apiFetch(`/juegos/detalle/${id}/`);
         if (!res.ok) return null;
         return await res.json();
       } catch {
@@ -126,7 +127,7 @@ export default function Perfil() {
       }
     };
 
-    fetch(`/api/juegos/populares/?ids=${ids.join(",")}`)
+    apiFetch(`/juegos/populares/?ids=${ids.join(",")}`)
       .then(res => res.json())
       .then(async data => {
         let juegos = ids.map(id => data.juegos.find(j => j.id === id) || null);
@@ -160,19 +161,19 @@ export default function Perfil() {
 
   useEffect(() => {
     if (!perfil?.username) return;
-    fetch(`/api/actividad/${perfil.username}/`)
+    apiFetch(`/actividad/${perfil.username}/`)
       .then(res => res.json())
       .then(data => setActividad(data))
       .catch(() => setActividad([]));
 
-    fetch(`/api/actividad/logros/${perfil.username}/`)
+    apiFetch(`/actividad/logros/${perfil.username}/`)
       .then(res => res.json())
       .then(data => setLogros(data))
       .catch(() => setLogros([]));
   }, [perfil]);
 
   const manejarSeguir = async () => {
-    const url = `/api/usuarios/${sigo ? "dejar_seguir" : "seguir"}/${nombre}/`;
+    const url = `/usuarios/${sigo ? "dejar_seguir" : "seguir"}/${nombre}/`;
     try {
       const res = await fetchAuth(url, { method: "POST" });
       if (res.ok) setSigo(!sigo);
@@ -182,7 +183,7 @@ export default function Perfil() {
   };
 
   const manejarBloqueo = async () => {
-    const url = `/api/usuarios/${bloqueado ? "desbloquear" : "bloquear"}/${nombre}/`;
+    const url = `/usuarios/${bloqueado ? "desbloquear" : "bloquear"}/${nombre}/`;
     try {
       const res = await fetchAuth(url, { method: "POST" });
       if (res.ok) {
@@ -459,7 +460,7 @@ export default function Perfil() {
           onGuardar={async (nuevos) => {
             const nuevosIds = [...nuevos].map(j => (j && j.id) || null);
             while (nuevosIds.length < 5) nuevosIds.push(null);
-            await fetchAuth('/api/usuarios/favoritos/', {
+            await fetchAuth('/usuarios/favoritos/', {
               method: 'POST',
               body: JSON.stringify({ favoritos: nuevosIds }),
             });

@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { useLang } from "./context/LangContext";
+import { apiFetch } from "./lib/api";
 
 import {
   Menu,
@@ -398,7 +399,7 @@ function AppContent() {
           <button
             className="flex items-center gap-2 text-red-400 hover:text-red-300"
             onClick={() =>
-              fetch("/api/usuarios/logout/", { method: "POST" }).then(() => (window.location.href = "/"))
+              apiFetch("/usuarios/logout/", { method: "POST" }).then(() => (window.location.href = "/"))
             }
           >
             <LogOut /> {t("menuLogout")}

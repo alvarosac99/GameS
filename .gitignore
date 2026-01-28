@@ -33,4 +33,5 @@ apiPrecios/__pycache__/
 chrome-win64
 chromedriver.exe
 
+#seguridad
 .env

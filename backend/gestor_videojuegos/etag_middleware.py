@@ -10,8 +10,22 @@ class AutoETagMiddleware:
     Middleware que añade ETags automáticamente a todas las respuestas GET de la API.
     """
 
+    # Rutas que requieren revalidación inmediata (datos dinámicos de usuario)
+    ALWAYS_REVALIDATE_PATHS = [
+        '/api/usuarios/',
+        '/api/actividad/',
+        '/api/notificaciones/',
+    ]
+
     def __init__(self, get_response):
         self.get_response = get_response
+
+    def _should_always_revalidate(self, path):
+        """Determina si la ruta debe revalidar siempre (sin caché max-age)."""
+        for prefix in self.ALWAYS_REVALIDATE_PATHS:
+            if path.startswith(prefix):
+                return True
+        return False
 
     def __call__(self, request):
         # Procesar la petición
@@ -51,11 +65,12 @@ class AutoETagMiddleware:
         # max-age=0: fuerza revalidación en cada petición
         # must-revalidate: debe validar con el servidor si está expirado
         if 'Cache-Control' not in response:
-            response['Cache-Control'] = 'public, max-age=0, must-revalidate'
-        
-        # Añadir Vary para que Cloudflare cachee por Authorization
-        # Esto asegura que usuarios diferentes no compartan caché
-        if 'Vary' not in response:
-            response['Vary'] = 'Accept-Encoding, Authorization'
+            if self._should_always_revalidate(request.path):
+                # Endpoints de usuario: siempre revalidar, pero permite caché
+                response['Cache-Control'] = 'private, max-age=0, must-revalidate'
+            else:
+                # Otros endpoints: caché de 5 minutos
+                response['Cache-Control'] = 'public, max-age=300, must-revalidate'
 
         return response
+

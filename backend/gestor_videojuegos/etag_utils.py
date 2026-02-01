@@ -94,7 +94,7 @@ def with_etag(etag_func=None):
             
             # Añadir ETag a la respuesta
             response['ETag'] = f'"{etag}"'
-            response['Cache-Control'] = 'public, max-age=300, must-revalidate'
+            response['Cache-Control'] = 'private, max-age=0, must-revalidate'
             
             return response
         

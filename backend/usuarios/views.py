@@ -111,8 +111,8 @@ def perfil_usuario(request):
         # Devolver datos con ETag
         response = Response(data)
         response['ETag'] = f'"{etag}"'
-        # Cachear 5 minutos pero siempre revalidar con ETag
-        response['Cache-Control'] = 'public, max-age=300, must-revalidate'
+        # Siempre revalidar para datos de usuario
+        response['Cache-Control'] = 'private, max-age=0, must-revalidate'
         return response
 
     elif request.method == "PATCH":

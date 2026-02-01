@@ -460,7 +460,7 @@ export default function Perfil() {
             onGuardar={async (nuevos) => {
               const nuevosIds = [...nuevos].map(j => (j && j.id) || null);
               while (nuevosIds.length < 5) nuevosIds.push(null);
-              const res = await fetchAuth('/api/usuarios/favoritos/', {
+              const res = await fetchAuth('/usuarios/favoritos/', {
                 method: 'POST',
                 body: JSON.stringify({ favoritos: nuevosIds }),
               });

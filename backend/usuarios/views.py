@@ -65,28 +65,55 @@ def perfil_publico_view(request, nombre_usuario):
 @permission_classes([IsAuthenticated])
 def perfil_usuario(request):
     """Obtiene o actualiza el perfil del usuario autenticado."""
+    from gestor_videojuegos.etag_utils import generate_etag, check_etag
+    from rest_framework import status as http_status
 
     usuario = request.user
     perfil, _ = Perfil.objects.get_or_create(user=usuario)
 
     if request.method == "GET":
-        return Response(
-            {
-                "id": usuario.id,
-                "nombre": usuario.get_full_name() or usuario.username,
-                "username": usuario.username,
-                "email": usuario.email,
-                "rol": perfil.rol,
-                "bio": perfil.biografia,
-                "foto": (
-                    request.build_absolute_uri(perfil.avatar.url)
-                    if perfil.avatar
-                    else request.build_absolute_uri("/media/avatares/default.jpg")
-                ),
-                "filtro_adulto": perfil.filtro_adulto,
-                "gustos_generos": perfil.gustos_generos,
-            }
+        data = {
+            "id": usuario.id,
+            "nombre": usuario.get_full_name() or usuario.username,
+            "username": usuario.username,
+            "email": usuario.email,
+            "rol": perfil.rol,
+            "bio": perfil.biografia,
+            "foto": (
+                request.build_absolute_uri(perfil.avatar.url)
+                if perfil.avatar
+                else request.build_absolute_uri("/media/avatares/default.jpg")
+            ),
+            "filtro_adulto": perfil.filtro_adulto,
+            "gustos_generos": perfil.gustos_generos,
+        }
+        
+        # Generar ETag basado en todos los datos del perfil
+        avatar_name = perfil.avatar.name if perfil.avatar else "default"
+        etag = generate_etag(
+            usuario.id,
+            usuario.email,
+            usuario.first_name,
+            usuario.last_name,
+            perfil.biografia,
+            avatar_name,
+            perfil.gustos_generos,
+            perfil.filtro_adulto,
+            perfil.favoritos
         )
+        
+        # Verificar si el cliente tiene la versión actual
+        if check_etag(request, etag):
+            response = Response(status=http_status.HTTP_304_NOT_MODIFIED)
+            response['ETag'] = f'"{etag}"'
+            return response
+        
+        # Devolver datos con ETag
+        response = Response(data)
+        response['ETag'] = f'"{etag}"'
+        # Cachear 5 minutos pero siempre revalidar con ETag
+        response['Cache-Control'] = 'public, max-age=300, must-revalidate'
+        return response
 
     elif request.method == "PATCH":
         # Datos que puede modificar el usuario
@@ -110,7 +137,42 @@ def perfil_usuario(request):
         # Registramos la actividad de actualización de perfil
         registrar_actividad(usuario, "logro", "Actualizó su perfil")
 
-        return Response({"message": "Perfil actualizado correctamente"})
+        # Devolver datos actualizados con nuevo ETag
+        data = {
+            "id": usuario.id,
+            "nombre": usuario.get_full_name() or usuario.username,
+            "username": usuario.username,
+            "email": usuario.email,
+            "rol": perfil.rol,
+            "bio": perfil.biografia,
+            "foto": (
+                request.build_absolute_uri(perfil.avatar.url)
+                if perfil.avatar
+                else request.build_absolute_uri("/media/avatares/default.jpg")
+            ),
+            "filtro_adulto": perfil.filtro_adulto,
+            "gustos_generos": perfil.gustos_generos,
+        }
+        
+        # Generar nuevo ETag con datos actualizados
+        from gestor_videojuegos.etag_utils import generate_etag
+        avatar_name = perfil.avatar.name if perfil.avatar else "default"
+        etag = generate_etag(
+            usuario.id,
+            usuario.email,
+            usuario.first_name,
+            usuario.last_name,
+            perfil.biografia,
+            avatar_name,
+            perfil.gustos_generos,
+            perfil.filtro_adulto,
+            perfil.favoritos
+        )
+        
+        response = Response(data)
+        response['ETag'] = f'"{etag}"'
+        response['Cache-Control'] = 'no-store'  # No cachear PATCH
+        return response
 
 
 @csrf_exempt
@@ -264,9 +326,30 @@ def actualizar_favoritos(request):
 
     registrar_actividad(
         request.user, "juego_agregado", "Actualizó sus juegos favoritos"
-    )  # NUEVO
+    )
 
-    return Response({"ok": True})
+    # Devolver datos completos del perfil actualizados
+    usuario = request.user
+    data = {
+        "id": usuario.id,
+        "nombre": usuario.get_full_name() or usuario.username,
+        "username": usuario.username,
+        "email": usuario.email,
+        "rol": perfil.rol,
+        "bio": perfil.biografia,
+        "foto": (
+            request.build_absolute_uri(perfil.avatar.url)
+            if perfil.avatar
+            else request.build_absolute_uri("/media/avatares/default.jpg")
+        ),
+        "filtro_adulto": perfil.filtro_adulto,
+        "gustos_generos": perfil.gustos_generos,
+        "favoritos": perfil.favoritos,
+    }
+    
+    response = Response(data)
+    response['Cache-Control'] = 'no-store'
+    return response
 
 
 @api_view(["GET"])
@@ -311,6 +394,13 @@ def buscar_usuarios(request):
 
 # SEGUIR Y BLOQUEAR
 
+
+@api_view(["GET"])
+def perfil_publico(request, username):
+    """Permite seguir a otro usuario."""
+    objetivo = get_object_or_404(User, username=username)
+    perfil_objetivo = getattr(objetivo, "perfil", None)
+    perfil_actual = request.user.perfil
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])

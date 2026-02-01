@@ -46,8 +46,16 @@ class AutoETagMiddleware:
         # Añadir ETag a la respuesta
         response['ETag'] = f'"{etag}"'
         
-        # Solo añadir Cache-Control si no existe
+        # Configurar Cache-Control para trabajar con Cloudflare
+        # public: permite que Cloudflare y navegadores cacheen
+        # max-age=0: fuerza revalidación en cada petición
+        # must-revalidate: debe validar con el servidor si está expirado
         if 'Cache-Control' not in response:
-            response['Cache-Control'] = 'public, max-age=300, must-revalidate'
+            response['Cache-Control'] = 'public, max-age=0, must-revalidate'
+        
+        # Añadir Vary para que Cloudflare cachee por Authorization
+        # Esto asegura que usuarios diferentes no compartan caché
+        if 'Vary' not in response:
+            response['Vary'] = 'Accept-Encoding, Authorization'
 
         return response

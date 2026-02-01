@@ -9,20 +9,26 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
+    expose:
+      - "3306"
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 5s
       timeout: 5s
       retries: 30
+    networks:
+      - web
 
   redis:
     image: redis:7-alpine
     volumes:
-      - redis_data:/data 
-    ports:
-      - "6379:6379"
+      - redis_data:/data
+    expose:
+      - "6379"
+    networks:
+      - web
 
   backend:
     build:
@@ -35,41 +41,41 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     command: >
-      sh -c "
-      python manage.py migrate &&
-      python manage.py collectstatic --noinput &&
-      gunicorn gestor_videojuegos.wsgi:application --bind 0.0.0.0:8000
-      "
+      sh -c " python manage.py migrate && python manage.py collectstatic --noinput && gunicorn gestor_videojuegos.wsgi:application --bind 0.0.0.0:8000 "
     volumes:
       - ./backend:/app
+      - media_data:/app/media
+    networks:
+      - web
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "5173:80"
-  #   depends_on:
-  #     - backend
-
-#hot reloading frontend (development only)
-  frontend:
-    image: node:20-alpine
-    working_dir: /app
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
     ports:
-      - "5173:5173"
-    environment:
-      - CHOKIDAR_USEPOLLING=true
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./cloudflare/certs:/etc/nginx/certs:ro
+      - media_data:/var/www/media:ro
     depends_on:
       - backend
+    networks:
+      - web
 
 volumes:
   db_data:
+    name: proyecto_db_data
+    external: true
   redis_data:
+    name: proyecto_redis_data
+    external: true
+  media_data:
+
+
+networks:
+  web:
+    driver: bridge

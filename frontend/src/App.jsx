@@ -46,7 +46,7 @@ import NuevoJuego from "./pages/NuevoJuego";
 import LoadingScreen from "./components/LoadingScreen";
 
 function AppContent() {
-  const { autenticado, usuario, cargando } = useAuth();
+  const { autenticado, usuario } = useAuth();
   const { t } = useLang();
   const [mostrarBuscador, setMostrarBuscador] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -59,10 +59,6 @@ function AppContent() {
   const menuFirstLinkRef = useRef(null);
   const [botonTop, setBotonTop] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(80);
-
-  if (cargando) {
-    return <LoadingScreen />;
-  }
 
   useLayoutEffect(() => {
     const calcularPosiciones = () => {
@@ -453,10 +449,20 @@ function AppContent() {
   );
 }
 
+function AppWithLoading() {
+  const { cargando } = useAuth();
+
+  if (cargando) {
+    return <LoadingScreen />;
+  }
+
+  return <AppContent />;
+}
+
 export default function App() {
   return (
     <Router>
-      <AppContent />
+      <AppWithLoading />
     </Router>
   );
 }

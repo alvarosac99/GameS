@@ -116,7 +116,7 @@ function writeFavoritesCache(username, images) {
       images: images.slice(0, 140),
     };
     localStorage.setItem(`fav_bg_${username}`, JSON.stringify(payload));
-  } catch {}
+  } catch { }
 }
 
 function hashString(input) {
@@ -205,7 +205,7 @@ export default function JuegoUnico() {
               if (resJuego.ok) {
                 juegos[i] = await resJuego.json();
               }
-            } catch {}
+            } catch { }
           }
         }
         const allImages = juegos.flatMap((j) => extractMediaUrls(j));
@@ -281,7 +281,7 @@ export default function JuegoUnico() {
       .then((data) => {
         if (data && data.found) setTiempo(data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [juego?.name]);
 
   const igdbPhotos = [
@@ -511,7 +511,7 @@ export default function JuegoUnico() {
 
   const mediaImages = extractMediaUrls(juego);
   const baseBackgroundImages =
-    favoritosImages.length > 0 ? favoritosImages : mediaImages;
+    mediaImages.length > 0 ? mediaImages : favoritosImages;
   const backgroundImages =
     baseBackgroundImages.length > 0
       ? Array.from({ length: 96 }, (_, i) => baseBackgroundImages[i % baseBackgroundImages.length])
@@ -804,7 +804,7 @@ export default function JuegoUnico() {
                           onChange={(e) => {
                             const nuevo = e.target.value;
                             setEstado(nuevo);
-                              fetchAuth(`/juegos/biblioteca/${entryId}/`, {
+                            fetchAuth(`/juegos/biblioteca/${entryId}/`, {
                               method: "PATCH",
                               body: JSON.stringify({ estado: nuevo }),
                             });

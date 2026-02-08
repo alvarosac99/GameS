@@ -15,6 +15,8 @@ class AutoETagMiddleware:
         '/api/usuarios/',
         '/api/actividad/',
         '/api/notificaciones/',
+        '/api/juegos/biblioteca/',
+        '/api/juegos/valoracion/',
     ]
 
     def __init__(self, get_response):

@@ -7,8 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .services import (
-    cargar_cache_juegos,
-    filtrar_y_ordenar,
+    buscar_y_cachear,
     obtener_detalle_juego,
     obtener_filtros,
     calcular_stats_bienvenida,
@@ -17,13 +16,13 @@ from .services import (
     valorar_juego_service,
     calcular_recomendaciones_usuario,
 )
-from .utils import DESCARGANDO_KEY, buscar_hltb
+from .utils import buscar_hltb
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def listar_juegos(request):
-    """Lista juegos almacenados en caché aplicando filtros de búsqueda."""
+    """Lista juegos almacenados en caché/DB aplicando filtros de búsqueda."""
     try:
         pagina = max(int(request.GET.get("pagina", 1)), 1)
         por_pagina = max(int(request.GET.get("por_pagina", 60)), 1)
@@ -46,23 +45,8 @@ def listar_juegos(request):
     if request.user.is_authenticated and filtro_adulto_param is not None:
         filtro_adulto = filtro_adulto_param in ["1", "true", "True", True]
 
-    juegos = cargar_cache_juegos()
-    if juegos is None:
-        return Response(
-            {
-                "error": "descargando",
-                "message": "Estamos recopilando los datos de IGDB. Por favor, espera unos segundos y vuelve a intentarlo.",
-                "descargando": True,
-            },
-            status=status.HTTP_202_ACCEPTED,
-        )
-    if not juegos:
-        return Response({"error": "cache_no_disponible"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-
-    total_sin_filtrar = len(juegos)
-
-    juegos = filtrar_y_ordenar(
-        juegos,
+    # Usar nuevo servicio de búsqueda
+    qs = buscar_y_cachear(
         q=q,
         genero=genero,
         plataforma=plataforma,
@@ -70,21 +54,43 @@ def listar_juegos(request):
         filtro_adulto=filtro_adulto,
         orden=orden_param,
         asc=asc,
+        limite=por_pagina,
+        offset=(pagina - 1) * por_pagina
     )
 
-    total_filtrado = len(juegos)
-    ocultos = total_sin_filtrar - total_filtrado
-    offset = (pagina - 1) * por_pagina
-    juegos_pagina = juegos[offset: offset + por_pagina]
+    from django.core.paginator import Paginator
+    paginator = Paginator(qs, por_pagina)
+    
+    try:
+        page_obj = paginator.page(pagina)
+    except Exception:
+        # Si pagina fuera de rango, devolver ultima o vacia? 
+        # Mejor devolver pagina 1 o vacia si es muy alta
+        page_obj = paginator.page(1)
+        pagina = 1
+
+    # Serializar resultados
+    juegos_data = []
+    for j in page_obj:
+        juegos_data.append({
+            "id": j.id,
+            "name": j.name,
+            "cover": {"url": j.cover_url} if j.cover_url else {},
+            "summary": j.summary,
+            "popularidad": j.popularidad,
+            "first_release_date": j.first_release_date.timestamp() if j.first_release_date else None,
+            # Agregamos generos si es necesario para algun filtro en frontend, 
+            # pero frontend suele pedir detalle para eso.
+        })
 
     return Response(
         {
-            "juegos": juegos_pagina,
-            "total_resultados": total_filtrado,
-            "total_sin_filtrar": total_sin_filtrar,
-            "ocultos": ocultos,
+            "juegos": juegos_data,
+            "total_resultados": paginator.count,
+            "total_sin_filtrar": paginator.count, # Ya no es relevante el "sin filtrar" real global
+            "ocultos": 0,
             "pagina_actual": pagina,
-            "paginas_totales": math.ceil(total_filtrado / por_pagina),
+            "paginas_totales": paginator.num_pages,
         },
         status=status.HTTP_200_OK,
     )

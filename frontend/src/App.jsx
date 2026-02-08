@@ -43,8 +43,10 @@ import Ajustes from "./pages/Ajustes";
 import NuestrosJuegos from "./pages/NuestrosJuegos";
 import NuevoJuego from "./pages/NuevoJuego";
 
+import LoadingScreen from "./components/LoadingScreen";
+
 function AppContent() {
-  const { autenticado, usuario } = useAuth();
+  const { autenticado, usuario, cargando } = useAuth();
   const { t } = useLang();
   const [mostrarBuscador, setMostrarBuscador] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -57,6 +59,10 @@ function AppContent() {
   const menuFirstLinkRef = useRef(null);
   const [botonTop, setBotonTop] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(80);
+
+  if (cargando) {
+    return <LoadingScreen />;
+  }
 
   useLayoutEffect(() => {
     const calcularPosiciones = () => {
@@ -404,16 +410,16 @@ function AppContent() {
           >
             <LogOut /> {t("menuLogout")}
           </button>
-            {/* Enlaces adicionales en texto pequeño */}
-    <div className="mt-6 text-xs text-gray-400 space-y-1">
-      <Link to="/sobre-mi" className="hover:text-naranja">
-        Sobre mí
-      </Link>
-      <Link to="/manual" className="hover:text-naranja">
-        Manual de uso
-      </Link>
-    </div>
-  </nav>
+          {/* Enlaces adicionales en texto pequeño */}
+          <div className="mt-6 text-xs text-gray-400 space-y-1">
+            <Link to="/sobre-mi" className="hover:text-naranja">
+              Sobre mí
+            </Link>
+            <Link to="/manual" className="hover:text-naranja">
+              Manual de uso
+            </Link>
+          </div>
+        </nav>
       </aside>
 
       {/* CONTENIDO */}

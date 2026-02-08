@@ -12,11 +12,27 @@ def default_duration():
 
 
 class Juego(models.Model):
-    """Representa un juego básico identificado por su ID de IGDB."""
+    """Representa un juego identificado por su ID de IGDB, con caché local de datos."""
     id = models.BigIntegerField(primary_key=True)
+    name = models.CharField(max_length=255, db_index=True)
+    slug = models.SlugField(max_length=255, db_index=True, blank=True, null=True)
+    summary = models.TextField(blank=True, null=True)
+    cover_url = models.URLField(max_length=500, blank=True, null=True)
+    first_release_date = models.DateTimeField(blank=True, null=True)
+    popularidad = models.FloatField(default=0.0, db_index=True)
+    aggregated_rating = models.FloatField(blank=True, null=True)
+    rating_count = models.IntegerField(default=0)
+    
+    # Datos JSON para listas simples
+    genres = models.JSONField(default=list, blank=True)
+    platforms = models.JSONField(default=list, blank=True)
+    involved_companies = models.JSONField(default=list, blank=True)
+    themes = models.JSONField(default=list, blank=True)
+    
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Juego IGDB {self.id}"
+        return self.name or f"Juego IGDB {self.id}"
 
 
 class Biblioteca(models.Model):
@@ -31,7 +47,7 @@ class Biblioteca(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="biblioteca"
     )
-    game_id = models.IntegerField()
+    game_id = models.BigIntegerField()
     added_at = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default="jugando")
 

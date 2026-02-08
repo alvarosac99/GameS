@@ -97,7 +97,8 @@ def _buscar_en_igdb_y_guardar(query_text):
         # Buscamos campos básicos para la lista
         fields = (
             "id,name,slug,summary,cover.url,first_release_date,"
-            "total_rating,total_rating_count,genres,platforms,involved_companies,themes"
+            "total_rating,total_rating_count,"
+            "genres.name,platforms.name,involved_companies.company.name,themes.name"
         )
         # Usamos search de IGDB
         igdb_query = (
@@ -142,40 +143,15 @@ def _guardar_juegos_batch(lista_juegos_igdb):
 
 
 def obtener_detalle_juego(juego_id, force_update=False):
-    """Recupera información detallada de IGDB para un juego y actualiza la DB."""
-    # Primero intentamos sacar de DB local
-    try:
-        juego_db = Juego.objects.get(id=juego_id)
-        
-        # Verificar frescura de los datos (ej. 7 días)
-        if not force_update:
-            umbral = timezone.now() - timedelta(days=7)
-            if juego_db.updated_at > umbral:
-                # Datos frescos, devolver local convertidos a dict
-                # Nota: Necesitamos simular la estructura que devuelve la API para consistencia
-                # o refactorizar las vistas para usar el objeto.
-                # Por ahora, reconstruimos el dict básico + extras que tengamos.
-                return {
-                    "id": juego_db.id,
-                    "name": juego_db.name,
-                    "slug": juego_db.slug,
-                    "summary": juego_db.summary,
-                    "first_release_date": int(juego_db.first_release_date.timestamp()) if juego_db.first_release_date else None,
-                    "cover": {"url": juego_db.cover_url} if juego_db.cover_url else {},
-                    # Campos JSON
-                    "genres": juego_db.genres,
-                    "platforms": juego_db.platforms,
-                    "involved_companies": juego_db.involved_companies,
-                    "themes": juego_db.themes,
-                    # Extras que quizás no guardamos todos los detalles profundos
-                    # Si faltan datos críticos, se podría forzar update
-                    "aggregated_rating": juego_db.aggregated_rating,
-                    "rating_count": juego_db.rating_count,
-                }
-            
-    except Juego.DoesNotExist:
-        juego_db = None
+    """Recupera información detallada de IGDB para un juego."""
+    # 1. Intentar obtener RESPUESTA COMPLETA de caché Redis
+    cache_key = f"igdb_detalle_{juego_id}"
+    if not force_update:
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return cached_data
 
+    # 2. Si no está en caché o force_update, consultar IGDB
     headers = _headers()
     # Pedimos todo lo necesario para mostrar detalle
     query = f"""
@@ -191,8 +167,24 @@ def obtener_detalle_juego(juego_id, force_update=False):
         where id = {juego_id};
     """
     res = requests.post(f"{IGDB_BASE_URL}/games", headers=headers, data=query.strip())
+    
     if res.status_code != 200:
-        return None
+        # Fallback: intentar DB local si IGDB falla, aunque sea incompleta
+        try:
+             juego_db = Juego.objects.get(id=juego_id)
+             return {
+                "id": juego_db.id,
+                "name": juego_db.name,
+                "slug": juego_db.slug,
+                "summary": juego_db.summary,
+                "first_release_date": int(juego_db.first_release_date.timestamp()) if juego_db.first_release_date else None,
+                "cover": {"url": juego_db.cover_url} if juego_db.cover_url else {},
+                "genres": juego_db.genres,
+                "platforms": juego_db.platforms,
+                "is_cached_fallback": True 
+             }
+        except Juego.DoesNotExist:
+             return None
     
     data = res.json()
     if not data:
@@ -200,16 +192,19 @@ def obtener_detalle_juego(juego_id, force_update=False):
 
     juego_data = data[0]
     
-    # Actualizar DB local con lo básico
-    _guardar_juegos_batch([juego_data])
+    # 3. Guardar en DB local para búsquedas/listados (solo datos parciales soportados por modelo)
+    # Esto asegura que búsquedas funcionen, aunque detalles dependan de Redis/IGDB
+    try:
+        _guardar_juegos_batch([juego_data])
+    except Exception as e:
+        logger.error(f"Error actualizando DB local en detalle: {e}")
 
-    # Procesar idiomas extra
+    # 4. Procesar idiomas extra
     language_ids = juego_data.get("language_supports", [])
     idiomas = []
     if language_ids:
-        # Lógica de idiomas se mantiene igual, consultando IGDB
-        # (Podríamos cachear esto también, pero es menos crítico)
-        ids_str = ",".join(str(i) for i in language_ids[:20]) # Limitamos para no explotar URL
+        # (Lógica de idiomas se mantiene igual)
+        ids_str = ",".join(str(i) for i in language_ids[:20]) 
         if ids_str:
             q_ids = f"fields language.name,language.native_name; where id=({ids_str});"
             res_ids = requests.post(f"{IGDB_BASE_URL}/language_support", headers=headers, data=q_ids)
@@ -220,6 +215,9 @@ def obtener_detalle_juego(juego_id, force_update=False):
                     if name:
                         idiomas.append(name)
     juego_data["idiomas"] = idiomas
+    
+    # 5. Guardar respuesta COMPLETA en Redis (TTL 48 horas)
+    cache.set(cache_key, juego_data, 172800)
     
     return juego_data
 
@@ -267,28 +265,40 @@ def obtener_filtros():
     return resultado
 
 
+
 def calcular_stats_bienvenida():
     """Estadísticas resumidas para mostrar en la pantalla de inicio."""
+    # Intentar obtener de caché
+    cache_key = "stats_bienvenida"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return cached_data
+
     usuarios = get_user_model().objects.count()
     bibliotecas = Biblioteca.objects.count()
+    # Usar .count() es rápido en MyISAM/InnoDB (si count aprox) pero count(*) real puede tardar.
+    # Cacheamos el resultado final así que está bien.
     total_juegos = Juego.objects.count()
 
     # Obtener populares reales de la DB local
     populares_qs = Juego.objects.order_by('-popularidad')[:10]
     
-    # Obtener random
-    # MySQL 'order by random' es lento para tablas grandes, pero para <10k ok.
-    # Si tabla muy grande, mejor usar IDs aleatorios.
-    count = Juego.objects.count()
+    # Obtener random optimizado
+    # Evitamos order_by('?') que es full scan
+    count = total_juegos
     random_juegos = []
     if count > 0:
         if count <= 10:
              random_juegos = list(Juego.objects.all())
         else:
-            # Obtener 10 indices random
-            random_indices = random.sample(range(1, count + 1), 10) # Aproximación burda si hay huecos
-            # Mejor: order_by('?')
-            random_juegos = list(Juego.objects.order_by('?')[:10])
+            # Opción eficiente: Obtener un rango de IDs o samplear IDs
+            # Traer todos los IDs es ligero (pocos MB para 100k juegos)
+            all_ids = list(Juego.objects.values_list('id', flat=True))
+            if len(all_ids) > 10:
+                random_ids = random.sample(all_ids, 10)
+                random_juegos = list(Juego.objects.filter(id__in=random_ids))
+            else:
+                 random_juegos = list(Juego.objects.all())
 
     def serializar(juego):
         return {
@@ -299,14 +309,20 @@ def calcular_stats_bienvenida():
             "first_release_date": juego.first_release_date,
         }
 
-    return {
-        "totalJuegos": total_juegos, # Ahora es total cacheado
+    resultado = {
+        "totalJuegos": total_juegos,
         "totalJuegosMostrados": total_juegos,
         "totalUsuarios": usuarios,
         "totalBibliotecas": bibliotecas,
         "juegosPopulares": [serializar(j) for j in populares_qs],
         "juegosRandom": [serializar(j) for j in random_juegos],
     }
+    
+    # Cachear por 1 hora (3600 segundos)
+    # Esto reduce la carga masivamente si hay muchos hits
+    cache.set(cache_key, resultado, 3600)
+    
+    return resultado
 
 
 def buscar_juego_por_id_igdb(game_id):
@@ -371,21 +387,30 @@ def valorar_juego_service(juego_id, usuario, valor=None):
     }
 
 
+
 def calcular_recomendaciones_usuario(usuario, limite=10):
     """Devuelve juegos recomendados para un usuario."""
+    # Cache por usuario
+    if not usuario.is_authenticated:
+        return []
+        
+    cache_key = f"reco_user_{usuario.id}"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return cached_data
+
     # Implementación simplificada basada en géneros de juegos jugados
-    # 1. Obtener IDs de juegos del usuario
     mis_ids = list(Biblioteca.objects.filter(user=usuario).values_list("game_id", flat=True))
     if not mis_ids:
+        # Cacheamos resultado vacío para no re-consultar inmediatamente
+        cache.set(cache_key, [], 1800) 
         return []
 
-    # 2. Analizar géneros (esto requiere que los juegos estén en DB local)
-    # Si no están, no podemos analizar. Asumimos que al añadir a biblioteca se guardaron.
+    # 2. Analizar géneros
     mis_juegos = Juego.objects.filter(id__in=mis_ids)
     
     all_genres = []
     for j in mis_juegos:
-        # genres es JSON list, puede ser [1, 2] o [{"id": 1, ...}]
         if isinstance(j.genres, list):
             for g in j.genres:
                 if isinstance(g, dict):
@@ -394,26 +419,21 @@ def calcular_recomendaciones_usuario(usuario, limite=10):
                      all_genres.append(g)
             
     if not all_genres:
+         cache.set(cache_key, [], 1800)
          return []
          
-    # Filtrar posibles Nones
     all_genres = [g for g in all_genres if g is not None]
 
     contador = Counter(all_genres)
-    generos_top = [g for g, _ in contador.most_common(3)]
+    # Tomamos los top 5 generos para tener variedad
+    generos_top_ids = [g for g, _ in contador.most_common(5)]
     
-    # 3. Buscar juegos con esos géneros que yo no tenga
-    # JSON contains en MySQL/MariaDB: JSON_CONTAINS(genres, '123')
-    # Django lookup: genres__contains=123 (depende del backend DB)
-    
-    # Como fallback seguro: Traer candidatos populares y filtrar en python (híbrido)
-    # O usar name__icontains="" para traer un batch.
-    
-    # Vamos a devolver populares por ahora para no complicar la query JSON
-    # en esta fase de optimización.
+    # 3. Buscar juegos (FALLBACK simple: Populares que no tengo)
+    # Por ahora seguimos con la estrategia de populares, pero cacheada.
+    # TODO: Implementar filtro real por JSON de géneros cuando sea posible optimizarlo.
     recomendados = Juego.objects.exclude(id__in=mis_ids).order_by('-popularidad')[:limite]
 
-    return [
+    resultado = [
         {
             "id": j.id,
             "name": j.name,
@@ -423,3 +443,8 @@ def calcular_recomendaciones_usuario(usuario, limite=10):
         }
         for j in recomendados
     ]
+    
+    # Cachear 30 minutos
+    cache.set(cache_key, resultado, 1800)
+    
+    return resultado

@@ -1,10 +1,11 @@
 import logging
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import Counter
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.db.models import Avg, Count, Q
 from django.utils import timezone
 from ..models import Biblioteca, Juego, Valoracion
@@ -140,15 +141,38 @@ def _guardar_juegos_batch(lista_juegos_igdb):
             logger.error(f"Error guardando juego {j.get('id')}: {e}")
 
 
-def obtener_detalle_juego(juego_id):
+def obtener_detalle_juego(juego_id, force_update=False):
     """Recupera información detallada de IGDB para un juego y actualiza la DB."""
     # Primero intentamos sacar de DB local
     try:
         juego_db = Juego.objects.get(id=juego_id)
-        # Si tiene datos detallados recientes (podríamos chequear updated_at), devolver.
-        # Pero si queremos detalle FULL (screenshots, videos, etc que no guardamos todo),
-        # quizás siempre consultamos IGDB para detalle fresco y aprovechamos de actualizar DB.
-        pass
+        
+        # Verificar frescura de los datos (ej. 7 días)
+        if not force_update:
+            umbral = timezone.now() - timedelta(days=7)
+            if juego_db.updated_at > umbral:
+                # Datos frescos, devolver local convertidos a dict
+                # Nota: Necesitamos simular la estructura que devuelve la API para consistencia
+                # o refactorizar las vistas para usar el objeto.
+                # Por ahora, reconstruimos el dict básico + extras que tengamos.
+                return {
+                    "id": juego_db.id,
+                    "name": juego_db.name,
+                    "slug": juego_db.slug,
+                    "summary": juego_db.summary,
+                    "first_release_date": int(juego_db.first_release_date.timestamp()) if juego_db.first_release_date else None,
+                    "cover": {"url": juego_db.cover_url} if juego_db.cover_url else {},
+                    # Campos JSON
+                    "genres": juego_db.genres,
+                    "platforms": juego_db.platforms,
+                    "involved_companies": juego_db.involved_companies,
+                    "themes": juego_db.themes,
+                    # Extras que quizás no guardamos todos los detalles profundos
+                    # Si faltan datos críticos, se podría forzar update
+                    "aggregated_rating": juego_db.aggregated_rating,
+                    "rating_count": juego_db.rating_count,
+                }
+            
     except Juego.DoesNotExist:
         juego_db = None
 
@@ -202,7 +226,13 @@ def obtener_detalle_juego(juego_id):
 
 def obtener_filtros():
     """Solicita a IGDB las opciones de filtro disponibles."""
-    # Esto podría cachearse en redis por 24 horas fácilmente
+    # Intentar obtener de caché Redis
+    cache_key = "igdb_filtros"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return cached_data
+
+    # Si no está en caché, consultar API
     headers = _headers()
     res_gen = requests.post(
         f"{IGDB_BASE_URL}/genres",
@@ -225,11 +255,16 @@ def obtener_filtros():
     )
     publishers = res_pub.json() if res_pub.status_code == 200 else []
 
-    return {
+    resultado = {
         "genres": genres,
         "platforms": platforms,
         "publishers": publishers,
     }
+    
+    # Guardar en caché por 24 horas (86400 segundos)
+    cache.set(cache_key, resultado, 86400)
+    
+    return resultado
 
 
 def calcular_stats_bienvenida():

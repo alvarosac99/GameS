@@ -37,5 +37,8 @@ jobs:
         IGDB_CLIENT_ID: "dummy_client_id"
         IGDB_CLIENT_SECRET: "dummy_client_secret"
         DJANGO_SECRET_KEY: "dummy_secret_key"
+        MYSQL_DATABASE: "dummy_db"
+        MYSQL_USER: "dummy_user"
+        MYSQL_PASSWORD: "dummy_password"
       run: |
         python manage.py test

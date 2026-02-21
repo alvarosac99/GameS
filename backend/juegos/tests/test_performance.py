@@ -5,14 +5,20 @@ from datetime import timedelta
 from juegos.models import Juego
 from juegos.igdb_views.services import obtener_detalle_juego, obtener_filtros
 
+from django.core.cache import cache
+
 class PerformanceTest(TestCase):
     def setUp(self):
+        cache.clear()
         # Crear un juego "fresco" en la DB local
         self.juego_reciente = Juego.objects.create(
             id=12345,
             name="Juego Test Reciente",
             updated_at=timezone.now()
         )
+        # Simular que el Redis ya tenía el objeto descargado
+        cache.set("igdb_detalle_12345", {"id": 12345, "name": "Juego Test Reciente"}, 100)
+
         # Crear un juego "antiguo"
         self.juego_antiguo = Juego.objects.create(
             id=67890,

@@ -14,6 +14,8 @@
 
 [![License](https://img.shields.io/badge/license-Copyright-blue?style=for-the-badge)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-orange?style=for-the-badge)](#)
+[![Django CI](https://img.shields.io/github/actions/workflow/status/alvarosac99/GameS/django.yml?logo=github&label=Django%20CI&style=for-the-badge)](https://github.com/alvarosac99/GameS/actions/workflows/django.yml)
+[![Node CI](https://img.shields.io/github/actions/workflow/status/alvarosac99/GameS/node.js.yml?logo=github&label=Node.js%20CI&style=for-the-badge)](https://github.com/alvarosac99/GameS/actions/workflows/node.js.yml)
 
 <br/>
 
@@ -113,7 +115,7 @@ Asegúrate de contar con lo siguiente instalado en tu host o máquina de desplie
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/zenithseed/GameS.git
+git clone https://github.com/alvarosac99/GameS.git
 cd GameS
 
 # 2. Configurar las variables de entorno

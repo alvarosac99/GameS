@@ -10,7 +10,27 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
+
+    services:
+      db:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: dummy_db
+          MYSQL_USER: dummy_user
+          MYSQL_PASSWORD: dummy_password
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
     defaults:
       run:
         working-directory: ./backend
@@ -40,5 +60,7 @@ jobs:
         MYSQL_DATABASE: "dummy_db"
         MYSQL_USER: "dummy_user"
         MYSQL_PASSWORD: "dummy_password"
+        DB_HOST: "127.0.0.1"
+        REDIS_HOST: "127.0.0.1"
       run: |
         python manage.py test

@@ -20,7 +20,7 @@ jobs:
           MYSQL_USER: dummy_user
           MYSQL_PASSWORD: dummy_password
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mysqladmin ping -u root -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -58,9 +58,10 @@ jobs:
         IGDB_CLIENT_SECRET: "dummy_client_secret"
         DJANGO_SECRET_KEY: "dummy_secret_key"
         MYSQL_DATABASE: "dummy_db"
-        MYSQL_USER: "dummy_user"
-        MYSQL_PASSWORD: "dummy_password"
+        MYSQL_USER: "root"
+        MYSQL_PASSWORD: "root"
         DB_HOST: "127.0.0.1"
         REDIS_HOST: "127.0.0.1"
+        IS_TESTING: "True"
       run: |
         python manage.py test

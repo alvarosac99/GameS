@@ -25,6 +25,9 @@ HLTB_USER_AGENT = (
 
 def obtener_token_igdb():
     """Recupera y cachea el token de autenticación de IGDB."""
+    if getattr(settings, 'IS_TESTING', False):
+        return "test_token_dummy_12345"
+
     token = cache.get("igdb_token")
     if not token:
         auth = requests.post(

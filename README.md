@@ -7,13 +7,13 @@
 
 
 [![React](https://img.shields.io/badge/react-19.1-%2361DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Django](https://img.shields.io/badge/django-5.2-%23092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![MySQL](https://img.shields.io/badge/mysql-8.0-%234479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Redis](https://img.shields.io/badge/redis-7-%23DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
-[![Docker](https://img.shields.io/badge/docker-compose-%232496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Docker](https://img.shields.io/badge/docker--compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 [![License](https://img.shields.io/badge/license-Copyright-blue?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-orange?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/version-v1-orange?style=for-the-badge)](#)
 [![Django CI](https://img.shields.io/github/actions/workflow/status/alvarosac99/GameS/django.yml?logo=github&label=Django%20CI&style=for-the-badge)](https://github.com/alvarosac99/GameS/actions/workflows/django.yml)
 [![Node CI](https://img.shields.io/github/actions/workflow/status/alvarosac99/GameS/node.js.yml?logo=github&label=Node.js%20CI&style=for-the-badge)](https://github.com/alvarosac99/GameS/actions/workflows/node.js.yml)
 
@@ -77,7 +77,7 @@
 Integración automática con la API de IGDB para disponer de la base de una de las mayores plataformas de internet. El proyecto usa **Redis** para almacenar la data localmente y agilizar brutalmente las peticiones de búsquedas.
 
 #### <img src="https://api.iconify.design/lucide/coins.svg?color=%23ffffff" width="16" align="absmiddle"> Buscador Inteligente de Ofertas
-Rastreador de precios con base en **AllKeyShop** con algoritmo de mapeo automático de títulos (haciendo conversiones en títulos con numeración romana y procesando resultados para mostrarlos perfectamente agrupados por consola y rebajados).
+Rastreador de precios con base en **AllKeyShop** con algoritmo de mapeo automático de títulos (haciendo conversiones en títulos con numeración romana y procesando resultados para mostrarlos perfectamente agrupados por consola y rebajados). *Nota: Debido a que usa web scraping, no se recomienda su uso en producción abierta para evitar consumir ancho de banda no deseado.*
 
 #### <img src="https://api.iconify.design/lucide/clock.svg?color=%23ffffff" width="16" align="absmiddle"> Gestión de Colección y Tiempo
 Registra y modera tus sesiones. Haz un recuento de tu tiempo jugado o añade notas en formato de diario, con **estadísticas precisas** y visualizaciones gráficas.
@@ -470,7 +470,7 @@ curl -X POST http://localhost/api/actividad/ \
 | `npm run preview` | <img src="https://api.iconify.design/lucide/eye.svg?color=%23ffffff" width="14" align="absmiddle"> Preview del build de producción |
 | `npm run test` | <img src="https://api.iconify.design/lucide/test-tube.svg?color=%23ffffff" width="14" align="absmiddle"> Ejecutar tests unitarios |
 
-### <img src="https://api.iconify.design/lucide/python.svg?color=%23ffffff" width="18" align="absmiddle"> Backend (Django)
+### <img src="https://api.iconify.design/mdi/language-python.svg?color=%23ffffff" width="18" align="absmiddle"> Backend (Django)
 
 | Comando | Descripción |
 |---------|-------------|
@@ -483,7 +483,7 @@ curl -X POST http://localhost/api/actividad/ \
 | `python manage.py sync_igdb` | <img src="https://api.iconify.design/lucide/refresh-cw.svg?color=%23ffffff" width="14" align="absmiddle"> Sincronizar con IGDB |
 | `python manage.py actualizar_precios` | <img src="https://api.iconify.design/lucide/dollar-sign.svg?color=%23ffffff" width="14" align="absmiddle"> Actualizar precios de juegos |
 
-### <img src="https://api.iconify.design/lucide/docker.svg?color=%23ffffff" width="18" align="absmiddle"> Docker
+### <img src="https://api.iconify.design/mdi/docker.svg?color=%23ffffff" width="18" align="absmiddle"> Docker
 
 | Comando | Descripción |
 |---------|-------------|
@@ -679,7 +679,7 @@ docker-compose restart backend
 
 **IGDB**: La API es gratuita pero requiere registro en Twitch Developers. El proyecto incluye credenciales de ejemplo, pero para uso en producción debes obtener las tuyas propias.
 
-**AllKeyShop**: El proyecto usa web scraping público. No se requiere API key.
+**AllKeyShop**: El proyecto usa web scraping público. No se requiere API key. **Nota**: El uso de web scraping podría suponer un consumo de tráfico no deseado en su página web, por lo que **no se debería implementar en entornos de producción abiertos**.
 
 </details>
 
@@ -779,7 +779,6 @@ Actualmente el sistema no incluye exportación directa, pero puedes acceder a tu
 Este proyecto utiliza y agradece a:
 
 - [IGDB](https://www.igdb.com/) por su completa base de datos de videojuegos
-- [AllKeyShop](https://www.allkeyshop.com/) por la información de precios
 - [Radix UI](https://www.radix-ui.com/) por sus componentes accesibles
 - [Tailwind CSS](https://tailwindcss.com/) por el framework CSS
 - [Iconify](https://iconify.design/) por los iconos utilizados en esta documentación
@@ -790,6 +789,6 @@ Este proyecto utiliza y agradece a:
 
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/alvarosac99)
 
-<sub>v1.0.0 | Última actualización: Febrero 2025</sub>
+<sub>v1 | Última actualización: Febrero 2025</sub>
 
 </div>

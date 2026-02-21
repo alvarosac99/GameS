@@ -1,0 +1,45 @@
+server {
+    listen 80;
+    server_name example.com; # <--- Cambia por tu dominio
+
+    # Redirigir HTTP a HTTPS si configuras el listener en 443 
+    # return 301 https://$host$request_uri;
+
+    location /media/ {
+        alias /var/www/media/;
+        
+        # Headers CORS
+        add_header Access-Control-Allow-Origin "$http_origin" always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,x-csrftoken" always;
+        add_header Access-Control-Expose-Headers "Content-Length,Content-Range" always;
+        
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Max-Age 1728000;
+            add_header Content-Type 'text/plain; charset=utf-8';
+            add_header Content-Length 0;
+            return 204;
+        }
+        
+        # Permitir acceso cross-origin
+        add_header Cross-Origin-Resource-Policy "cross-origin" always;
+        
+        # Cache para mejorar rendimiento
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Pasar headers importantes
+        proxy_set_header X-CSRFToken $http_x_csrftoken;
+        proxy_pass_header Set-Cookie;
+        
+        proxy_redirect off;
+    }
+}

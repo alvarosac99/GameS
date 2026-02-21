@@ -1,6 +1,6 @@
 <div align="center">
 
-# <img src="https://api.iconify.design/lucide/gamepad-2.svg?color=%2361dafb" width="32" align="absmiddle"> GameS (Gestor de Videojuegos)
+# GameS (Gestor de Videojuegos) <img src="https://api.iconify.design/lucide/gamepad-2.svg?color=%2361dafb" width="32" align="absmiddle">
 
 **Plataforma web integral para descubrir, organizar y gestionar videojuegos, con búsqueda avanzada, historial de precios y recomendaciones personalizadas.**
 
@@ -19,7 +19,7 @@
 
 <br/>
 
-### <img src="https://api.iconify.design/lucide/zap.svg?color=%23f59e0b" width="20" align="absmiddle"> Características Destacadas
+### Características Destacadas <img src="https://api.iconify.design/lucide/zap.svg?color=%23f59e0b" width="20" align="absmiddle">
 
 <table>
 <tr align="center">
@@ -33,65 +33,66 @@
 
 <br/>
 
-[<img src="https://api.iconify.design/lucide/rocket.svg?color=%2361dafb" width="16" align="absmiddle"> Inicio Rápido](#inicio-rápido) · [<img src="https://api.iconify.design/lucide/book-open.svg?color=%2310b981" width="16" align="absmiddle"> Documentación](#uso) · [<img src="https://api.iconify.design/lucide/bug.svg?color=%23f59e0b" width="16" align="absmiddle"> Problemas](../../issues)
+[<img src="https://api.iconify.design/lucide/rocket.svg?color=%2361dafb" width="16" align="absmiddle"> Inicio Rápido](#inicio-rapido) · [<img src="https://api.iconify.design/lucide/book-open.svg?color=%2310b981" width="16" align="absmiddle"> Documentación](#uso) · [<img src="https://api.iconify.design/lucide/bug.svg?color=%23f59e0b" width="16" align="absmiddle"> Problemas](../../issues)
 
 </div>
 
 ---
 
-## <img src="https://api.iconify.design/lucide/list.svg?color=%2361dafb" width="24" align="absmiddle"> Tabla de Contenidos
+## Tabla de Contenidos <img src="https://api.iconify.design/lucide/list.svg?color=%2361dafb" width="24" align="absmiddle">
 - [Sobre el Proyecto](#sobre-el-proyecto)
 - [Demo y Capturas](#demo-y-capturas)
-- [Stack Tecnológico](#stack-tecnológico)
+- [Stack Tecnológico](#stack-tecnologico)
 - [Arquitectura](#arquitectura)
-- [Inicio Rápido](#inicio-rápido)
+- [Inicio Rápido](#inicio-rapido)
   - [Requisitos Previos](#requisitos-previos)
-  - [Instalación](#instalación)
+  - [Instalación](#instalacion)
   - [Variables de Entorno](#variables-de-entorno)
-  - [Configuración Inicial](#configuración-inicial)
+  - [Configuración Inicial](#configuracion-inicial)
 - [Uso](#uso)
 - [API REST](#api-rest)
-  - [Autenticación](#autenticación)
+  - [Autenticación](#autenticacion)
   - [Endpoints Principales](#endpoints-principales)
 - [Scripts Disponibles](#scripts-disponibles)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 - [Pruebas](#pruebas)
 - [Despliegue](#despliegue)
-- [Solución de Problemas](#solución-de-problemas)
+- [Solución de Problemas](#solucion-de-problemas)
 - [FAQ](#faq)
 - [Licencia y Derechos](#licencia-y-derechos)
 
 ---
 
-## <img src="https://api.iconify.design/lucide/target.svg?color=%23ffffff" width="24" align="absmiddle"> Sobre el Proyecto
+<a name="sobre-el-proyecto"></a>
+## Sobre el Proyecto <img src="https://api.iconify.design/lucide/target.svg?color=%23ffffff" width="24" align="absmiddle">
 
 > **GameS** es un gestor de videojuegos conceptualizado y desarrollado para ofrecer una experiencia completa a los apasionados de los juegos. Permite a los usuarios consultar información meticulosamente extraída de IGDB, planificar sus sesiones, administrar meticulosamente bibliotecas personales, hacer un seguimiento del tiempo y descubrir las mejores ofertas y precios históricos del mercado de claves. Todo bajo una interfaz estilizada y responsiva con un backend dinámico preparado para optimización por tráfico.
 
-### <img src="https://api.iconify.design/lucide/sparkles.svg?color=%23ffffff" width="20" align="absmiddle"> Características Principales
+### Características Principales <img src="https://api.iconify.design/lucide/sparkles.svg?color=%23ffffff" width="20" align="absmiddle">
 
 <table>
 <tr>
 <td width="50%">
 
-#### <img src="https://api.iconify.design/lucide/flame.svg?color=%23ffffff" width="16" align="absmiddle"> Catálogo Completo con IGDB
+#### Catálogo Completo con IGDB <img src="https://api.iconify.design/lucide/flame.svg?color=%23ffffff" width="16" align="absmiddle">
 Integración automática con la API de IGDB para disponer de la base de una de las mayores plataformas de internet. El proyecto usa **Redis** para almacenar la data localmente y agilizar brutalmente las peticiones de búsquedas.
 
-#### <img src="https://api.iconify.design/lucide/coins.svg?color=%23ffffff" width="16" align="absmiddle"> Buscador Inteligente de Ofertas
+#### Buscador Inteligente de Ofertas <img src="https://api.iconify.design/lucide/coins.svg?color=%23ffffff" width="16" align="absmiddle">
 Rastreador de precios con base en **AllKeyShop** con algoritmo de mapeo automático de títulos (haciendo conversiones en títulos con numeración romana y procesando resultados para mostrarlos perfectamente agrupados por consola y rebajados). *Nota: Debido a que usa web scraping, no se recomienda su uso en producción abierta para evitar consumir ancho de banda no deseado.*
 
-#### <img src="https://api.iconify.design/lucide/clock.svg?color=%23ffffff" width="16" align="absmiddle"> Gestión de Colección y Tiempo
+#### Gestión de Colección y Tiempo <img src="https://api.iconify.design/lucide/clock.svg?color=%23ffffff" width="16" align="absmiddle">
 Registra y modera tus sesiones. Haz un recuento de tu tiempo jugado o añade notas en formato de diario, con **estadísticas precisas** y visualizaciones gráficas.
 
 </td>
 <td width="50%">
 
-#### <img src="https://api.iconify.design/lucide/bot.svg?color=%23ffffff" width="16" align="absmiddle"> Recomendaciones Personalizadas
+#### Recomendaciones Personalizadas <img src="https://api.iconify.design/lucide/bot.svg?color=%23ffffff" width="16" align="absmiddle">
 Motor de recomendaciones propio y automático basado en los géneros de los videojuegos alojados en la biblioteca del usuario con **algoritmos de similitud**.
 
-#### <img src="https://api.iconify.design/lucide/moon.svg?color=%23ffffff" width="16" align="absmiddle"> Sistema Temático Adaptativo
+#### Sistema Temático Adaptativo <img src="https://api.iconify.design/lucide/moon.svg?color=%23ffffff" width="16" align="absmiddle">
 Interfaz altamente cuidada que guarda automáticamente tu preferencia visual con tema **Claro y Oscuro** guardado en caché de forma persistente.
 
-#### <img src="https://api.iconify.design/lucide/users.svg?color=%23ffffff" width="16" align="absmiddle"> Sistema Social
+#### Sistema Social <img src="https://api.iconify.design/lucide/users.svg?color=%23ffffff" width="16" align="absmiddle">
 Comentarios, valoraciones y reseñas de videojuegos con sistema de notificaciones en tiempo real para interacción entre usuarios.
 
 </td>
@@ -100,7 +101,8 @@ Comentarios, valoraciones y reseñas de videojuegos con sistema de notificacione
 
 ---
 
-## <img src="https://api.iconify.design/lucide/image.svg?color=%23ffffff" width="24" align="absmiddle"> Demo y Capturas
+<a name="demo-y-capturas"></a>
+## Demo y Capturas <img src="https://api.iconify.design/lucide/image.svg?color=%23ffffff" width="24" align="absmiddle">
 
 ### Bienvenida
 <img src="docs/screenshots/Bienvenida.png" alt="Bienvenida" width="100%">
@@ -116,13 +118,14 @@ Comentarios, valoraciones y reseñas de videojuegos con sistema de notificacione
 
 ---
 
-## <img src="https://api.iconify.design/lucide/layers.svg?color=%23ffffff" width="24" align="absmiddle"> Stack Tecnológico
+<a name="stack-tecnologico"></a>
+## Stack Tecnológico <img src="https://api.iconify.design/lucide/layers.svg?color=%23ffffff" width="24" align="absmiddle">
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-### <img src="https://api.iconify.design/lucide/monitor.svg?color=%23ffffff" width="18" align="absmiddle"> Frontend
+### Frontend <img src="https://api.iconify.design/lucide/monitor.svg?color=%23ffffff" width="18" align="absmiddle">
 - **React 19.1** - Biblioteca UI con hooks y context
 - **Vite** - Build tool ultrarrápido
 - **Tailwind CSS** - Framework CSS utility-first
@@ -130,7 +133,7 @@ Comentarios, valoraciones y reseñas de videojuegos con sistema de notificacione
 - **React Router DOM** - Enrutamiento SPA
 - **Axios** - Cliente HTTP
 
-### <img src="https://api.iconify.design/lucide/database.svg?color=%23ffffff" width="18" align="absmiddle"> Base de Datos
+### Base de Datos <img src="https://api.iconify.design/lucide/database.svg?color=%23ffffff" width="18" align="absmiddle">
 - **MySQL 8.0** - Base de datos relacional
 - **Redis 7** - Caché en memoria para juegos y sesiones
 - **Django ORM** - Mapeo objeto-relacional
@@ -138,7 +141,7 @@ Comentarios, valoraciones y reseñas de videojuegos con sistema de notificacione
 </td>
 <td width="50%" valign="top">
 
-### <img src="https://api.iconify.design/lucide/server.svg?color=%23ffffff" width="18" align="absmiddle"> Backend
+### Backend <img src="https://api.iconify.design/lucide/server.svg?color=%23ffffff" width="18" align="absmiddle">
 - **Django 5.2** - Framework web de alto nivel
 - **Python 3.10+** - Lenguaje de programación
 - **Django REST Framework** - API REST toolkit
@@ -146,7 +149,7 @@ Comentarios, valoraciones y reseñas de videojuegos con sistema de notificacione
 - **Gunicorn** - WSGI HTTP Server
 - **Celery** (opcional) - Tareas asíncronas
 
-### <img src="https://api.iconify.design/lucide/box.svg?color=%23ffffff" width="18" align="absmiddle"> DevOps
+### DevOps <img src="https://api.iconify.design/lucide/box.svg?color=%23ffffff" width="18" align="absmiddle">
 - **Docker & Docker Compose** - Containerización
 - **Nginx** - Proxy inverso y servidor estático
 - **Sablier** - Auto-suspensión de contenedores
@@ -156,14 +159,15 @@ Comentarios, valoraciones y reseñas de videojuegos con sistema de notificacione
 </tr>
 </table>
 
-### <img src="https://api.iconify.design/lucide/plug.svg?color=%23ffffff" width="18" align="absmiddle"> APIs Externas
+### APIs Externas <img src="https://api.iconify.design/lucide/plug.svg?color=%23ffffff" width="18" align="absmiddle">
 
 - **IGDB API** (Twitch) - Base de datos de videojuegos
 - **AllKeyShop** - Comparador de precios de claves
 
 ---
 
-## <img src="https://api.iconify.design/lucide/blocks.svg?color=%23ffffff" width="24" align="absmiddle"> Arquitectura
+<a name="arquitectura"></a>
+## Arquitectura <img src="https://api.iconify.design/lucide/blocks.svg?color=%23ffffff" width="24" align="absmiddle">
 
 ```mermaid
 graph TD
@@ -196,9 +200,11 @@ graph TD
 
 ---
 
-## <img src="https://api.iconify.design/lucide/rocket.svg?color=%23ffffff" width="24" align="absmiddle"> Inicio Rápido
+<a name="inicio-rapido"></a>
+## Inicio Rápido <img src="https://api.iconify.design/lucide/rocket.svg?color=%23ffffff" width="24" align="absmiddle">
 
-### Requisitos Previos
+<a name="requisitos-previos"></a>
+### Requisitos Previos 
 
 Asegúrate de contar con lo siguiente instalado en tu host o máquina de despliegue:
 
@@ -206,7 +212,8 @@ Asegúrate de contar con lo siguiente instalado en tu host o máquina de desplie
 - **Docker Compose** `>= 2.x`
 - En caso de ejecutar en formato de pre-desarrollo local y nativo, precisarás **Node.js** v20+, **Python** 3.10+, **MySQL Server** 8+, **Redis** 7+
 
-### Instalación
+<a name="instalacion"></a>
+### Instalación 
 
 ```bash
 # 1. Clonar el repositorio
@@ -226,7 +233,8 @@ npm install
 npm run dev
 ```
 
-### Variables de Entorno
+<a name="variables-de-entorno"></a>
+### Variables de Entorno 
 
 Variables a completar alojadas en `.env`:
 
@@ -258,7 +266,8 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 
 </details>
 
-### <img src="https://api.iconify.design/lucide/settings.svg?color=%23ffffff" width="20" align="absmiddle"> Configuración Inicial
+<a name="configuracion-inicial"></a>
+### Configuración Inicial <img src="https://api.iconify.design/lucide/settings.svg?color=%23ffffff" width="20" align="absmiddle">
 
 Una vez levantados los contenedores, es necesario realizar la configuración inicial:
 
@@ -285,7 +294,8 @@ docker-compose exec redis redis-cli ping
 
 ---
 
-## <img src="https://api.iconify.design/lucide/book-open.svg?color=%23ffffff" width="24" align="absmiddle"> Uso
+<a name="uso"></a>
+## Uso <img src="https://api.iconify.design/lucide/book-open.svg?color=%23ffffff" width="24" align="absmiddle">
 
 ### Estructura base
 La aplicación centraliza la experiencia en el frontend expuesto nativamente en los puertos de Nginx (habitualmente 443 vía TLS si Cloudflare está enganchado o por el 80 directo). 
@@ -297,11 +307,13 @@ Nginx se gestiona de forma global en `nginx-central` fuera del contenedor (para 
 
 ---
 
-## <img src="https://api.iconify.design/lucide/code.svg?color=%23ffffff" width="24" align="absmiddle"> API REST
+<a name="api-rest"></a>
+## API REST <img src="https://api.iconify.design/lucide/code.svg?color=%23ffffff" width="24" align="absmiddle">
 
 La API REST de GameS proporciona endpoints para todas las funcionalidades principales del sistema.
 
-### <img src="https://api.iconify.design/lucide/lock.svg?color=%23ffffff" width="18" align="absmiddle"> Autenticación
+<a name="autenticacion"></a>
+### Autenticación <img src="https://api.iconify.design/lucide/lock.svg?color=%23ffffff" width="18" align="absmiddle">
 
 El sistema utiliza **JWT (JSON Web Tokens)** para la autenticación:
 
@@ -327,13 +339,14 @@ curl -X POST http://localhost/api/token/refresh/ \
   -d '{"refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."}'
 ```
 
-### <img src="https://api.iconify.design/lucide/database.svg?color=%23ffffff" width="18" align="absmiddle"> Endpoints Principales
+<a name="endpoints-principales"></a>
+### Endpoints Principales <img src="https://api.iconify.design/lucide/database.svg?color=%23ffffff" width="18" align="absmiddle">
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-#### <img src="https://api.iconify.design/lucide/gamepad-2.svg?color=%23ffffff" width="14" align="absmiddle"> Juegos
+#### Juegos <img src="https://api.iconify.design/lucide/gamepad-2.svg?color=%23ffffff" width="14" align="absmiddle">
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -343,7 +356,7 @@ curl -X POST http://localhost/api/token/refresh/ \
 | `GET` | `/api/juegos/{id}/precios/` | Precios del juego |
 | `POST` | `/api/juegos/{id}/favorito/` | Añadir a favoritos |
 
-#### <img src="https://api.iconify.design/lucide/library.svg?color=%23ffffff" width="14" align="absmiddle"> Biblioteca
+#### Biblioteca <img src="https://api.iconify.design/lucide/library.svg?color=%23ffffff" width="14" align="absmiddle">
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -353,7 +366,7 @@ curl -X POST http://localhost/api/token/refresh/ \
 | `DELETE` | `/api/biblioteca/{id}/` | Eliminar juego |
 | `GET` | `/api/biblioteca/estadisticas/` | Estadísticas |
 
-#### <img src="https://api.iconify.design/lucide/clock.svg?color=%23ffffff" width="14" align="absmiddle"> Actividad
+#### Actividad <img src="https://api.iconify.design/lucide/clock.svg?color=%23ffffff" width="14" align="absmiddle">
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -365,7 +378,7 @@ curl -X POST http://localhost/api/token/refresh/ \
 </td>
 <td width="50%" valign="top">
 
-#### <img src="https://api.iconify.design/lucide/coins.svg?color=%23ffffff" width="14" align="absmiddle"> Precios
+#### Precios <img src="https://api.iconify.design/lucide/coins.svg?color=%23ffffff" width="14" align="absmiddle">
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -374,7 +387,7 @@ curl -X POST http://localhost/api/token/refresh/ \
 | `GET` | `/api/precios/ofertas/` | Mejores ofertas |
 | `POST` | `/api/precios/{id}/alerta/` | Crear alerta |
 
-#### <img src="https://api.iconify.design/lucide/message-square.svg?color=%23ffffff" width="14" align="absmiddle"> Comentarios
+#### Comentarios <img src="https://api.iconify.design/lucide/message-square.svg?color=%23ffffff" width="14" align="absmiddle">
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -384,7 +397,7 @@ curl -X POST http://localhost/api/token/refresh/ \
 | `DELETE` | `/api/comentarios/{id}/` | Eliminar comentario |
 | `POST` | `/api/comentarios/{id}/like/` | Me gusta |
 
-#### <img src="https://api.iconify.design/lucide/user.svg?color=%23ffffff" width="14" align="absmiddle"> Usuarios
+#### Usuarios <img src="https://api.iconify.design/lucide/user.svg?color=%23ffffff" width="14" align="absmiddle">
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -458,9 +471,10 @@ curl -X POST http://localhost/api/actividad/ \
 
 ---
 
-## <img src="https://api.iconify.design/lucide/terminal.svg?color=%23ffffff" width="24" align="absmiddle"> Scripts Disponibles
+<a name="scripts-disponibles"></a>
+## Scripts Disponibles <img src="https://api.iconify.design/lucide/terminal.svg?color=%23ffffff" width="24" align="absmiddle">
 
-### <img src="https://api.iconify.design/lucide/package.svg?color=%23ffffff" width="18" align="absmiddle"> Frontend (NPM)
+### Frontend (NPM) <img src="https://api.iconify.design/lucide/package.svg?color=%23ffffff" width="18" align="absmiddle">
 
 | Comando | Descripción |
 |---------|-------------|
@@ -470,7 +484,7 @@ curl -X POST http://localhost/api/actividad/ \
 | `npm run preview` | <img src="https://api.iconify.design/lucide/eye.svg?color=%23ffffff" width="14" align="absmiddle"> Preview del build de producción |
 | `npm run test` | <img src="https://api.iconify.design/lucide/test-tube.svg?color=%23ffffff" width="14" align="absmiddle"> Ejecutar tests unitarios |
 
-### <img src="https://api.iconify.design/mdi/language-python.svg?color=%23ffffff" width="18" align="absmiddle"> Backend (Django)
+### Backend (Django) <img src="https://api.iconify.design/mdi/language-python.svg?color=%23ffffff" width="18" align="absmiddle">
 
 | Comando | Descripción |
 |---------|-------------|
@@ -483,7 +497,7 @@ curl -X POST http://localhost/api/actividad/ \
 | `python manage.py sync_igdb` | <img src="https://api.iconify.design/lucide/refresh-cw.svg?color=%23ffffff" width="14" align="absmiddle"> Sincronizar con IGDB |
 | `python manage.py actualizar_precios` | <img src="https://api.iconify.design/lucide/dollar-sign.svg?color=%23ffffff" width="14" align="absmiddle"> Actualizar precios de juegos |
 
-### <img src="https://api.iconify.design/mdi/docker.svg?color=%23ffffff" width="18" align="absmiddle"> Docker
+### Docker <img src="https://api.iconify.design/mdi/docker.svg?color=%23ffffff" width="18" align="absmiddle">
 
 | Comando | Descripción |
 |---------|-------------|
@@ -498,7 +512,8 @@ curl -X POST http://localhost/api/actividad/ \
 
 ---
 
-## <img src="https://api.iconify.design/lucide/folder-tree.svg?color=%23ffffff" width="24" align="absmiddle"> Estructura del Proyecto
+<a name="estructura-del-proyecto"></a>
+## Estructura del Proyecto <img src="https://api.iconify.design/lucide/folder-tree.svg?color=%23ffffff" width="24" align="absmiddle">
 
 ```text
 GameS/
@@ -525,7 +540,8 @@ GameS/
 
 ---
 
-## <img src="https://api.iconify.design/lucide/test-tube.svg?color=%23ffffff" width="24" align="absmiddle"> Pruebas
+<a name="pruebas"></a>
+## Pruebas <img src="https://api.iconify.design/lucide/test-tube.svg?color=%23ffffff" width="24" align="absmiddle">
 
 Lanza la consola interactiva test del framework de Python directamente con:
 ```bash
@@ -541,7 +557,8 @@ npm run lint
 
 ---
 
-## <img src="https://api.iconify.design/lucide/server.svg?color=%23ffffff" width="24" align="absmiddle"> Despliegue
+<a name="despliegue"></a>
+## Despliegue <img src="https://api.iconify.design/lucide/server.svg?color=%23ffffff" width="24" align="absmiddle">
 
 La plataforma usa `docker-compose` atada fuertemente a mecanismos del orquestador exterior:
 - Consta de etiquetas de **Sablier** (`sablier.enable=true` / `sablier.strategy=dynamic`) en el servicio del backend, dispuestas para paralogizar auto-suspensión de los bins Docker bajo falta de tráfico web, optimizando al máximo un despliegue VPS o Host de baja capacidad. 
@@ -551,7 +568,7 @@ La plataforma usa `docker-compose` atada fuertemente a mecanismos del orquestado
 docker-compose --env-file .env up --build -d
 ```
 
-### <img src="https://api.iconify.design/lucide/cloud.svg?color=%23ffffff" width="20" align="absmiddle"> Optimizaciones de Producción
+### Optimizaciones de Producción <img src="https://api.iconify.design/lucide/cloud.svg?color=%23ffffff" width="20" align="absmiddle">
 
 El proyecto incluye varias optimizaciones para entornos de producción:
 
@@ -563,7 +580,8 @@ El proyecto incluye varias optimizaciones para entornos de producción:
 
 ---
 
-## <img src="https://api.iconify.design/lucide/alert-circle.svg?color=%23ffffff" width="24" align="absmiddle"> Solución de Problemas
+<a name="solucion-de-problemas"></a>
+## Solución de Problemas <img src="https://api.iconify.design/lucide/alert-circle.svg?color=%23ffffff" width="24" align="absmiddle">
 
 <details>
 <summary><b>🔴 Error: "Connection refused" al acceder a la aplicación</b></summary>
@@ -672,7 +690,8 @@ docker-compose restart backend
 
 ---
 
-## <img src="https://api.iconify.design/lucide/help-circle.svg?color=%23ffffff" width="24" align="absmiddle"> FAQ
+<a name="faq"></a>
+## FAQ <img src="https://api.iconify.design/lucide/help-circle.svg?color=%23ffffff" width="24" align="absmiddle">
 
 <details>
 <summary><b>❓ ¿Necesito pagar por las APIs de IGDB o AllKeyShop?</b></summary>
@@ -755,13 +774,14 @@ Actualmente el sistema no incluye exportación directa, pero puedes acceder a tu
 
 ---
 
-## <img src="https://api.iconify.design/lucide/shield-check.svg?color=%23ffffff" width="24" align="absmiddle"> Licencia y Derechos
+<a name="licencia-y-derechos"></a>
+## Licencia y Derechos <img src="https://api.iconify.design/lucide/shield-check.svg?color=%23ffffff" width="24" align="absmiddle">
 
 © Copyright - Todos los derechos del código fuente y logotipos de GameS pertenecen y están adjudicados exclusivamente a su autor principal.
 
 **Este es un proyecto privativo y la copia, reproducción, venta o uso no autorizado en terceros servicios externos se encuentra prohibido según la jurisdicción actual.** No se aceptan Pull Requests ni participaciones externas.
 
-### <img src="https://api.iconify.design/lucide/info.svg?color=%23ffffff" width="18" align="absmiddle"> Política de Uso
+### Política de Uso <img src="https://api.iconify.design/lucide/info.svg?color=%23ffffff" width="18" align="absmiddle">
 
 - ✅ Uso personal y educativo
 - ✅ Estudio del código fuente
@@ -774,7 +794,7 @@ Actualmente el sistema no incluye exportación directa, pero puedes acceder a tu
 
 <div align="center">
 
-### <img src="https://api.iconify.design/lucide/star.svg?color=%23ffffff" width="20" align="absmiddle"> Agradecimientos
+### Agradecimientos <img src="https://api.iconify.design/lucide/star.svg?color=%23ffffff" width="20" align="absmiddle">
 
 Este proyecto utiliza y agradece a:
 

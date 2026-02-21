@@ -33,5 +33,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Run Tests
+      env:
+        IGDB_CLIENT_ID: "dummy_client_id"
+        IGDB_CLIENT_SECRET: "dummy_client_secret"
+        DJANGO_SECRET_KEY: "dummy_secret_key"
       run: |
         python manage.py test

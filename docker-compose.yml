@@ -36,6 +36,11 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
+    labels:
+      - "sablier.enable=true"
+      - "sablier.group=games"
+      - "sablier.strategy=dynamic"
+      - "sablier.timeout=5m"
     depends_on:
       db:
         condition: service_healthy

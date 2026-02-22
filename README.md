@@ -1,6 +1,6 @@
 <div align="center">
 
-# GameS (Gestor de Videojuegos) <img src="https://api.iconify.design/lucide/gamepad-2.svg?color=%2361dafb" width="32" align="absmiddle">
+# GameS (Gestor de Videojuegos) <img src="https://api.iconify.design/lucide/gamepad-2.svg?color=%23ffffff" width="32" align="absmiddle">
 
 **Plataforma web integral para descubrir, organizar y gestionar videojuegos, con búsqueda avanzada, historial de precios y recomendaciones personalizadas.**
 
@@ -39,7 +39,7 @@
 
 ---
 
-## Tabla de Contenidos <img src="https://api.iconify.design/lucide/list.svg?color=%2361dafb" width="24" align="absmiddle">
+## Tabla de Contenidos <img src="https://api.iconify.design/lucide/list.svg?color=%23ffffff" width="24" align="absmiddle">
 - [Sobre el Proyecto](#sobre-el-proyecto)
 - [Demo y Capturas](#demo-y-capturas)
 - [Stack Tecnológico](#stack-tecnologico)

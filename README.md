@@ -2,7 +2,7 @@
 
 # <img src="https://api.iconify.design/mdi:gamepad-variant.svg?color=%2361DAFB" width="32" height="32" align="absmiddle" /> GameS (Gestor de Videojuegos)
 
-**Plataforma web integral para descubrir, organizar y gestionar videojuegos, con búsqueda avanzada, historial de precios y recomendaciones personalizadas.**
+**Plataforma web para descubrir, organizar y gestionar videojuegos, con búsqueda avanzada, historial de precios y recomendaciones personalizadas.**
 
 
 
@@ -66,7 +66,7 @@
 <a name="sobre-el-proyecto"></a>
 ## <img src="https://api.iconify.design/mdi:rocket-launch.svg?color=%23EF4444" width="20" height="20" align="absmiddle" /> Sobre el Proyecto
 
-> **GameS** es un gestor de videojuegos conceptualizado y desarrollado para ofrecer una experiencia completa a los apasionados de los juegos. Permite a los usuarios consultar información meticulosamente extraída de IGDB, planificar sus sesiones, administrar meticulosamente bibliotecas personales, hacer un seguimiento del tiempo y descubrir las mejores ofertas y precios históricos del mercado de claves. Todo bajo una interfaz estilizada y responsiva con un backend dinámico preparado para optimización por tráfico.
+> **GameS** es un gestor de videojuegos conceptualizado y desarrollado para ofrecer una experiencia completa a los apasionados de los juegos. Permite a los usuarios consultar información extraída de IGDB, planificar sus sesiones, administrar bibliotecas personales, hacer un seguimiento del tiempo y descubrir las mejores ofertas y precios históricos del mercado de claves. Todo bajo una interfaz estilizada y responsiva con un backend dinámico preparado para optimización por tráfico.
 
 ### <img src="https://api.iconify.design/mdi:star-four-points.svg?color=%23F59E0B" width="20" height="20" align="absmiddle" /> Características Principales
 

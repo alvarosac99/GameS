@@ -38,6 +38,7 @@ chromedriver.exe
 
 #seguridad
 .env
+backend/gestor_videojuegos/settings.py
 
 # Nginx
 nginx/conf.d/*.conf

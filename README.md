@@ -805,7 +805,7 @@ Este proyecto utiliza y agradece a:
 
 ---
 
-**Diseñado y Construido con <img src="https://api.iconify.design/lucide/heart.svg?color=%23ffffff" width="16" align="absmiddle"> por Sebas (ZENITHSEED)**
+**Diseñado y Construido por Sebas <img src="https://api.iconify.design/lucide/heart.svg?color=%23ffffff" width="16" align="absmiddle">**
 
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/alvarosac99)
 

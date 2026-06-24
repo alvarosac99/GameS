@@ -36,11 +36,23 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
+    environment:
+      - SESSION_COOKIE_DOMAIN=
+      - CSRF_COOKIE_DOMAIN=
+      - SESSION_COOKIE_SECURE=False
+      - CSRF_COOKIE_SECURE=False
+      - SESSION_COOKIE_SAMESITE=Lax
+      - CSRF_COOKIE_SAMESITE=Lax
     labels:
       - "sablier.enable=true"
       - "sablier.group=games"
       - "sablier.strategy=dynamic"
       - "sablier.timeout=5m"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
     depends_on:
       db:
         condition: service_healthy

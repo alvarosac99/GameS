@@ -87,10 +87,13 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "gestor_videojuegos.turnstile_middleware.TurnstileMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "gestor_videojuegos.etag_middleware.AutoETagMiddleware",  # ETags automáticos
+    "gestor_videojuegos.etag_middleware.AutoETagMiddleware",
 ]
+
+TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY", "")
 
 CORS_ALLOWED_ORIGINS = [
     "https://games.zenithseed.dev",
@@ -107,18 +110,21 @@ from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-csrftoken",
     "x-requested-with",
+    "x-turnstile-token",
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 
-SESSION_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_DOMAIN = ".zenithseed.dev"  # Permite compartir cookies entre subdominios
+SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", "None")
+CSRF_COOKIE_SAMESITE = os.environ.get("CSRF_COOKIE_SAMESITE", "None")
+SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "True") == "True"
+CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "True") == "True"
+_csrf_domain = os.environ.get("CSRF_COOKIE_DOMAIN", ".zenithseed.dev")
+CSRF_COOKIE_DOMAIN = _csrf_domain if _csrf_domain else None
 CSRF_COOKIE_HTTPONLY = False  # Permite que JavaScript lea la cookie
-SESSION_COOKIE_DOMAIN = ".zenithseed.dev"  # También para sesiones
+_session_domain = os.environ.get("SESSION_COOKIE_DOMAIN", ".zenithseed.dev")
+SESSION_COOKIE_DOMAIN = _session_domain if _session_domain else None
 
 # Rest framework settings
 REST_FRAMEWORK = {
@@ -158,7 +164,6 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "3306"),
     }
 }
-"http://192.168.56.1:5173"
 
 
 # Password validation

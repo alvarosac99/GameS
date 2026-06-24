@@ -8,23 +8,13 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { t } = useLang();
-  const [csrfToken, setCsrfToken] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
 
   useEffect(() => {
-    apiFetch('/usuarios/session/', { credentials: "include" })
-      .then(res => {
-        function getCookie(name) {
-          const value = `; ${document.cookie}`;
-          const parts = value.split(`; ${name}=`);
-          if (parts.length === 2) return parts.pop().split(";").shift();
-        }
-        const token = getCookie("csrftoken");
-        if (token) setCsrfToken(token);
-        return res.json();
-      })
+    apiFetch('/usuarios/session/')
+      .then(res => res.json())
       .then(data => {
         if (data.authenticated) navigate("/bienvenida");
       });
@@ -32,24 +22,23 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    try {
+      const res = await apiFetch("/usuarios/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
-    const res = await apiFetch("/usuarios/login/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken,
-      },
-      credentials: "include",
-      body: JSON.stringify({ username, password }),
-    });
+      const data = await res.json();
 
-    const data = await res.json();
-
-    if (res.ok && data.token && data.usuario) {
-      login(data.token, data.usuario);
-      navigate("/bienvenida");
-    } else {
-      setMensaje(data.error || "Fallo al iniciar sesión");
+      if (res.ok && data.token && data.usuario) {
+        await login(data.token, data.usuario);
+        navigate("/bienvenida");
+      } else {
+        setMensaje(data.error || "Fallo al iniciar sesión");
+      }
+    } catch {
+      setMensaje("No se pudo conectar con el servidor");
     }
   };
 

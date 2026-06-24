@@ -42,3 +42,4 @@ chromedriver.exe
 # Nginx
 nginx/conf.d/*.conf
 !nginx/conf.d/*.conf.example
+docker-compose.override.yml

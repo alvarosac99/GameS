@@ -3,6 +3,17 @@ export const API_BASE_URL = rawBaseUrl.replace(/\/+$|\s+$/g, "");
 
 let hasLoggedMissingBase = false;
 
+let _turnstileToken = null;
+let _turnstileRefresh = null;
+
+export function setTurnstileToken(token) {
+  _turnstileToken = token;
+}
+
+export function setTurnstileRefresh(fn) {
+  _turnstileRefresh = fn;
+}
+
 // Cache en memoria para ETags y respuestas
 const etagCache = new Map();
 const responseCache = new Map();
@@ -57,11 +68,13 @@ export async function apiFetch(endpoint = "", options = {}) {
 
   const headers = new Headers(options.headers || {});
 
-  // Añadir CSRF token para métodos no seguros
   if (isUnsafeMethod(method)) {
     const csrf = getCookie("csrftoken");
     if (csrf && !headers.has("X-CSRFToken")) {
       headers.set("X-CSRFToken", csrf);
+    }
+    if (_turnstileToken) {
+      headers.set("X-Turnstile-Token", _turnstileToken);
     }
   }
 
@@ -83,19 +96,14 @@ export async function apiFetch(endpoint = "", options = {}) {
   if (method === "GET") {
     const etag = response.headers.get("ETag");
 
-    // Si recibimos 304 Not Modified, devolver la respuesta cacheada
-    if (response.status === 304) {
-      if (responseCache.has(cacheKey)) {
-        const cachedResponse = responseCache.get(cacheKey);
-        // Crear una nueva Response con los datos cacheados
-        return new Response(JSON.stringify(cachedResponse), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "ETag": etag || etagCache.get(cacheKey),
-          },
-        });
-      }
+    if (response.status === 304 && responseCache.has(cacheKey)) {
+      return new Response(JSON.stringify(responseCache.get(cacheKey)), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "ETag": etag || etagCache.get(cacheKey),
+        },
+      });
     }
 
     // Si recibimos 200 con ETag, cachear la respuesta
@@ -116,10 +124,19 @@ export async function apiFetch(endpoint = "", options = {}) {
     }
   }
 
-  // Para métodos que modifican datos (POST, PUT, DELETE, PATCH),
-  // invalidar la caché relacionada
   if (isUnsafeMethod(method)) {
     invalidateRelatedCache(endpoint);
+  }
+
+  if (response.status === 403 && isUnsafeMethod(method) && !options._turnstileRetry) {
+    try {
+      const body = await response.clone().json();
+      if (body.error && body.error.includes("seguridad") && _turnstileRefresh) {
+        _turnstileRefresh();
+        await new Promise((r) => setTimeout(r, 2000));
+        return apiFetch(endpoint, { ...options, _turnstileRetry: true });
+      }
+    } catch {}
   }
 
   return response;
@@ -132,11 +149,12 @@ export async function apiFetch(endpoint = "", options = {}) {
  */
 function invalidateRelatedCache(endpoint) {
   const normalizedEndpoint = normalizeEndpoint(endpoint);
-  const baseEndpoint = normalizedEndpoint.split('/')[0];
+  const baseSegment = normalizedEndpoint.split('/')[0];
+  const suffix = `/${baseSegment}`;
 
-  // Eliminar todas las entradas de caché que empiecen con el mismo base endpoint
   for (const [key] of etagCache.entries()) {
-    if (key.includes(baseEndpoint)) {
+    const urlPart = key.split(":", 2)[1] || key;
+    if (urlPart.includes(suffix)) {
       etagCache.delete(key);
       responseCache.delete(key);
     }

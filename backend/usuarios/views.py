@@ -15,25 +15,29 @@ User = get_user_model()
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def perfil_publico_view(request, nombre_usuario):
     """Devuelve la información pública de un perfil."""
 
     user = get_object_or_404(User, username=nombre_usuario)
 
-    # Si el usuario ha sido bloqueado por el objetivo, se rechaza
-    if request.user in user.perfil.bloqueados.all():
-        return Response({"detail": "Has sido bloqueado por este usuario."}, status=403)
-
     perfil, _ = Perfil.objects.get_or_create(user=user)
+
+    # Si el usuario ha sido bloqueado por el objetivo, se rechaza
+    if request.user.is_authenticated and request.user in perfil.bloqueados.all():
+        return Response({"detail": "Has sido bloqueado por este usuario."}, status=403)
 
     # Los favoritos se rellenan con "None" hasta completar 5 elementos
     favoritos = perfil.favoritos if perfil.favoritos else []
     favoritos = list(favoritos) + [None] * (5 - len(favoritos))
     favoritos = favoritos[:5]
 
-    yo_sigo = perfil.seguidores.filter(id=request.user.id).exists()
-    yo_lo_bloquee = request.user.perfil.bloqueados.filter(id=user.id).exists()
+    yo_sigo = request.user.is_authenticated and perfil.seguidores.filter(id=request.user.id).exists()
+    if request.user.is_authenticated:
+        mi_perfil, _ = Perfil.objects.get_or_create(user=request.user)
+        yo_lo_bloquee = mi_perfil.bloqueados.filter(id=user.id).exists()
+    else:
+        yo_lo_bloquee = False
 
     return Response(
         {
@@ -41,12 +45,8 @@ def perfil_publico_view(request, nombre_usuario):
             "nombre": user.first_name or user.username,
             "username": user.username,
             "email": user.email,
-            "es_mi_perfil": request.user.username == user.username,
-            "foto": (
-                request.build_absolute_uri(perfil.avatar.url)
-                if perfil.avatar
-                else request.build_absolute_uri("/media/avatares/default.jpg")
-            ),
+            "es_mi_perfil": request.user.is_authenticated and request.user.username == user.username,
+            "foto": perfil.avatar.url if perfil.avatar else "/media/avatares/default.jpg",
             "horas": getattr(perfil, "horas", 0),
             "juegos": getattr(perfil, "juegos", 0),
             "amigos": getattr(perfil, "amigos", 0),
@@ -80,9 +80,7 @@ def perfil_usuario(request):
             "rol": perfil.rol,
             "bio": perfil.biografia,
             "foto": (
-                request.build_absolute_uri(perfil.avatar.url)
-                if perfil.avatar
-                else request.build_absolute_uri("/media/avatares/default.jpg")
+                perfil.avatar.url if perfil.avatar else "/media/avatares/default.jpg"
             ),
             "filtro_adulto": perfil.filtro_adulto,
             "gustos_generos": perfil.gustos_generos,
@@ -146,9 +144,7 @@ def perfil_usuario(request):
             "rol": perfil.rol,
             "bio": perfil.biografia,
             "foto": (
-                request.build_absolute_uri(perfil.avatar.url)
-                if perfil.avatar
-                else request.build_absolute_uri("/media/avatares/default.jpg")
+                perfil.avatar.url if perfil.avatar else "/media/avatares/default.jpg"
             ),
             "filtro_adulto": perfil.filtro_adulto,
             "gustos_generos": perfil.gustos_generos,
@@ -338,9 +334,7 @@ def actualizar_favoritos(request):
         "rol": perfil.rol,
         "bio": perfil.biografia,
         "foto": (
-            request.build_absolute_uri(perfil.avatar.url)
-            if perfil.avatar
-            else request.build_absolute_uri("/media/avatares/default.jpg")
+            perfil.avatar.url if perfil.avatar else "/media/avatares/default.jpg"
         ),
         "filtro_adulto": perfil.filtro_adulto,
         "gustos_generos": perfil.gustos_generos,
@@ -382,9 +376,7 @@ def buscar_usuarios(request):
                 "username": user.username,
                 "nombre": user.first_name or user.username,
                 "foto": (
-                    request.build_absolute_uri(perfil.avatar.url)
-                    if perfil and perfil.avatar
-                    else request.build_absolute_uri("/media/avatares/default.png")
+                    perfil.avatar.url if perfil and perfil.avatar else "/media/avatares/default.png"
                 ),
             }
         )
@@ -394,13 +386,6 @@ def buscar_usuarios(request):
 
 # SEGUIR Y BLOQUEAR
 
-
-@api_view(["GET"])
-def perfil_publico(request, username):
-    """Permite seguir a otro usuario."""
-    objetivo = get_object_or_404(User, username=username)
-    perfil_objetivo = getattr(objetivo, "perfil", None)
-    perfil_actual = request.user.perfil
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])

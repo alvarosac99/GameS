@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { useLang } from "./context/LangContext";
-import { apiFetch } from "./lib/api";
+
 
 import {
   Menu,
@@ -42,11 +42,12 @@ import PlanificacionDetalle from "./pages/PlanificacionDetalle";
 import Ajustes from "./pages/Ajustes";
 import NuestrosJuegos from "./pages/NuestrosJuegos";
 import NuevoJuego from "./pages/NuevoJuego";
+import Privacidad from "./pages/Privacidad";
 
 import LoadingScreen from "./components/LoadingScreen";
 
 function AppContent() {
-  const { autenticado, usuario } = useAuth();
+  const { autenticado, usuario, logout } = useAuth();
   const { t } = useLang();
   const [mostrarBuscador, setMostrarBuscador] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -400,9 +401,7 @@ function AppContent() {
           </Link>
           <button
             className="flex items-center gap-2 text-red-400 hover:text-red-300"
-            onClick={() =>
-              apiFetch("/usuarios/logout/", { method: "POST" }).then(() => (window.location.href = "/"))
-            }
+            onClick={() => logout().then(() => (window.location.href = "/"))}
           >
             <LogOut /> {t("menuLogout")}
           </button>
@@ -413,6 +412,9 @@ function AppContent() {
             </Link>
             <Link to="/manual" className="hover:text-naranja">
               Manual de uso
+            </Link>
+            <Link to="/privacidad" className="hover:text-naranja">
+              Privacidad
             </Link>
           </div>
         </nav>
@@ -438,12 +440,13 @@ function AppContent() {
           <Route path="/nuestros-juegos" element={<NuestrosJuegos />} />
           <Route path="/nuevo-juego" element={<NuevoJuego />} />
           <Route path="/jugar" element={<Jugar />} />
+          <Route path="/privacidad" element={<Privacidad />} />
           <Route path="*" element={<h2 className="text-center">{t("pageNotFound")}</h2>} />
         </Routes>
       </main>
 
       <footer className="relative z-20 bg-[hsl(var(--color-metal))] py-2 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-borde shadow-[0_-10px_30px_rgba(0,0,0,0.25)]">
-        GameS © 2025
+        GameS © 2025 · <Link to="/privacidad" className="hover:text-naranja">Privacidad</Link>
       </footer>
     </div>
   );

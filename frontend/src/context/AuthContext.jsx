@@ -1,22 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 
-// Utilidad para obtener la cookie del CSRF token
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim(); 
-      if (cookie.substring(0, name.length + 1) === name + "=") {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -28,19 +12,7 @@ export default function AuthProvider({ children }) {
   const [autenticado, setAutenticado] = useState(false);
   const [cargando, setCargando] = useState(true);
 
-  // Fetch seguro con CSRF y sesión incluida
-  const fetchAuth = (endpoint, options = {}) => {
-    const headers = options.headers || {};
-    if (["POST", "PUT", "PATCH", "DELETE"].includes((options.method || "GET").toUpperCase())) {
-      headers["X-CSRFToken"] = getCookie("csrftoken");
-      headers["Content-Type"] = "application/json";
-    }
-    return apiFetch(endpoint, {
-      ...options,
-      credentials: "include",
-      headers,
-    });
-  };
+  const fetchAuth = (endpoint, options = {}) => apiFetch(endpoint, options);
 
   // Carga el usuario y su filtro_adulto
   useEffect(() => {
@@ -71,21 +43,20 @@ export default function AuthProvider({ children }) {
       .finally(() => setCargando(false));
   }, []);
 
-  const login = (token, datos) => {
-    fetchAuth("/usuarios/me/", { credentials: "include" })
-      .then(r => r.json())
-      .then(userdata => {
-        setUsuario({
-          ...datos,
-          rol: userdata.rol,
-          filtro_adulto: userdata.filtro_adulto,
-          foto: userdata.foto || "/media/avatares/default.png",
-        });
-      });
+  const login = async (token, datos) => {
+    const r = await fetchAuth("/usuarios/me/", { credentials: "include" });
+    const userdata = await r.json();
+    setUsuario({
+      ...datos,
+      rol: userdata.rol,
+      filtro_adulto: userdata.filtro_adulto,
+      foto: userdata.foto || "/media/avatares/default.png",
+    });
     setAutenticado(true);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await fetchAuth("/usuarios/logout/", { method: "POST" }).catch(() => {});
     setUsuario(null);
     setAutenticado(false);
   };

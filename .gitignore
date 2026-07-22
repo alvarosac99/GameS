@@ -43,3 +43,9 @@ chromedriver.exe
 nginx/conf.d/*.conf
 !nginx/conf.d/*.conf.example
 docker-compose.override.yml
+
+# Claude / asistentes IA — nunca versionar
+.claude/
+CLAUDE.md
+AGENTS.md
+.mcp.json

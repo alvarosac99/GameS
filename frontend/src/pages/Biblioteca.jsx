@@ -2,27 +2,21 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import TarjetaSkeleton from "../components/TarjetaSkeleton";
-import PerPageSelector from "@/components/ui/PerPageSelector";
-import Pagination from "@/components/ui/Pagination";
 import { FaSort, FaSortAmountUp, FaSortAmountDown } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
 import { apiFetch } from "../lib/api";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
-const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
+const TANDA = 24;
 
 export default function Biblioteca() {
   const [juegosTotales, setJuegosTotales] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [tiempos, setTiempos] = useState({});
-  const [valoraciones, setValoraciones] = useState({});
-  const [pagina, setPagina] = useState(1);
-  const [paginasTotales, setPaginasTotales] = useState(1);
-  const [totalResultados, setTotalResultados] = useState(0);
+  const [visibles, setVisibles] = useState(TANDA);
   const [busqueda, setBusqueda] = useState("");
   const [orden, setOrden] = useState("popularidad");
   const [ascendente, setAscendente] = useState(false);
   const [mostrarMenuOrden, setMostrarMenuOrden] = useState(false);
-  const [porPagina, setPorPagina] = useState(30);
   const navigate = useNavigate();
   const { t } = useLang();
   const menuRef = useRef();
@@ -62,18 +56,14 @@ export default function Biblioteca() {
         }));
 
         setJuegosTotales(conInfo);
-        setTiempos(tiemposData);
-        setValoraciones(valores);
-        setTotalResultados(conInfo.length);
-        setPaginasTotales(Math.ceil(conInfo.length / porPagina));
       })
       .catch(() => setJuegosTotales([]))
       .finally(() => setCargando(false));
   }, []);
 
   useEffect(() => {
-    setPagina(1);
-  }, [busqueda, porPagina]);
+    setVisibles(TANDA);
+  }, [busqueda]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -93,26 +83,19 @@ export default function Biblioteca() {
     return dir * ((a.aggregated_rating || 0) - (b.aggregated_rating || 0));
   };
 
-  const cambiarPorPagina = (e) => {
-    const valor = parseInt(e.target.value, 10);
-    if (valor) {
-      setPorPagina(valor);
-      setPagina(1);
-    }
-  };
-
   // 🔍 Filtrado local
   const juegosFiltrados = juegosTotales.filter((j) =>
     j.name?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  // 📦 Paginación local
   const juegosOrdenados = [...juegosFiltrados].sort(ordenarJuegos);
-  const juegosPaginados = juegosOrdenados.slice(
-    (pagina - 1) * porPagina,
-    pagina * porPagina
+  const juegosVisibles = juegosOrdenados.slice(0, visibles);
+  const hayMas = visibles < juegosOrdenados.length;
+
+  const sentinelRef = useInfiniteScroll(
+    () => setVisibles((v) => v + TANDA),
+    { hasMore: hayMas, loading: cargando }
   );
-  const paginasCalculadas = Math.ceil(juegosFiltrados.length / porPagina);
 
   return (
     <div className="min-h-screen bg-transparent text-foreground p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto">
@@ -122,7 +105,7 @@ export default function Biblioteca() {
         ref={menuRef}
         className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4"
       >
-        <h1 className="text-3xl font-bold">{t("libraryTitle")}</h1>
+        <h1 className="font-display text-3xl font-bold">{t("libraryTitle")}</h1>
 
         <div className="flex flex-wrap items-center gap-2 relative">
           <input
@@ -172,22 +155,6 @@ export default function Biblioteca() {
             </div>
           )}
 
-          <PerPageSelector
-            opciones={OPCIONES_POR_PAGINA}
-            valor={porPagina}
-            onCambiarPreset={cambiarPorPagina}
-            onCambiarPersonalizado={(e) => {
-              let val = parseInt(e.target.value, 10) || 1;
-              if (val > 500) val = 500;
-              if (val < 1) val = 1;
-              setPorPagina(val);
-              setPagina(1);
-            }}
-            etiquetaOtro={t("other")}
-            etiquetaMostrar={t("showNumber")}
-            etiquetaSufijo={t("perPage")}
-            tituloPersonalizado={t("customAmount")}
-          />
         </div>
       </div>
 
@@ -200,18 +167,18 @@ export default function Biblioteca() {
 
       {cargando ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
-          {Array(porPagina)
+          {Array(TANDA)
             .fill()
             .map((_, i) => (
               <TarjetaSkeleton key={i} />
             ))}
         </div>
-      ) : juegosPaginados.length === 0 ? (
+      ) : juegosVisibles.length === 0 ? (
         <p>{t("noMatchingGames")}</p>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
-            {juegosPaginados.map((juego) => (
+            {juegosVisibles.map((juego) => (
               <GameCard
                 key={juego.id}
                 juego={juego}
@@ -222,18 +189,13 @@ export default function Biblioteca() {
             ))}
           </div>
 
-          {paginasCalculadas > 1 && (
-            <div className="mt-6 text-center">
-              <p>
-                {t("pageOf")
-                  .replace("{page}", pagina)
-                  .replace("{total}", paginasCalculadas)}
-              </p>
-              <Pagination
-                paginas={Array.from({ length: paginasCalculadas }, (_, i) => i + 1)}
-                paginaActual={pagina}
-                onCambiar={setPagina}
-              />
+          {hayMas && (
+            <div ref={sentinelRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6 mt-6">
+              {Array(Math.min(TANDA, juegosOrdenados.length - visibles))
+                .fill()
+                .map((_, i) => (
+                  <TarjetaSkeleton key={i} />
+                ))}
             </div>
           )}
         </>

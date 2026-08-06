@@ -56,7 +56,7 @@ export default function Diario() {
   return (
     <div className="p-4 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">🎮 {t("myGameDiary")}</h1>
+        <h1 className="font-display text-3xl font-bold">🎮 {t("myGameDiary")}</h1>
         <Link
           to="/jugar"
           className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-opacity-80"

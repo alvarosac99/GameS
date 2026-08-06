@@ -71,7 +71,7 @@ export default function PlanificacionDetalle() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-3xl font-bold">{plan.nombre}</h1>
+      <h1 className="font-display text-3xl font-bold">{plan.nombre}</h1>
       <div className="text-sm">
         <p>Total: {formatHoras(plan.total)}</p>
         <p>Jugado: {formatHoras(plan.jugado)}</p>

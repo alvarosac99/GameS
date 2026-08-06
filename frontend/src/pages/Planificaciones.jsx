@@ -112,7 +112,7 @@ export default function Planificaciones() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-3xl font-bold">Planificaciones</h1>
+      <h1 className="font-display text-3xl font-bold">Planificaciones</h1>
       <div className="flex gap-2">
         <button
           onClick={() => setVista("lista")}

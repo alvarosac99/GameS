@@ -59,7 +59,7 @@ export default function Planificar() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-3xl font-bold">Crear planificación</h1>
+      <h1 className="font-display text-3xl font-bold">Crear planificación</h1>
 
       <div className="space-y-2">
         <label htmlFor="plan-nombre" className="sr-only">

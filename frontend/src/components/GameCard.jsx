@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 
 import { FaStar, FaRegStar, FaStarHalfAlt } from "react-icons/fa";
 import { formatHoras } from "@/lib/format";
@@ -7,6 +7,7 @@ function GameCard({ juego, onClick, tiempo = 0, valoracion = null }) {
     const rectRef = useRef(null);
     const rafRef = useRef(null);
     const cardRef = useRef(null);
+    const [cargada, setCargada] = useState(false);
 
     if (!juego) {
         // Tarjeta vacía si no hay juego
@@ -71,11 +72,17 @@ function GameCard({ juego, onClick, tiempo = 0, valoracion = null }) {
             }}
         >
             {coverUrl ? (
-                <img
-                    src={coverUrl}
-                    alt={juego.name}
-                    className="block w-full max-h-[340px] object-contain transition-transform duration-50 group-hover:scale-[1.03]"
-                />
+                <div className="relative bg-muted min-h-[200px]">
+                    <img
+                        src={coverUrl}
+                        alt={juego.name}
+                        loading="lazy"
+                        onLoad={() => setCargada(true)}
+                        className={`block w-full max-h-[340px] object-contain transition-[opacity,transform] duration-300 group-hover:scale-[1.03] ${
+                            cargada ? "opacity-100" : "opacity-0"
+                        }`}
+                    />
+                </div>
             ) : (
                 <div className="w-full h-[200px] flex items-center justify-center bg-card text-muted-foreground text-sm px-2">
                     Sin portada

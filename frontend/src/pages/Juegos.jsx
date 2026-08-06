@@ -3,12 +3,11 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import TarjetaSkeleton from "@/components/TarjetaSkeleton";
 import GameCard from "@/components/GameCard";
-import PerPageSelector from "@/components/ui/PerPageSelector";
-import Pagination from "@/components/ui/Pagination";
 import LoaderCirculo from "@/components/LoaderCirculo";
 import { apiFetch } from "../lib/api";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
-const OPCIONES_POR_PAGINA = [10, 20, 30, 40, 50];
+const POR_PAGINA = 24;
 
 export default function Juegos() {
   const navigate = useNavigate();
@@ -20,30 +19,25 @@ export default function Juegos() {
     [navigate]
   );
 
-  const initPagina = parseInt(searchParams.get("pagina") || "1", 10);
   const initOrden = searchParams.get("orden") || "popular";
   const initGenero = searchParams.get("genero") || "";
   const initPlataforma = searchParams.get("plataforma") || "";
-  const initPublisher = searchParams.get("publisher") || "";
-  const initPorPagina = parseInt(searchParams.get("por_pagina") || "30", 10);
 
   const terminoBusqueda = searchParams.get("q")?.trim() || "";
 
   const [juegos, setJuegos] = useState([]);
-  const [pagina, setPagina] = useState(initPagina);
+  const [pagina, setPagina] = useState(1);
   const [paginasTotales, setPaginasTotales] = useState(1);
   const [totalResultados, setTotalResultados] = useState(0);
   const [cargando, setCargando] = useState(true);
+  const [cargandoMas, setCargandoMas] = useState(false);
   const [orden, setOrden] = useState(initOrden);
   const [ascendente, setAscendente] = useState(false);
   const [generoSel, setGeneroSel] = useState(initGenero);
   const [plataformaSel, setPlataformaSel] = useState(initPlataforma);
-  const [publisherSel, setPublisherSel] = useState(initPublisher);
-  const [porPagina, setPorPagina] = useState(initPorPagina);
   const [filtersLoaded, setFiltersLoaded] = useState(false);
   const [genres, setGenres] = useState([]);
   const [platforms, setPlatforms] = useState([]);
-  const [publishers, setPublishers] = useState([]);
   const [mensajeCargaLenta, setMensajeCargaLenta] = useState(false);
   const [descargando, setDescargando] = useState(false);
   const [ordenAbierto, setOrdenAbierto] = useState(false);
@@ -56,7 +50,6 @@ export default function Juegos() {
       .then(data => {
         setGenres(data.genres || []);
         setPlatforms(data.platforms || []);
-        setPublishers(data.publishers || []);
       })
       .finally(() => setFiltersLoaded(true));
   }, []);
@@ -71,13 +64,6 @@ export default function Juegos() {
   }, [cargando]);
 
   useEffect(() => {
-    if (descargando) {
-      const interval = setInterval(obtenerJuegos, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [descargando]);
-
-  useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setOrdenAbierto(false);
@@ -87,24 +73,17 @@ export default function Juegos() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (busquedaRef.current !== terminoBusqueda) {
-      busquedaRef.current = terminoBusqueda;
-      setPagina(1);
-    }
-  }, [terminoBusqueda]);
-
-  const obtenerJuegos = () => {
-    setCargando(true);
+  const obtenerJuegos = (paginaFetch, append) => {
+    if (append) setCargandoMas(true);
+    else setCargando(true);
     setDescargando(false);
     const params = new URLSearchParams();
-    params.set("pagina", pagina);
-    params.set("por_pagina", porPagina);
+    params.set("pagina", paginaFetch);
+    params.set("por_pagina", POR_PAGINA);
     params.set("orden", orden + (ascendente ? "_asc" : ""));
     if (terminoBusqueda) params.set("q", terminoBusqueda);
     if (generoSel) params.set("genero", generoSel);
     if (plataformaSel) params.set("plataforma", plataformaSel);
-    if (publisherSel) params.set("publisher", publisherSel);
     if (autenticado && usuario && typeof usuario.filtro_adulto === "boolean") {
       params.set("adult", usuario.filtro_adulto ? "1" : "0");
     }
@@ -114,60 +93,63 @@ export default function Juegos() {
       .then(data => {
         if (data?.error === "descargando") {
           setDescargando(true);
-          setCargando(false);
           setJuegos([]);
           setPagina(1);
           setPaginasTotales(1);
           setTotalResultados(0);
           return;
         }
-        const unicos = Array.from(new Map(data.juegos.map(j => [j.id, j])).values());
-        setJuegos(unicos);
+        setJuegos((prev) => {
+          const base = append ? prev : [];
+          return Array.from(new Map([...base, ...data.juegos].map(j => [j.id, j])).values());
+        });
         setPagina(data.pagina_actual);
         setPaginasTotales(data.paginas_totales);
         setTotalResultados(data.total_resultados);
       })
       .catch(() => {
-        setJuegos([]);
-        setPaginasTotales(0);
-        setTotalResultados(0);
+        if (!append) {
+          setJuegos([]);
+          setPaginasTotales(0);
+          setTotalResultados(0);
+        }
       })
-      .finally(() => setCargando(false));
+      .finally(() => {
+        setCargando(false);
+        setCargandoMas(false);
+      });
   };
 
+  // Recarga desde el principio cuando cambian filtros/orden/búsqueda
   useEffect(() => {
     if (!filtersLoaded) return;
-    obtenerJuegos();
+    obtenerJuegos(1, false);
     const params = new URLSearchParams();
-    params.set("pagina", pagina);
-    params.set("por_pagina", porPagina);
     params.set("orden", orden + (ascendente ? "_asc" : ""));
     if (terminoBusqueda) params.set("q", terminoBusqueda);
     if (generoSel) params.set("genero", generoSel);
     if (plataformaSel) params.set("plataforma", plataformaSel);
-    if (publisherSel) params.set("publisher", publisherSel);
     if (autenticado && usuario && typeof usuario.filtro_adulto === "boolean") {
       params.set("adult", usuario.filtro_adulto ? "1" : "0");
     }
     navigate(`?${params.toString()}`, { replace: true });
-  }, [pagina, orden, ascendente, generoSel, plataformaSel, publisherSel, terminoBusqueda, porPagina, filtersLoaded, autenticado, usuario?.filtro_adulto]);
+  }, [orden, ascendente, generoSel, plataformaSel, terminoBusqueda, filtersLoaded, autenticado, usuario?.filtro_adulto]);
 
-  const generarPaginas = () => {
-    const delta = 2;
-    const pages = new Set([1, paginasTotales]);
-    for (let i = pagina - delta; i <= pagina + delta; i++) {
-      if (i > 1 && i < paginasTotales) pages.add(i);
+  useEffect(() => {
+    if (descargando) {
+      const interval = setInterval(() => obtenerJuegos(1, false), 10000);
+      return () => clearInterval(interval);
     }
-    const sorted = [...pages].sort((a, b) => a - b);
-    const res = [];
-    let prev = 0;
-    sorted.forEach((p) => {
-      if (p - prev > 1) res.push("...");
-      res.push(p);
-      prev = p;
-    });
-    return res;
+  }, [descargando]);
+
+  const cargarMas = () => {
+    if (pagina < paginasTotales) obtenerJuegos(pagina + 1, true);
   };
+
+  const sentinelRef = useInfiniteScroll(cargarMas, {
+    hasMore: pagina < paginasTotales,
+    loading: cargando || cargandoMas,
+  });
 
   const toggleOrden = (nuevoOrden) => {
     if (orden === nuevoOrden) {
@@ -176,17 +158,7 @@ export default function Juegos() {
       setOrden(nuevoOrden);
       setAscendente(false);
     }
-    setPagina(1);
     setOrdenAbierto(false);
-  };
-
-  // Cambia porPagina desde el select rápido
-  const cambiarPorPagina = (e) => {
-    const valor = parseInt(e.target.value, 10);
-    if (valor) {
-      setPorPagina(valor);
-      setPagina(1);
-    }
   };
 
   return (
@@ -194,7 +166,7 @@ export default function Juegos() {
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
         <div className="mb-3">
-          <h1 className="text-4xl font-black mb-1">
+          <h1 className="font-display text-4xl font-black mb-1">
             {terminoBusqueda
               ? `Resultados para ${terminoBusqueda.charAt(0).toUpperCase() + terminoBusqueda.slice(1)}`
               : "🎮 Juegos"}
@@ -228,10 +200,7 @@ export default function Juegos() {
           </div>
           <select
             value={generoSel}
-            onChange={(e) => {
-              setGeneroSel(e.target.value);
-              setPagina(1);
-            }}
+            onChange={(e) => setGeneroSel(e.target.value)}
             className="bg-card text-foreground border border-border rounded px-3 py-1"
           >
             <option value="">🎭 Todos los géneros</option>
@@ -239,28 +208,12 @@ export default function Juegos() {
           </select>
           <select
             value={plataformaSel}
-            onChange={(e) => {
-              setPlataformaSel(e.target.value);
-              setPagina(1);
-            }}
+            onChange={(e) => setPlataformaSel(e.target.value)}
             className="bg-card text-foreground border border-border rounded px-3 py-1"
           >
             <option value="">🖥️ Todas las plataformas</option>
             {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          {/* Selector personalizado para juegos por página */}
-          <PerPageSelector
-            opciones={OPCIONES_POR_PAGINA}
-            valor={porPagina}
-            onCambiarPreset={cambiarPorPagina}
-            onCambiarPersonalizado={(e) => {
-              let val = parseInt(e.target.value, 10) || 1;
-              if (val > 500) val = 500;
-              if (val < 1) val = 1;
-              setPorPagina(val);
-              setPagina(1);
-            }}
-          />
         </div>
       </div>
 
@@ -275,24 +228,29 @@ export default function Juegos() {
         <LoaderCirculo texto="Estamos recopilando todos los datos de IGDB. Espera unos segundos." />
       ) : cargando ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
-          {Array(porPagina).fill().map((_, i) => (
+          {Array(POR_PAGINA).fill().map((_, i) => (
             <TarjetaSkeleton key={i} />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
-          {juegos.map((j) => (
-            <GameCard key={j.id} juego={j} onClick={irAJuego} />
-          ))}
-        </div>
-      )}
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
+            {juegos.map((j) => (
+              <GameCard key={j.id} juego={j} onClick={irAJuego} />
+            ))}
+          </div>
 
-      {/* Paginación */}
-      {paginasTotales > 1 && !cargando && (
-        <div className="text-center mt-6">
-          Página {pagina} de {paginasTotales}
-          <Pagination paginas={generarPaginas()} paginaActual={pagina} onCambiar={setPagina} />
-        </div>
+          {pagina < paginasTotales && (
+            <div
+              ref={sentinelRef}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6 mt-6"
+            >
+              {Array(POR_PAGINA).fill().map((_, i) => (
+                <TarjetaSkeleton key={i} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

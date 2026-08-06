@@ -10,7 +10,6 @@ import { Pencil } from "lucide-react";
 import ActividadReciente from "@/components/ActividadReciente";
 import Reportar from "@/components/Reportar";
 import { apiFetch } from "../lib/api";
-import Panel from "@/components/ui/Panel";
 
 const extraerMediaUrls = (juego) => {
   if (!juego) return [];
@@ -209,7 +208,7 @@ export default function Perfil() {
   if (bloqueadoPorMi) {
     return (
       <div className="min-h-screen flex items-center justify-center text-center px-4">
-        <div className="bg-black/40 border border-border p-6 rounded-2xl w-full max-w-md shadow-xl mx-auto">
+        <div className="bg-card border border-border p-6 rounded-2xl w-full max-w-md shadow-xl mx-auto">
           <h2 className="text-2xl font-bold text-primary mb-2">Has bloqueado a este perfil</h2>
           <p className="text-foreground mb-4">Desbloquéalo si deseas volver a ver su contenido.</p>
           <button onClick={manejarBloqueo} className="px-4 py-2 bg-primary text-primary-foreground font-bold rounded-full">Desbloquear</button>
@@ -221,7 +220,7 @@ export default function Perfil() {
   if (bloqueadoPorEl) {
     return (
       <div className="min-h-screen flex items-center justify-center text-center px-4">
-        <div className="bg-black/40 border border-border p-6 rounded-2xl w-full max-w-md shadow-xl mx-auto">
+        <div className="bg-card border border-border p-6 rounded-2xl w-full max-w-md shadow-xl mx-auto">
           <h2 className="text-2xl font-bold text-primary mb-2">Este usuario te ha bloqueado</h2>
           <p className="text-foreground">No puedes ver su perfil ni interactuar con él.</p>
         </div>
@@ -306,152 +305,121 @@ export default function Perfil() {
       )}
 
       <div className="relative z-10 w-full px-4 sm:px-6 pt-10">
-        <div className="w-full bg-card/75 text-foreground border border-border shadow-lg backdrop-blur-sm dark:bg-black/35 dark:text-foreground dark:border-border dark:shadow-xl dark:backdrop-blur-md rounded-3xl px-6 sm:px-10 py-8 sm:py-10 perfil-enter perfil-delay-1">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-10">
-            <div className="relative">
-              <img
-                src={perfil.avatar || "/media/avatares/default.png"}
-                alt="Avatar"
-                className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full object-cover ring-4 ring-primary border-4 border-border shadow-2xl bg-black"
-              />
-              {esMiPerfil && (
-                <button
-                  onClick={() => setModoEdicion(true)}
-                  className="absolute bottom-3 right-3 bg-foreground text-white p-2 rounded-full hover:bg-foreground/90 shadow dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
-                  title="Editar perfil"
-                >
-                  <Pencil className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-            <div className="flex-1">
-              <h1
-                className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground dark:text-white tracking-tight cursor-pointer select-none"
-                onClick={cambiarAnimacion}
-                title="Haz clic para animar tu nombre"
-              >
-                {renderNombreAnimado(perfil.nombre)}
-              </h1>
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative z-10 min-h-screen w-full px-4 sm:px-6 py-10 flex flex-col lg:flex-row gap-12">
-        <div className="w-full lg:w-[340px] flex flex-col items-center lg:items-start perfil-enter perfil-delay-1 bg-card/70 text-foreground border border-border shadow-sm backdrop-blur-sm rounded-2xl p-4">
-          <div className="relative mb-6 perfil-enter perfil-delay-2 hidden">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-10 perfil-enter perfil-delay-1">
+          <div className="relative shrink-0">
             <img
               src={perfil.avatar || "/media/avatares/default.png"}
               alt="Avatar"
-              className="w-40 h-40 rounded-full object-cover ring-4 ring-primary border-4 border-border shadow-xl bg-black"
+              className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover ring-4 ring-primary border-4 border-border shadow-2xl bg-black"
             />
             {esMiPerfil && (
               <button
                 onClick={() => setModoEdicion(true)}
-                className="absolute bottom-3 right-3 bg-primary p-2 rounded-full hover:bg-primary/90 text-primary-foreground shadow"
+                className="absolute bottom-1 right-1 bg-foreground text-white p-2 rounded-full hover:bg-foreground/90 shadow dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                 title="Editar perfil"
               >
                 <Pencil className="w-5 h-5" />
               </button>
             )}
           </div>
-          <h1
-            className="text-3xl font-bold text-foreground text-left cursor-pointer select-none hidden"
-            onClick={cambiarAnimacion}
-            title="Haz clic para animar tu nombre"
-          >
-            {renderNombreAnimado(perfil.nombre)}
-          </h1>
-          <p className="text-foreground dark:text-primary text-lg font-semibold mb-2 perfil-enter perfil-delay-3">@{perfil.username}</p>
-          <div className="flex flex-wrap gap-2 mb-2 perfil-enter perfil-delay-3">
-            {tags.map((t, i) => (
-              <span key={i} className="text-xs rounded-xl px-3 py-1 font-bold border border-border bg-card/80 text-foreground dark:border-primary dark:bg-primary/10 dark:text-primary">{t}</span>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-4 text-lg font-semibold text-foreground dark:text-primary mb-1 perfil-enter perfil-delay-4">
-            <span>{perfil.horas || 0}h jugadas</span>
-            <span>·</span>
-            <span>{perfil.juegos || 0} juegos</span>
-          </div>
-          <div className="flex flex-wrap gap-4 text-base text-foreground dark:text-foreground mb-3 perfil-enter perfil-delay-4">
-            <span>{perfil.amigos || 0} amigos</span>
-            <span>·</span>
-            <span>{perfil.seguidores || 0} seguidores</span>
-          </div>
-          <div className="w-full perfil-enter perfil-delay-5">
-            <h2 className="font-bold text-primary mb-1 text-left">Biografía</h2>
-            <div className="bg-card/70 border border-border rounded-xl px-3 py-2 min-h-[40px] mb-2">
-              <p className="text-foreground dark:text-foreground text-sm">{perfil.bio || <span className="text-muted-foreground dark:text-muted-foreground">¡No ha escrito su biografía aún!</span>}</p>
-            </div>
-          </div>
-          {!esMiPerfil && (
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={manejarSeguir}
-                className={`px-4 py-1 rounded font-semibold ${sigo ? "bg-muted text-foreground dark:bg-muted dark:text-primary" : "bg-foreground text-white dark:bg-primary dark:text-primary-foreground"}`}
-              >
-                {sigo ? "Dejar de seguir" : "Seguir"}
-              </button>
-              <button
-                onClick={manejarBloqueo}
-                className="px-4 py-1 rounded bg-destructive text-white"
-              >
-                {bloqueado ? "Desbloquear" : "Bloquear"}
-              </button>
-              <Reportar modelo="usuario" objectId={perfil.id} />
-            </div>
-          )}
-        </div>
+          <div className="flex-1 min-w-0">
+            <h1
+              className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground dark:text-white tracking-tight cursor-pointer select-none"
+              onClick={cambiarAnimacion}
+              title="Haz clic para animar tu nombre"
+            >
+              {renderNombreAnimado(perfil.nombre)}
+            </h1>
+            <p className="text-primary text-lg font-semibold mt-1">@{perfil.username}</p>
 
-        <div className="flex-1 flex flex-col gap-8 justify-start perfil-enter perfil-delay-2">
-          <Panel className="flex flex-col gap-2 perfil-enter perfil-delay-3">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="font-bold text-foreground dark:text-primary text-lg">Favoritos</h2>
-              {esMiPerfil && (
-                <button
-                  onClick={() => setModoFavoritos(true)}
-                  className="ml-2 text-xs bg-foreground text-white px-2 py-1 rounded font-bold dark:bg-primary dark:text-primary-foreground"
-                >Editar</button>
-              )}
+            <div className="flex flex-wrap gap-2 mt-3">
+              {tags.map((t, i) => (
+                <span key={i} className="text-xs rounded-xl px-3 py-1 font-bold border border-border bg-card/60 text-foreground dark:border-primary dark:bg-primary/10 dark:text-primary">{t}</span>
+              ))}
             </div>
-            {cargandoFavoritos ? (
-              <LoaderCirculo texto="Cargando juegos favoritos..." />
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                {favoritosDatos.map((juego, i) =>
-                  juego ? (
-                    <GameCard key={juego.id || i} juego={juego} onClick={() => navigate(`/juego/${juego.id}`)} />
-                  ) : (
-                    <GameCard key={i} />
-                  )
-                )}
+
+            <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3 text-sm text-foreground/80">
+              <span><strong className="text-foreground">{perfil.horas || 0}h</strong> jugadas</span>
+              <span><strong className="text-foreground">{perfil.juegos || 0}</strong> juegos</span>
+              <span><strong className="text-foreground">{perfil.amigos || 0}</strong> amigos</span>
+              <span><strong className="text-foreground">{perfil.seguidores || 0}</strong> seguidores</span>
+            </div>
+
+            {!esMiPerfil && (
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={manejarSeguir}
+                  className={`px-4 py-1 rounded font-semibold ${sigo ? "bg-muted text-foreground dark:bg-muted dark:text-primary" : "bg-foreground text-white dark:bg-primary dark:text-primary-foreground"}`}
+                >
+                  {sigo ? "Dejar de seguir" : "Seguir"}
+                </button>
+                <button
+                  onClick={manejarBloqueo}
+                  className="px-4 py-1 rounded bg-destructive text-white"
+                >
+                  {bloqueado ? "Desbloquear" : "Bloquear"}
+                </button>
+                <Reportar modelo="usuario" objectId={perfil.id} />
               </div>
             )}
-          </Panel>
+          </div>
+        </div>
 
-          <Panel className="flex flex-col gap-2 perfil-enter perfil-delay-4">
-            <h2 className="font-bold text-foreground dark:text-primary text-lg mb-2">Recompensas / Logros</h2>
-            <div className="flex flex-wrap gap-2">
-              {logros.length === 0 ? (
-                <p className="text-muted-foreground dark:text-muted-foreground text-sm">Aún no tiene logros.</p>
-              ) : (
-                logros.map((logro, i) => (
-                  <span
-                    key={i}
-                    className="bg-muted text-foreground font-semibold px-3 py-1 rounded-xl border border-border dark:bg-primary/20 dark:text-primary dark:border-primary"
-                    title={logro.descripcion || ""}
-                  >
-                    {logro.nombre}
-                  </span>
-                ))
+        <div className="mt-8 max-w-2xl perfil-enter perfil-delay-2">
+          <h2 className="text-sm uppercase tracking-[0.2em] text-foreground/50 mb-1">Biografía</h2>
+          <p className="text-foreground text-sm leading-relaxed">
+            {perfil.bio || <span className="text-muted-foreground">¡No ha escrito su biografía aún!</span>}
+          </p>
+        </div>
+      </div>
+
+      <div className="relative z-10 min-h-screen w-full px-4 sm:px-6 py-10 flex flex-col gap-10">
+        <section className="perfil-enter perfil-delay-3">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-foreground dark:text-primary text-lg">Favoritos</h2>
+            {esMiPerfil && (
+              <button
+                onClick={() => setModoFavoritos(true)}
+                className="text-xs bg-foreground text-white px-2 py-1 rounded font-bold dark:bg-primary dark:text-primary-foreground"
+              >Editar</button>
+            )}
+          </div>
+          {cargandoFavoritos ? (
+            <LoaderCirculo texto="Cargando juegos favoritos..." />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {favoritosDatos.map((juego, i) =>
+                juego ? (
+                  <GameCard key={juego.id || i} juego={juego} onClick={() => navigate(`/juego/${juego.id}`)} />
+                ) : (
+                  <GameCard key={i} />
+                )
               )}
             </div>
-          </Panel>
+          )}
+        </section>
 
-          <div className="perfil-enter perfil-delay-5">
-            <ActividadReciente actividades={actividad} />
+        <section className="perfil-enter perfil-delay-4">
+          <h2 className="font-bold text-foreground dark:text-primary text-lg mb-3">Recompensas / Logros</h2>
+          <div className="flex flex-wrap gap-2">
+            {logros.length === 0 ? (
+              <p className="text-muted-foreground dark:text-muted-foreground text-sm">Aún no tiene logros.</p>
+            ) : (
+              logros.map((logro, i) => (
+                <span
+                  key={i}
+                  className="bg-muted text-foreground font-semibold px-3 py-1 rounded-xl border border-border dark:bg-primary/20 dark:text-primary dark:border-primary"
+                  title={logro.descripcion || ""}
+                >
+                  {logro.nombre}
+                </span>
+              ))
+            )}
           </div>
+        </section>
+
+        <div className="perfil-enter perfil-delay-5">
+          <ActividadReciente actividades={actividad} />
         </div>
 
         {modoEdicion && <EditarPerfil cerrar={() => setModoEdicion(false)} />}

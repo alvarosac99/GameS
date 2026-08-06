@@ -110,7 +110,7 @@ export default function Jugar() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-3xl font-bold">🎮 JUGAR!</h1>
+      <h1 className="font-display text-3xl font-bold">🎮 JUGAR!</h1>
 
       <div className="relative">
         <label htmlFor="jugar-busqueda" className="sr-only">

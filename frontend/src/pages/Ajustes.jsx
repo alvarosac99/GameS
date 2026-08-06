@@ -7,7 +7,7 @@ export default function Ajustes() {
 
   return (
     <div className="p-6 max-w-md mx-auto text-foreground">
-      <h1 className="text-3xl font-bold mb-4">{t("settingsTitle")}</h1>
+      <h1 className="font-display text-3xl font-bold mb-4">{t("settingsTitle")}</h1>
       <label className="block mb-2" htmlFor="lang-select">
         {t("chooseLanguage")}
       </label>

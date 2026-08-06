@@ -61,11 +61,11 @@ export default function PaginaPrincipal() {
         ) : (
           <>
             {/* Hero */}
-            <section className="flex flex-col items-center gap-6 text-center pb-10 md:pb-14">
+            <section className="flex flex-col items-start gap-6 text-left pb-10 md:pb-14">
               <img
                 src="/logo.png"
                 alt="GameS"
-                className="h-16 md:h-20 drop-shadow-xl hero-rise"
+                className="h-14 md:h-16 drop-shadow-xl hero-rise"
               />
               <div className="hero-rise" style={{ animationDelay: "80ms" }}>
                 <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.35em] text-primary">
@@ -74,14 +74,14 @@ export default function PaginaPrincipal() {
                 <h1 className="font-display mt-3 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground text-balance">
                   Tu videoteca, tu diario, tu ritmo
                 </h1>
-                <p className="mt-4 max-w-2xl mx-auto text-base md:text-lg text-foreground/70 text-pretty">
+                <p className="mt-4 max-w-2xl text-base md:text-lg text-foreground/70 text-pretty">
                   GameS junta tu biblioteca, tus sesiones de juego, tus reseñas y
                   tus planificaciones en un solo sitio, para que siempre sepas a
                   qué jugar y cuánto has avanzado.
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-3 hero-rise" style={{ animationDelay: "140ms" }}>
+              <div className="flex flex-wrap gap-3 hero-rise" style={{ animationDelay: "140ms" }}>
                 <button
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_10px_24px_rgba(255,120,40,0.35)] transition hover:-translate-y-0.5 hover:bg-primary/90"
                   onClick={() => navigate("/juegos")}
@@ -96,7 +96,7 @@ export default function PaginaPrincipal() {
                 </button>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-x-8 gap-y-1 mt-2 text-sm text-foreground/60 hero-rise" style={{ animationDelay: "200ms" }}>
+              <div className="flex flex-wrap gap-x-8 gap-y-1 mt-2 text-sm text-foreground/60 hero-rise" style={{ animationDelay: "200ms" }}>
                 <span><strong className="text-foreground">{stats.totalJuegos.toLocaleString()}</strong> juegos</span>
                 <span><strong className="text-foreground">{stats.totalUsuarios.toLocaleString()}</strong> jugadores</span>
                 <span><strong className="text-foreground">{stats.totalBibliotecas.toLocaleString()}</strong> en bibliotecas</span>
@@ -183,9 +183,9 @@ function Seccion({ title, subtitle, children }) {
 
 function HeroSkeleton() {
   return (
-    <div className="flex flex-col items-center gap-6 pb-14 animate-pulse" aria-hidden="true">
-      <div className="h-16 md:h-20 w-16 md:w-20 rounded-2xl bg-muted" />
-      <div className="flex flex-col items-center gap-3 w-full max-w-xl">
+    <div className="flex flex-col items-start gap-6 pb-14 animate-pulse" aria-hidden="true">
+      <div className="h-14 md:h-16 w-14 md:w-16 rounded-2xl bg-muted" />
+      <div className="flex flex-col items-start gap-3 w-full max-w-xl">
         <div className="h-3 w-40 rounded bg-muted" />
         <div className="h-10 w-full max-w-md rounded bg-muted" />
         <div className="h-4 w-full rounded bg-muted" />

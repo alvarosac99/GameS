@@ -18,7 +18,7 @@ export default function CalendarioDiario({ entradas }) {
     : null;
 
   return (
-    <div className="flex flex-col md:flex-row bg-metal/40 backdrop-blur rounded-xl shadow p-4 gap-6">
+    <div className="flex flex-col md:flex-row bg-card/40 backdrop-blur rounded-xl shadow p-4 gap-6">
       
       {/* Calendario a la izquierda */}
       <div className="w-full md:w-1/2">
@@ -39,10 +39,10 @@ export default function CalendarioDiario({ entradas }) {
       </div>
 
       {/* Lista de entradas a la derecha */}
-      <div className="w-full md:w-1/2 flex flex-col space-y-3 text-claro">
+      <div className="w-full md:w-1/2 flex flex-col space-y-3 text-foreground">
         {fechaSeleccionadaStr ? (
           <>
-            <h3 className="text-lg font-bold border-b border-borde pb-1">
+            <h3 className="text-lg font-bold border-b border-border pb-1">
               Entradas del {fechaSeleccionadaStr}
             </h3>
 
@@ -50,7 +50,7 @@ export default function CalendarioDiario({ entradas }) {
               entradasPorFecha[fechaSeleccionadaStr].map((entrada) => (
                 <div
                   key={entrada.id}
-                  className="bg-fondo p-3 rounded border-l-4 border-naranja shadow-sm"
+                  className="bg-background p-3 rounded border border-border shadow-sm"
                 >
                   <p className="font-semibold">
                     {entrada.juego_nombre ?? `Juego ID: ${entrada.juego}`}

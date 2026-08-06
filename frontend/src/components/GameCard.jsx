@@ -1,8 +1,9 @@
 import React, { useRef } from "react";
 
 import { FaStar, FaRegStar, FaStarHalfAlt } from "react-icons/fa";
+import { formatHoras } from "@/lib/format";
 
-export default function GameCard({ juego, onClick, tiempo = 0, valoracion = null }) {
+function GameCard({ juego, onClick, tiempo = 0, valoracion = null }) {
     const rectRef = useRef(null);
     const rafRef = useRef(null);
     const cardRef = useRef(null);
@@ -10,14 +11,7 @@ export default function GameCard({ juego, onClick, tiempo = 0, valoracion = null
     if (!juego) {
         // Tarjeta vacía si no hay juego
         return (
-            <div
-                className="relative rounded-lg overflow-hidden shadow-lg bg-borde flex flex-col items-center justify-center h-[200px] min-h-[200px] transition-transform duration-50 border-2 border-dashed border-borde text-gray-400 cursor-default select-none"
-                style={{
-                    minHeight: 200,
-                    height: 200,
-                    width: "100%",
-                }}
-            >
+            <div className="relative w-full h-[200px] min-h-[200px] rounded-lg overflow-hidden shadow-lg bg-muted flex flex-col items-center justify-center transition-transform duration-50 border-2 border-dashed border-border text-muted-foreground cursor-default select-none">
                 <span className="text-2xl font-bold mb-2 opacity-60">Vacío</span>
             </div>
         );
@@ -30,9 +24,23 @@ export default function GameCard({ juego, onClick, tiempo = 0, valoracion = null
     return (
         <div
             ref={cardRef}
-            className="relative group rounded-lg overflow-hidden shadow-lg transition-transform duration-50 transform-gpu cursor-pointer"
+            data-juego-id={juego.id}
+            className="relative group rounded-lg overflow-hidden shadow-lg transition-transform duration-50 transform-gpu cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             style={{ willChange: "transform" }}
+            role={onClick ? "button" : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            aria-label={onClick ? juego.name : undefined}
             onClick={onClick}
+            onKeyDown={
+                onClick
+                    ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onClick(e);
+                          }
+                      }
+                    : undefined
+            }
             onMouseEnter={(e) => {
                 rectRef.current = e.currentTarget.getBoundingClientRect();
             }}
@@ -69,7 +77,7 @@ export default function GameCard({ juego, onClick, tiempo = 0, valoracion = null
                     className="block w-full max-h-[340px] object-contain transition-transform duration-50 group-hover:scale-[1.03]"
                 />
             ) : (
-                <div className="w-full h-[200px] flex items-center justify-center bg-metal text-gray-300 text-sm px-2">
+                <div className="w-full h-[200px] flex items-center justify-center bg-card text-muted-foreground text-sm px-2">
                     Sin portada
                 </div>
             )}
@@ -83,7 +91,7 @@ export default function GameCard({ juego, onClick, tiempo = 0, valoracion = null
 
             {tiempo > 0 && (
                 <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded z-30">
-                    {(tiempo / 3600).toFixed(1)}h
+                    {formatHoras(tiempo)}
                 </div>
             )}
 
@@ -92,11 +100,11 @@ export default function GameCard({ juego, onClick, tiempo = 0, valoracion = null
                     {Array.from({ length: 5 }, (_, i) => {
                         const val = i + 1;
                         return valoracion >= val ? (
-                            <FaStar key={i} className="text-naranja" />
+                            <FaStar key={i} className="text-primary" />
                         ) : valoracion >= val - 0.5 ? (
-                            <FaStarHalfAlt key={i} className="text-naranja" />
+                            <FaStarHalfAlt key={i} className="text-primary" />
                         ) : (
-                            <FaRegStar key={i} className="text-borde" />
+                            <FaRegStar key={i} className="text-muted-foreground" />
                         );
                     })}
                 </div>
@@ -104,3 +112,5 @@ export default function GameCard({ juego, onClick, tiempo = 0, valoracion = null
         </div>
     );
 }
+
+export default React.memo(GameCard);

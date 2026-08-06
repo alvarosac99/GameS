@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { formatHoras } from "@/lib/format";
 
 export default function PlanesCompletados() {
   const { fetchAuth } = useAuth();
@@ -32,9 +33,9 @@ export default function PlanesCompletados() {
       ) : (
         <ul className="space-y-4">
           {planes.map((p) => (
-            <li key={p.id} className="bg-metal/30 p-4 rounded">
+            <li key={p.id} className="bg-card/30 p-4 rounded">
               <h2 className="font-semibold mb-2">{p.nombre}</h2>
-              <p>Total jugado: {(p.resumen.total_segundos / 3600).toFixed(1)}h</p>
+              <p>Total jugado: {formatHoras(p.resumen.total_segundos)}</p>
               <p>Completados: {p.resumen.completados}</p>
               <p>Saltados: {p.resumen.saltados}</p>
             </li>

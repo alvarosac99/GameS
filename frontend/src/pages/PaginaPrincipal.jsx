@@ -1,14 +1,13 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Carrusel from "@/components/Carrusel";
 import {
-  FaUsers,
-  FaGamepad,
   FaBook,
   FaCompass,
   FaStar,
   FaBolt,
   FaArrowRight,
+  FaUsers,
 } from "react-icons/fa";
 import { apiFetch } from "../lib/api";
 
@@ -22,24 +21,27 @@ export default function PaginaPrincipal() {
     juegosRandom: [],
   });
   const [recomendados, setRecomendados] = useState([]);
+  const [cargando, setCargando] = useState(true);
   const navigate = useNavigate();
 
-  // Solo consulta la API de stats y la sesión de usuario
   useEffect(() => {
-    apiFetch("/usuarios/session/", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        if (data.authenticated) setUsuario(data.username);
-        else navigate("/"); // Redirige si no está autenticado
-      });
-
-    apiFetch("/juegos/stats_bienvenida/", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => setStats(data));
-
-    apiFetch("/juegos/recomendados/", { credentials: "include" })
-      .then(res => (res.ok ? res.json() : { recomendaciones: [] }))
-      .then(data => setRecomendados(data.recomendaciones || []));
+    Promise.all([
+      apiFetch("/usuarios/session/", { credentials: "include" }).then((r) => r.json()),
+      apiFetch("/juegos/stats_bienvenida/", { credentials: "include" }).then((r) => r.json()),
+      apiFetch("/juegos/recomendados/", { credentials: "include" }).then((r) =>
+        r.ok ? r.json() : { recomendaciones: [] }
+      ),
+    ])
+      .then(([sesion, statsData, recData]) => {
+        if (sesion.authenticated) setUsuario(sesion.username);
+        else {
+          navigate("/");
+          return;
+        }
+        setStats(statsData);
+        setRecomendados(recData.recomendaciones || []);
+      })
+      .finally(() => setCargando(false));
   }, [navigate]);
 
   return (
@@ -53,228 +55,146 @@ export default function PaginaPrincipal() {
         aria-hidden="true"
       />
 
-      <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-10 lg:pt-14">
-        <section className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-stretch">
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-background/80 p-6 md:p-8 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-foreground/60">
-              Panel de bienvenida
-            </div>
-            <h1 className="mt-3 text-4xl md:text-5xl font-black text-primary drop-shadow-sm">
-              ¡Bienvenido{usuario ? `, ${usuario}` : ""}!
-            </h1>
-            <p className="mt-4 text-lg text-foreground/80">
-              Gestiona tu colección, comparte experiencias y descubre títulos que
-              encajen contigo. Todo en una plataforma social y visual, pensada
-              para jugar más y mejor.
-            </p>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <FeatureCard
-                icon={<FaCompass />}
-                title="Explora catálogos vivos"
-                text="Accede a tendencias, fichas completas y lanzamientos destacados."
+      <div className="mx-auto w-full max-w-5xl px-4 pb-14 pt-10 lg:pt-16">
+        {cargando ? (
+          <HeroSkeleton />
+        ) : (
+          <>
+            {/* Hero */}
+            <section className="flex flex-col items-center gap-6 text-center pb-10 md:pb-14">
+              <img
+                src="/logo.png"
+                alt="GameS"
+                className="h-16 md:h-20 drop-shadow-xl hero-rise"
               />
-              <FeatureCard
-                icon={<FaStar />}
-                title="Recomendaciones a medida"
-                text="Sugerencias personalizadas basadas en tu biblioteca y hábitos."
-              />
-              <FeatureCard
-                icon={<FaBolt />}
-                title="Comparador en segundos"
-                text="Precios actualizados y alertas rápidas para cazar ofertas."
-              />
-              <FeatureCard
-                icon={<FaBook />}
-                title="Diario y comunidad"
-                text="Registra sesiones, comparte reseñas y conecta con otros jugadores."
-              />
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-[0_10px_24px_rgba(255,120,40,0.35)] transition hover:-translate-y-0.5 hover:bg-primary/90"
-                onClick={() => navigate("/juegos")}
-              >
-                Explorar catálogo <FaArrowRight className="text-xs" />
-              </button>
-              <button
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-5 py-2 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/60"
-                onClick={() => navigate("/biblioteca")}
-              >
-                Ir a mi biblioteca
-              </button>
-            </div>
-          </div>
-
-          <aside className="grid gap-4">
-            <div className="rounded-2xl border border-border bg-card/80 p-5 shadow-[0_10px_28px_rgba(15,23,42,0.12)]">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Estado de la comunidad
-                </h3>
-                <span className="text-xs text-foreground/60">Actualizado hoy</span>
+              <div className="hero-rise" style={{ animationDelay: "80ms" }}>
+                <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.35em] text-primary">
+                  Bienvenido{usuario ? `, ${usuario}` : ""}
+                </p>
+                <h1 className="font-display mt-3 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground text-balance">
+                  Tu videoteca, tu diario, tu ritmo
+                </h1>
+                <p className="mt-4 max-w-2xl mx-auto text-base md:text-lg text-foreground/70 text-pretty">
+                  GameS junta tu biblioteca, tus sesiones de juego, tus reseñas y
+                  tus planificaciones en un solo sitio, para que siempre sepas a
+                  qué jugar y cuánto has avanzado.
+                </p>
               </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                <StatBox
-                  icon={<FaGamepad className="text-xl" />}
-                  label="Juegos en la base"
-                  value={stats.totalJuegos}
-                />
-                <StatBox
-                  icon={<FaUsers className="text-xl" />}
-                  label="Usuarios registrados"
-                  value={stats.totalUsuarios}
-                />
-                <StatBox
-                  icon={<FaBook className="text-xl" />}
-                  label="Juegos en bibliotecas"
-                  value={stats.totalBibliotecas}
-                />
+
+              <div className="flex flex-wrap justify-center gap-3 hero-rise" style={{ animationDelay: "140ms" }}>
+                <button
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_10px_24px_rgba(255,120,40,0.35)] transition hover:-translate-y-0.5 hover:bg-primary/90"
+                  onClick={() => navigate("/juegos")}
+                >
+                  Explorar catálogo <FaArrowRight className="text-xs" />
+                </button>
+                <button
+                  className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/60"
+                  onClick={() => navigate("/biblioteca")}
+                >
+                  Ir a mi biblioteca
+                </button>
               </div>
-            </div>
 
-            <div className="rounded-2xl border border-border bg-background/75 p-5 shadow-[0_10px_24px_rgba(15,23,42,0.1)]">
-              <h3 className="text-lg font-semibold text-foreground">Atajos rápidos</h3>
-              <div className="mt-3 grid gap-3">
-                <QuickLink
-                  title="Inicia una sesión"
-                  subtitle="Jugar en directo"
-                  onClick={() => navigate("/jugar")}
-                />
-                <QuickLink
-                  title="Escribe en tu diario"
-                  subtitle="Reseñas y notas"
-                  onClick={() => navigate("/diario")}
-                />
-                <QuickLink
-                  title="Planifica partidas"
-                  subtitle="Objetivos de la semana"
-                  onClick={() => navigate("/planificaciones")}
-                />
+              <div className="flex flex-wrap justify-center gap-x-8 gap-y-1 mt-2 text-sm text-foreground/60 hero-rise" style={{ animationDelay: "200ms" }}>
+                <span><strong className="text-foreground">{stats.totalJuegos.toLocaleString()}</strong> juegos</span>
+                <span><strong className="text-foreground">{stats.totalUsuarios.toLocaleString()}</strong> jugadores</span>
+                <span><strong className="text-foreground">{stats.totalBibliotecas.toLocaleString()}</strong> en bibliotecas</span>
               </div>
+            </section>
+
+            {/* Qué puedes hacer */}
+            <section className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 border-y border-border py-8 mb-10">
+              <Feature icon={<FaCompass />} title="Explora" text="Catálogo vivo con tendencias y fichas completas." />
+              <Feature icon={<FaStar />} title="Descubre" text="Recomendaciones a medida según tu biblioteca." />
+              <Feature icon={<FaBolt />} title="Compara" text="Precios actualizados para cazar ofertas." />
+              <Feature icon={<FaBook />} title="Registra" text="Diario y planificación de tus partidas." />
+            </section>
+
+            {/* Atajos */}
+            <section className="flex flex-wrap gap-3 mb-12">
+              <QuickLink title="Inicia una sesión" onClick={() => navigate("/jugar")} />
+              <QuickLink title="Escribe en tu diario" onClick={() => navigate("/diario")} />
+              <QuickLink title="Planifica partidas" onClick={() => navigate("/planificaciones")} />
+              <QuickLink title="Gente para seguir" icon={<FaUsers />} onClick={() => navigate("/perfiles")} />
+            </section>
+
+            {/* Carruseles */}
+            <div className="flex flex-col gap-10">
+              {stats.juegosPopulares.length > 0 && (
+                <Seccion title="Los juegos más populares ahora mismo" subtitle="Pulso en tiempo real de la comunidad">
+                  <Carrusel juegos={stats.juegosPopulares} onSelect={(j) => navigate(`/juego/${j.id}`)} />
+                </Seccion>
+              )}
+
+              {stats.juegosRandom.length > 0 && (
+                <Seccion title="¿No sabes a qué jugar?" subtitle="Descubre algo fuera de tu radar">
+                  <Carrusel juegos={stats.juegosRandom} onSelect={(j) => navigate(`/juego/${j.id}`)} />
+                </Seccion>
+              )}
+
+              {recomendados.length > 0 && (
+                <Seccion title="Recomendados para ti" subtitle="Seleccionados por tu historial">
+                  <Carrusel juegos={recomendados} onSelect={(j) => navigate(`/juego/${j.id}`)} />
+                </Seccion>
+              )}
             </div>
-
-            <div className="rounded-2xl border border-border bg-card/70 p-5">
-              <h3 className="text-lg font-semibold text-foreground">
-                Qué hacer hoy
-              </h3>
-              <ul className="mt-3 space-y-2 text-sm text-foreground/70">
-                <li>• Completa tu perfil y actualiza tu estilo de juego.</li>
-                <li>• Añade un título nuevo a tu biblioteca y compártelo.</li>
-                <li>• Guarda una recomendación para verla más tarde.</li>
-              </ul>
-            </div>
-          </aside>
-        </section>
-
-        <section className="mt-10 grid gap-8 lg:grid-cols-12">
-          <div className="flex flex-col gap-8 lg:col-span-8">
-            {stats.juegosPopulares.length > 0 && (
-              <SectionCard
-                title="Los juegos más populares ahora mismo"
-                subtitle="Pulso en tiempo real de la comunidad"
-                accent="text-primary"
-              >
-                <Carrusel
-                  juegos={stats.juegosPopulares}
-                  onSelect={juego => navigate(`/juego/${juego.id}`)}
-                />
-              </SectionCard>
-            )}
-
-            {stats.juegosRandom.length > 0 && (
-              <SectionCard
-                title="¿No sabes a qué jugar?"
-                subtitle="Descubre algo fuera de tu radar"
-              >
-                <Carrusel
-                  juegos={stats.juegosRandom}
-                  onSelect={juego => navigate(`/juego/${juego.id}`)}
-                />
-              </SectionCard>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-8 lg:col-span-4">
-            {recomendados.length > 0 && (
-              <SectionCard
-                title="Recomendados para ti"
-                subtitle="Seleccionados por tu historial"
-              >
-                <Carrusel
-                  juegos={recomendados}
-                  onSelect={juego => navigate(`/juego/${juego.id}`)}
-                />
-              </SectionCard>
-            )}
-          </div>
-        </section>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function StatBox({ icon, label, value }) {
+function Feature({ icon, title, text }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-background/70 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-        {icon}
-      </div>
-      <div>
-        <div className="text-xl font-bold text-foreground">{value}</div>
-        <div className="text-xs uppercase tracking-[0.2em] text-foreground/60">
-          {label}
-        </div>
-      </div>
+    <div className="flex flex-col items-center text-center gap-2 sm:items-start sm:text-left">
+      <span className="text-primary text-lg">{icon}</span>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <p className="text-xs text-foreground/60 leading-relaxed">{text}</p>
     </div>
   );
 }
 
-function FeatureCard({ icon, title, text }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card/70 p-4 shadow-[0_8px_20px_rgba(15,23,42,0.08)]">
-      <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-          {icon}
-        </span>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      </div>
-      <p className="mt-2 text-sm text-foreground/70">{text}</p>
-    </div>
-  );
-}
-
-function QuickLink({ title, subtitle, onClick }) {
+function QuickLink({ title, icon, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="group flex items-center justify-between rounded-xl border border-border bg-card/70 px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-primary/60"
       type="button"
+      className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:border-primary/60 hover:text-primary"
     >
-      <div>
-        <div className="text-sm font-semibold text-foreground">{title}</div>
-        <div className="text-xs uppercase tracking-[0.2em] text-foreground/60">
-          {subtitle}
-        </div>
-      </div>
-      <span className="text-xs text-primary transition group-hover:translate-x-1">
-        Ir
-      </span>
+      {icon}
+      {title}
     </button>
   );
 }
 
-function SectionCard({ title, subtitle, accent = "text-foreground", children }) {
+function Seccion({ title, subtitle, children }) {
   return (
-    <div className="rounded-3xl border border-border bg-background/80 p-5 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
+    <section>
       <div className="mb-4 flex flex-col gap-1">
-        <h2 className={`text-xl font-bold ${accent}`}>{title}</h2>
-        <span className="text-xs uppercase tracking-[0.2em] text-foreground/60">
-          {subtitle}
-        </span>
+        <h2 className="text-xl font-bold text-foreground">{title}</h2>
+        <span className="text-xs uppercase tracking-[0.2em] text-foreground/50">{subtitle}</span>
       </div>
       {children}
+    </section>
+  );
+}
+
+function HeroSkeleton() {
+  return (
+    <div className="flex flex-col items-center gap-6 pb-14 animate-pulse" aria-hidden="true">
+      <div className="h-16 md:h-20 w-16 md:w-20 rounded-2xl bg-muted" />
+      <div className="flex flex-col items-center gap-3 w-full max-w-xl">
+        <div className="h-3 w-40 rounded bg-muted" />
+        <div className="h-10 w-full max-w-md rounded bg-muted" />
+        <div className="h-4 w-full rounded bg-muted" />
+        <div className="h-4 w-2/3 rounded bg-muted" />
+      </div>
+      <div className="flex gap-3">
+        <div className="h-10 w-40 rounded-full bg-muted" />
+        <div className="h-10 w-40 rounded-full bg-muted" />
+      </div>
     </div>
   );
 }

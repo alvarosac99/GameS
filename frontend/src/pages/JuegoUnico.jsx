@@ -716,7 +716,7 @@ export default function JuegoUnico() {
                       : t("gameReleaseUnknown")}
                   </p>
                   <h1
-                    className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mt-2"
+                    className="font-display text-4xl md:text-6xl font-bold tracking-tight text-foreground mt-2"
                     style={{ textShadow: "0 16px 40px rgba(0,0,0,0.55)" }}
                   >
                     {juego.name}
@@ -786,13 +786,13 @@ export default function JuegoUnico() {
             </div>
           </div>
         </div>
-        <div className="bg-card/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-border game-enter">
+        <div className="mb-10 game-enter">
           <div className="grid grid-cols-1 xl:grid-cols-[320px,minmax(0,1fr),320px] gap-8 items-start">
             {/* Columna izquierda */}
             <div className="flex flex-col items-center xl:items-stretch game-enter game-delay-1 order-3 xl:order-1">
               <div className="w-full bg-card/50 border border-border rounded-2xl p-4 shadow-lg backdrop-blur-sm">
                 {tiempo?.main && (
-                  <div className="w-full rounded-lg bg-muted/80 border border-border/60 px-3 py-2 text-sm text-muted-foreground">
+                  <div className="w-full text-sm">
                     <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
                       {t("gameDuration")}
                     </div>
@@ -1198,9 +1198,7 @@ export default function JuegoUnico() {
 
         {/* Comentarios */}
         <div className="w-full my-10 game-enter game-delay-5">
-          <div className="bg-card/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-border">
-            <Comentarios juegoId={juego.id} isAuth={autenticado} />
-          </div>
+          <Comentarios juegoId={juego.id} isAuth={autenticado} />
         </div>
       </div>
       {mostrarCompra && (

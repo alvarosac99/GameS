@@ -15,7 +15,7 @@ export default function NuestrosJuegos() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-3xl font-bold">Nuestros Juegos</h1>
+      <h1 className="font-display text-3xl font-bold">Nuestros Juegos</h1>
       {cargando ? (
         <p>Cargando...</p>
       ) : juegos.length === 0 ? (

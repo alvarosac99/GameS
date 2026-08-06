@@ -25,7 +25,7 @@ export default function PlanesCompletados() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-3xl font-bold">Planes completados</h1>
+      <h1 className="font-display text-3xl font-bold">Planes completados</h1>
       {cargando ? (
         <p>Cargando...</p>
       ) : planes.length === 0 ? (

@@ -13,11 +13,11 @@ export default function ListaEntradasDiario({ entradas, cargando }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="divide-y divide-border">
       {entradas.map((entrada) => (
         <div
           key={entrada.id}
-          className="flex gap-4 bg-card p-4 rounded-xl shadow border border-border"
+          className="flex gap-4 py-4 first:pt-0"
         >
           <div className="w-20 flex-shrink-0">
             <GameCard

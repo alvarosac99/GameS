@@ -32,7 +32,7 @@ export default function NuevoJuego() {
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-3xl font-bold">Añadir juego</h1>
+      <h1 className="font-display text-3xl font-bold">Añadir juego</h1>
       {error && <p className="text-destructive">{error}</p>}
       <form onSubmit={crear} className="space-y-4 max-w-xl">
         <label htmlFor="nuevo-juego-nombre" className="sr-only">

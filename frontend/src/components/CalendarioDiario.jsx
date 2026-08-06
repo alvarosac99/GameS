@@ -18,8 +18,8 @@ export default function CalendarioDiario({ entradas }) {
     : null;
 
   return (
-    <div className="flex flex-col md:flex-row bg-card/40 backdrop-blur rounded-xl shadow p-4 gap-6">
-      
+    <div className="flex flex-col md:flex-row gap-6">
+
       {/* Calendario a la izquierda */}
       <div className="w-full md:w-1/2">
         <Calendar
@@ -47,23 +47,22 @@ export default function CalendarioDiario({ entradas }) {
             </h3>
 
             {entradasPorFecha[fechaSeleccionadaStr]?.length ? (
-              entradasPorFecha[fechaSeleccionadaStr].map((entrada) => (
-                <div
-                  key={entrada.id}
-                  className="bg-background p-3 rounded border border-border shadow-sm"
-                >
-                  <p className="font-semibold">
-                    {entrada.juego_nombre ?? `Juego ID: ${entrada.juego}`}
-                  </p>
-                  <p className="text-sm italic">{entrada.estado}</p>
-                  {entrada.nota && <p className="text-sm mt-1">{entrada.nota}</p>}
-                  {entrada.duracion && (
-                    <p className="text-xs mt-1 opacity-80">
-                      Duración: {entrada.duracion}
+              <div className="divide-y divide-border">
+                {entradasPorFecha[fechaSeleccionadaStr].map((entrada) => (
+                  <div key={entrada.id} className="py-3 first:pt-0">
+                    <p className="font-semibold">
+                      {entrada.juego_nombre ?? `Juego ID: ${entrada.juego}`}
                     </p>
-                  )}
-                </div>
-              ))
+                    <p className="text-sm italic">{entrada.estado}</p>
+                    {entrada.nota && <p className="text-sm mt-1">{entrada.nota}</p>}
+                    {entrada.duracion && (
+                      <p className="text-xs mt-1 opacity-80">
+                        Duración: {entrada.duracion}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="text-sm italic">No hay entradas este día.</p>
             )}

@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import TarjetaSkeleton from "../components/TarjetaSkeleton";
+import PerPageSelector from "@/components/ui/PerPageSelector";
+import Pagination from "@/components/ui/Pagination";
 import { FaSort, FaSortAmountUp, FaSortAmountDown } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
 import { apiFetch } from "../lib/api";
@@ -24,6 +26,11 @@ export default function Biblioteca() {
   const navigate = useNavigate();
   const { t } = useLang();
   const menuRef = useRef();
+
+  const irAJuego = useCallback(
+    (e) => navigate(`/juego/${e.currentTarget.dataset.juegoId}`),
+    [navigate]
+  );
 
   useEffect(() => {
     setCargando(true);
@@ -108,7 +115,7 @@ export default function Biblioteca() {
   const paginasCalculadas = Math.ceil(juegosFiltrados.length / porPagina);
 
   return (
-    <div className="min-h-screen bg-transparent text-claro p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto">
+    <div className="min-h-screen bg-transparent text-foreground p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto">
 
       {/* Header y controles */}
       <div
@@ -123,18 +130,18 @@ export default function Biblioteca() {
             placeholder={t("searchLibrary")}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="bg-metal text-claro border border-borde rounded px-3 py-1"
+            className="bg-card text-foreground border border-border rounded px-3 py-1"
           />
 
           <button
             onClick={() => setMostrarMenuOrden(!mostrarMenuOrden)}
-            className="bg-borde hover:bg-metal text-claro px-3 py-1 rounded flex items-center gap-2"
+            className="bg-muted hover:bg-card text-foreground px-3 py-1 rounded flex items-center gap-2"
           >
             <FaSort /> {t("order")}
           </button>
 
           {mostrarMenuOrden && (
-            <div className="absolute right-0 mt-12 w-48 bg-metal border border-borde rounded shadow-md z-10">
+            <div className="absolute right-0 mt-12 w-48 bg-card border border-border rounded shadow-md z-10">
               {["popularidad", "nombre", "fecha"].map((tipo) => (
                 <button
                   key={tipo}
@@ -147,8 +154,8 @@ export default function Biblioteca() {
                     }
                     setMostrarMenuOrden(false);
                   }}
-                  className={`w-full px-4 py-2 text-left hover:bg-borde ${
-                    orden === tipo ? "font-bold text-naranja" : ""
+                  className={`w-full px-4 py-2 text-left hover:bg-muted ${
+                    orden === tipo ? "font-bold text-primary" : ""
                   }`}
                 >
                   {tipo === "popularidad" && `📈 ${t("popularity")}`}
@@ -165,41 +172,27 @@ export default function Biblioteca() {
             </div>
           )}
 
-          <div className="flex items-center gap-2">
-            <select
-              value={OPCIONES_POR_PAGINA.includes(porPagina) ? porPagina : ""}
-              onChange={cambiarPorPagina}
-              className="bg-metal text-claro border border-borde rounded px-3 py-1"
-            >
-              <option value="">{t("other")}</option>
-              {OPCIONES_POR_PAGINA.map((n) => (
-                <option key={n} value={n}>
-                  {t("showNumber")} {n}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              min={1}
-              max={500}
-              value={porPagina}
-              onChange={(e) => {
-                let val = parseInt(e.target.value, 10) || 1;
-                if (val > 500) val = 500;
-                if (val < 1) val = 1;
-                setPorPagina(val);
-                setPagina(1);
-              }}
-              className="w-20 bg-metal text-claro border border-borde rounded px-2 py-1 text-center"
-              title={t("customAmount")}
-            />
-            <span className="text-xs text-borde">{t("perPage")}</span>
-          </div>
+          <PerPageSelector
+            opciones={OPCIONES_POR_PAGINA}
+            valor={porPagina}
+            onCambiarPreset={cambiarPorPagina}
+            onCambiarPersonalizado={(e) => {
+              let val = parseInt(e.target.value, 10) || 1;
+              if (val > 500) val = 500;
+              if (val < 1) val = 1;
+              setPorPagina(val);
+              setPagina(1);
+            }}
+            etiquetaOtro={t("other")}
+            etiquetaMostrar={t("showNumber")}
+            etiquetaSufijo={t("perPage")}
+            tituloPersonalizado={t("customAmount")}
+          />
         </div>
       </div>
 
       {!cargando && juegosFiltrados.length > 0 && (
-        <div className="mb-4 text-claro">
+        <div className="mb-4 text-foreground">
           {juegosFiltrados.length} juego
           {juegosFiltrados.length !== 1 && "s"} en total
         </div>
@@ -224,7 +217,7 @@ export default function Biblioteca() {
                 juego={juego}
                 tiempo={juego.tiempo}
                 valoracion={juego.valoracion}
-                onClick={() => navigate(`/juego/${juego.id}`)}
+                onClick={irAJuego}
               />
             ))}
           </div>
@@ -236,21 +229,11 @@ export default function Biblioteca() {
                   .replace("{page}", pagina)
                   .replace("{total}", paginasCalculadas)}
               </p>
-              <div className="flex justify-center gap-2 mt-2 flex-wrap">
-                {Array.from({ length: paginasCalculadas }, (_, i) => i + 1).map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setPagina(n)}
-                    className={`px-3 py-1 rounded ${
-                      pagina === n
-                        ? "bg-naranja text-black font-bold"
-                        : "bg-borde text-claro hover:bg-metal"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
+              <Pagination
+                paginas={Array.from({ length: paginasCalculadas }, (_, i) => i + 1)}
+                paginaActual={pagina}
+                onCambiar={setPagina}
+              />
             </div>
           )}
         </>

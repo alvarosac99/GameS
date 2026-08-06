@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import { useLang } from "@/context/LangContext";
 import { apiFetch } from "../lib/api";
+import { formatHoras } from "@/lib/format";
 
 export default function Planificar() {
   const { fetchAuth } = useAuth();
@@ -61,29 +62,46 @@ export default function Planificar() {
       <h1 className="text-3xl font-bold">Crear planificación</h1>
 
       <div className="space-y-2">
+        <label htmlFor="plan-nombre" className="sr-only">
+          {t("planNamePlaceholder")}
+        </label>
         <input
+          id="plan-nombre"
           type="text"
           placeholder={t("planNamePlaceholder")}
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="w-full p-2 rounded bg-fondo border border-borde"
+          className="w-full p-2 rounded bg-background border border-border"
         />
+        <label htmlFor="plan-busqueda" className="sr-only">
+          {t("searchLibrary")}
+        </label>
         <input
+          id="plan-busqueda"
           type="text"
           placeholder={t("searchLibrary")}
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full p-2 rounded bg-fondo border border-borde"
+          className="w-full p-2 rounded bg-background border border-border"
         />
         {sugerencias.length > 0 && (
-          <ul className="divide-y divide-borde bg-metal rounded">
+          <ul className="divide-y divide-border bg-card rounded">
             {sugerencias.map((j) => (
               <li
                 key={j.id}
-                className="p-2 hover:bg-borde cursor-pointer"
+                role="button"
+                tabIndex={0}
+                className="p-2 hover:bg-muted cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => {
                   setLista((prev) => [...prev, j]);
                   setBusqueda("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setLista((prev) => [...prev, j]);
+                    setBusqueda("");
+                  }
                 }}
               >
                 {j.name}
@@ -96,20 +114,20 @@ export default function Planificar() {
       {lista.length > 0 && (
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {lista.map((j) => (
-            <div key={j.id} className="relative bg-metal/30 p-2 rounded group">
+            <div key={j.id} className="relative bg-card/30 p-2 rounded group">
               <div className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/60 z-10">
                 <button
                   onClick={() => setLista((prev) => prev.filter((x) => x.id !== j.id))}
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-1 rounded"
                 >
                   Eliminar
                 </button>
               </div>
               <GameCard juego={j} />
               <div className="text-xs mt-1 space-y-1">
-                <p>Total: {j.total ? (j.total / 3600).toFixed(1) + "h" : "N/A"}</p>
-                <p>Jugado: {(j.jugado / 3600).toFixed(1)}h</p>
-                {j.restante != null && <p>Restante: {(j.restante / 3600).toFixed(1)}h</p>}
+                <p>Total: {formatHoras(j.total)}</p>
+                <p>Jugado: {formatHoras(j.jugado)}</p>
+                {j.restante != null && <p>Restante: {formatHoras(j.restante)}</p>}
               </div>
             </div>
           ))}
@@ -125,7 +143,7 @@ export default function Planificar() {
             });
             navigate("/planificaciones");
           }}
-          className="mt-4 px-4 py-2 bg-naranja text-black rounded font-bold"
+          className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded font-bold"
         >
           Guardar planificación
         </button>

@@ -18,7 +18,7 @@ export default function Login() {
       .then(data => {
         if (data.authenticated) navigate("/bienvenida");
       });
-  }, []);
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -43,33 +43,41 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-sm mx-auto mt-12 p-6 bg-metal shadow-lg rounded text-claro">
+    <div className="max-w-sm mx-auto mt-12 p-6 bg-card shadow-lg rounded text-foreground">
       <h2 className="text-2xl font-bold mb-4 text-center">{t("loginTitle")}</h2>
       <form onSubmit={handleLogin}>
+        <label htmlFor="login-username" className="sr-only">
+          {t("loginUsername")}
+        </label>
         <input
+          id="login-username"
           type="text"
           placeholder={t("loginUsername")}
-          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-card text-foreground rounded placeholder:text-muted-foreground"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
         />
+        <label htmlFor="login-password" className="sr-only">
+          {t("loginPassword")}
+        </label>
         <input
+          id="login-password"
           type="password"
           placeholder={t("loginPassword")}
-          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-card text-foreground rounded placeholder:text-muted-foreground"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit" className="bg-naranja hover:bg-naranjaHover text-white p-2 rounded w-full font-medium">
+        <button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded w-full font-medium">
           {t("loginButton")}
         </button>
       </form>
-      {mensaje && <p className="mt-3 text-sm text-red-400 text-center">{mensaje}</p>}
+      {mensaje && <p className="mt-3 text-sm text-destructive text-center">{mensaje}</p>}
       <p className="mt-4 text-sm text-center">
         {t("loginNoAccount")} {" "}
-        <Link to="/register" className="text-naranja hover:underline">{t("loginRegisterHere")}</Link>
+        <Link to="/register" className="text-primary hover:underline">{t("loginRegisterHere")}</Link>
       </p>
     </div>
   );

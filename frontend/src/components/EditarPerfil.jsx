@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Pencil, X } from "lucide-react"
 import { apiFetch } from "../lib/api"
+import IconButton from "@/components/ui/IconButton"
 // <-- ¡NO IMPORTES SWITCH!
 
 function getCookie(name) {
@@ -99,22 +100,23 @@ export default function Perfil({ cerrar }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-60 overflow-y-auto flex items-start justify-center px-4 py-24">
+    <div className="fixed inset-0 z-modal bg-black bg-opacity-60 overflow-y-auto flex items-start justify-center px-4 py-24">
       <div className="relative w-full max-w-xl">
-        <button
+        <IconButton
           onClick={cerrar}
-          className="absolute -top-4 -right-4 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 z-10 shadow-lg"
+          label="Cerrar"
+          className="absolute -top-4 -right-4 bg-destructive hover:bg-destructive/90 text-destructive-foreground z-10 shadow-lg"
         >
           <X className="w-5 h-5" />
-        </button>
+        </IconButton>
 
-        <form onSubmit={handleSubmit} className="w-full bg-fondo text-claro p-6 rounded-xl shadow-xl space-y-8 border border-borde">
+        <form onSubmit={handleSubmit} className="w-full bg-background text-foreground p-6 rounded-xl shadow-xl space-y-8 border border-border">
 
           {/* AVATAR + INFO */}
-          <Card className="bg-metal border border-borde rounded-lg shadow-md">
+          <Card className="bg-card border border-border rounded-lg shadow-md">
             <CardContent className="p-6 flex flex-col items-center gap-4">
               <div className="relative">
-                <Avatar className="w-28 h-28 ring-2 ring-naranja">
+                <Avatar className="w-28 h-28 ring-2 ring-primary">
                   <AvatarImage
                     src={
                       perfil.foto
@@ -124,8 +126,8 @@ export default function Perfil({ cerrar }) {
                   />
                   <AvatarFallback>{perfil.nombre.slice(0, 2) || "?"}</AvatarFallback>
                 </Avatar>
-                <label className="absolute -bottom-2 -right-2 bg-metal p-2 rounded-full cursor-pointer hover:bg-borde transition">
-                  <Pencil className="w-4 h-4 text-naranja" />
+                <label className="absolute -bottom-2 -right-2 bg-card p-2 rounded-full cursor-pointer hover:bg-muted transition">
+                  <Pencil className="w-4 h-4 text-primary" />
                   <input
                     type="file"
                     accept="image/*"
@@ -137,23 +139,25 @@ export default function Perfil({ cerrar }) {
 
               <div className="w-full space-y-4">
                 <div>
-                  <Label className="text-claro" htmlFor="nombre">Nombre</Label>
+                  <Label className="text-foreground" htmlFor="nombre">Nombre</Label>
                   <Input
+                    id="nombre"
                     name="nombre"
                     value={perfil.nombre}
                     onChange={handleChange}
-                    className="bg-fondo border border-borde text-claro"
+                    className="bg-background border border-border text-foreground"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-claro" htmlFor="email">Correo</Label>
+                  <Label className="text-foreground" htmlFor="email">Correo</Label>
                   <Input
+                    id="email"
                     name="email"
                     type="email"
                     value={perfil.email}
                     onChange={handleChange}
-                    className="bg-fondo border border-borde text-claro"
+                    className="bg-background border border-border text-foreground"
                   />
                 </div>
               </div>
@@ -161,39 +165,42 @@ export default function Perfil({ cerrar }) {
           </Card>
 
           {/* BIO */}
-          <Card className="bg-metal border border-borde rounded-lg">
+          <Card className="bg-card border border-border rounded-lg">
             <CardContent className="p-6 space-y-2">
-              <Label className="text-claro" htmlFor="bio">Biografía</Label>
+              <Label className="text-foreground" htmlFor="bio">Biografía</Label>
               <Textarea
+                id="bio"
                 name="bio"
                 value={perfil.bio}
                 onChange={handleChange}
-                className="bg-fondo border border-borde text-claro resize-none"
+                className="bg-background border border-border text-foreground resize-none"
               />
             </CardContent>
           </Card>
 
           {/* CONTRASEÑAS */}
-          <Card className="bg-metal border border-borde rounded-lg">
+          <Card className="bg-card border border-border rounded-lg">
             <CardContent className="p-6 space-y-4">
               <div>
-                <Label className="text-claro" htmlFor="password">Nueva contraseña</Label>
+                <Label className="text-foreground" htmlFor="password">Nueva contraseña</Label>
                 <Input
+                  id="password"
                   name="password"
                   type="password"
                   value={perfil.password}
                   onChange={handleChange}
-                  className="bg-fondo border border-borde text-claro"
+                  className="bg-background border border-border text-foreground"
                 />
               </div>
               <div>
-                <Label className="text-claro" htmlFor="confirmPassword">Confirmar contraseña</Label>
+                <Label className="text-foreground" htmlFor="confirmPassword">Confirmar contraseña</Label>
                 <Input
+                  id="confirmPassword"
                   name="confirmPassword"
                   type="password"
                   value={perfil.confirmPassword}
                   onChange={handleChange}
-                  className="bg-fondo border border-borde text-claro"
+                  className="bg-background border border-border text-foreground"
                 />
               </div>
             </CardContent>
@@ -206,9 +213,9 @@ export default function Perfil({ cerrar }) {
               id="filtro-adulto"
               checked={perfil.filtro_adulto}
               onChange={handleFiltroAdultoChange}
-              className="w-5 h-5 accent-naranja cursor-pointer border-borde"
+              className="w-5 h-5 accent-primary cursor-pointer border-border"
             />
-            <Label className="text-claro" htmlFor="filtro-adulto">
+            <Label className="text-foreground" htmlFor="filtro-adulto">
               Ocultar juegos eróticos
             </Label>
           </CardContent>
@@ -216,7 +223,7 @@ export default function Perfil({ cerrar }) {
           <div className="text-right">
             <Button
               type="submit"
-              className="bg-naranja hover:bg-naranjaHover text-claro px-6"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
             >
               Guardar cambios
             </Button>

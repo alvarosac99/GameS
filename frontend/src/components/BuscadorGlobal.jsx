@@ -6,17 +6,29 @@ import { FaGamepad } from "react-icons/fa";
 import DropLoader from "@/components/DropLoader";
 import { useLang } from "@/context/LangContext";
 import { apiFetch } from "../lib/api";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 
 export default function BuscadorGlobal({ className = "" }) {
   const [modo, setModo] = useState("juegos"); // juegos | personas
   const [query, setQuery] = useState("");
-  const [sugerencias, setSugerencias] = useState([]);
-  const [cargando, setCargando] = useState(false);
   const [showSug, setShowSug] = useState(false);
-  const debounceRef = useRef();
   const navigate = useNavigate();
   const contenedorRef = useRef();
   const { t } = useLang();
+
+  const { resultados: sugerencias, cargando } = useDebouncedSearch(
+    query,
+    (q) => {
+      const endpoint =
+        modo === "juegos"
+          ? `/juegos/populares/?q=${encodeURIComponent(q)}&por_pagina=5`
+          : `/usuarios/buscar/?q=${encodeURIComponent(q)}`;
+      return apiFetch(endpoint)
+        .then((res) => res.json())
+        .then((data) => (modo === "juegos" ? data.juegos || [] : data.resultados || []));
+    },
+    { delay: 300, minLength: 2 }
+  );
 
   useEffect(() => {
     const manejarClickFuera = (e) => {
@@ -28,35 +40,17 @@ export default function BuscadorGlobal({ className = "" }) {
     return () => document.removeEventListener("mousedown", manejarClickFuera);
   }, []);
 
+  useEffect(() => {
+    const manejarEscape = (e) => {
+      if (e.key === "Escape") setShowSug(false);
+    };
+    document.addEventListener("keydown", manejarEscape);
+    return () => document.removeEventListener("keydown", manejarEscape);
+  }, []);
+
   const buscar = (q) => {
     setQuery(q);
     setShowSug(true);
-    setSugerencias([]);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (q.trim().length < 2) {
-      setCargando(false);
-      return;
-    }
-    setCargando(true);
-
-    let endpoint = modo === "juegos"
-      ? `/juegos/populares/?q=${encodeURIComponent(q)}&por_pagina=5`
-      : `/usuarios/buscar/?q=${encodeURIComponent(q)}`;
-
-    debounceRef.current = setTimeout(() => {
-      apiFetch(endpoint)
-        .then((res) => res.json())
-        .then((data) => {
-          if (modo === "juegos") {
-            setSugerencias(data.juegos || []);
-          } else {
-            setSugerencias(data.resultados || []);
-          }
-        })
-        .catch(() => setSugerencias([]))
-        .finally(() => setCargando(false));
-    }, 300);
   };
 
   const submitBusqueda = (e) => {
@@ -70,24 +64,27 @@ export default function BuscadorGlobal({ className = "" }) {
   const cambiarModo = () => {
     setModo((prev) => (prev === "juegos" ? "personas" : "juegos"));
     setQuery("");
-    setSugerencias([]);
     setShowSug(false);
   };
 
   return (
     <div ref={contenedorRef} className={`relative flex items-center ${className}`}>
       <form onSubmit={submitBusqueda} className="flex gap-2 items-center w-full">
+        <label htmlFor="buscador-global" className="sr-only">
+          {modo === "juegos" ? t("searchGamesPlaceholder") : t("searchPeoplePlaceholder")}
+        </label>
         <input
+          id="buscador-global"
           type="text"
           placeholder={modo === "juegos" ? t("searchGamesPlaceholder") : t("searchPeoplePlaceholder")}
           value={query}
           onChange={(e) => buscar(e.target.value)}
           onFocus={() => setShowSug(true)}
-          className="px-3 py-1 rounded bg-metal text-claro border border-borde placeholder:text-gray-400 w-48 sm:w-64"
+          className="px-3 py-1 rounded bg-card text-foreground border border-border placeholder:text-muted-foreground w-48 sm:w-64"
         />
         <button
           type="button"
-          className={`p-2 rounded-full border border-borde ${modo === "juegos" ? "text-naranja" : "text-blue-400"} bg-metal`}
+          className={`p-2 rounded-full border border-border ${modo === "juegos" ? "text-primary" : "text-info"} bg-card`}
           title={modo === "juegos" ? "Buscar en personas" : "Buscar en juegos"}
           onClick={cambiarModo}
         >
@@ -95,7 +92,7 @@ export default function BuscadorGlobal({ className = "" }) {
         </button>
         <button
           type="submit"
-          className="bg-naranja hover:bg-naranjaHover text-black font-semibold px-3 py-1 rounded"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-3 py-1 rounded"
         >
           Buscar
         </button>
@@ -103,18 +100,19 @@ export default function BuscadorGlobal({ className = "" }) {
 
       {/* Sugerencias */}
       {showSug && (query.length >= 2) && (
-        <div className="absolute top-full left-0 w-full bg-metal border border-borde rounded-b-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 w-full bg-card border border-border rounded-b-lg shadow-xl z-dropdown max-h-80 overflow-y-auto">
           {cargando && (
 
-            <div className="p-3 text-borde text-center"><DropLoader /></div>
+            <div className="p-3 text-muted-foreground text-center"><DropLoader /></div>
           )}
           {!cargando && sugerencias.length === 0 && (
-            <div className="p-3 text-gray-500 text-center">
+            <div className="p-3 text-muted-foreground text-center">
               No se han encontrado resultados.
               <div className="mt-1 text-sm">
                 ¿Quizás quisiste decir:&nbsp;
-                <span
-                  className="font-semibold underline cursor-pointer"
+                <button
+                  type="button"
+                  className="font-semibold underline"
                   onClick={() => {
                     const nueva = query.slice(0, -1);
                     setQuery(nueva);
@@ -122,7 +120,7 @@ export default function BuscadorGlobal({ className = "" }) {
                   }}
                 >
                   {query.slice(0, -1)}
-                </span>?
+                </button>?
               </div>
             </div>
           )}
@@ -132,8 +130,16 @@ export default function BuscadorGlobal({ className = "" }) {
                 modo === "juegos" ? (
                   <li
                     key={item.id || i}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-naranja/20 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-primary/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => navigate(`/juego/${item.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/juego/${item.id}`);
+                      }
+                    }}
                   >
                     <img
                       src={item.cover?.url ? `https:${item.cover.url.replace("t_thumb", "t_cover_small")}` : "/sin_portada.png"}
@@ -145,8 +151,16 @@ export default function BuscadorGlobal({ className = "" }) {
                 ) : (
                   <li
                     key={item.username || i}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-naranja/20 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-primary/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => navigate(`/perfil/${item.username}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/perfil/${item.username}`);
+                      }
+                    }}
                   >
                     <img
                       src={item.foto || "/media/avatares/default.png"}
@@ -154,7 +168,7 @@ export default function BuscadorGlobal({ className = "" }) {
                       className="w-8 h-8 object-cover rounded-full"
                     />
                     <span className="font-bold">{item.nombre || item.username}</span>
-                    <span className="text-naranja">@{item.username}</span>
+                    <span className="text-primary">@{item.username}</span>
                   </li>
                 )
               )}

@@ -1,8 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import TarjetaSkeleton from "@/components/TarjetaSkeleton";
 import GameCard from "@/components/GameCard";
+import PerPageSelector from "@/components/ui/PerPageSelector";
+import Pagination from "@/components/ui/Pagination";
 import LoaderCirculo from "@/components/LoaderCirculo";
 import { apiFetch } from "../lib/api";
 
@@ -12,6 +14,11 @@ export default function Juegos() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { usuario, autenticado } = useAuth();
+
+  const irAJuego = useCallback(
+    (e) => navigate(`/juego/${e.currentTarget.dataset.juegoId}`),
+    [navigate]
+  );
 
   const initPagina = parseInt(searchParams.get("pagina") || "1", 10);
   const initOrden = searchParams.get("orden") || "popular";
@@ -183,7 +190,7 @@ export default function Juegos() {
   };
 
   return (
-    <div className="min-h-screen text-claro p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto bg-transparent">
+    <div className="min-h-screen text-foreground p-6 max-w-full xl:max-w-[1700px] 3xl:max-w-[2200px] mx-auto bg-transparent">
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
         <div className="mb-3">
@@ -198,17 +205,17 @@ export default function Juegos() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setOrdenAbierto(!ordenAbierto)}
-              className="bg-metal border border-borde text-claro px-3 py-1 rounded"
+              className="bg-card border border-border text-foreground px-3 py-1 rounded"
             >
               Orden: {orden} {ascendente ? "↑" : "↓"}
             </button>
             {ordenAbierto && (
-              <div className="absolute right-0 mt-2 w-48 bg-metal border border-borde rounded shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded shadow-lg z-dropdown">
                 {["popular", "nombre", "fecha"].map((o) => (
                   <button
                     key={o}
                     onClick={() => toggleOrden(o)}
-                    className={`w-full text-left px-4 py-2 hover:bg-borde ${orden === o ? "font-bold text-naranja" : ""
+                    className={`w-full text-left px-4 py-2 hover:bg-muted ${orden === o ? "font-bold text-primary" : ""
                       }`}
                   >
                     {o === "popular" && "📈 Popularidad"}
@@ -225,7 +232,7 @@ export default function Juegos() {
               setGeneroSel(e.target.value);
               setPagina(1);
             }}
-            className="bg-metal text-claro border border-borde rounded px-3 py-1"
+            className="bg-card text-foreground border border-border rounded px-3 py-1"
           >
             <option value="">🎭 Todos los géneros</option>
             {genres.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -236,48 +243,30 @@ export default function Juegos() {
               setPlataformaSel(e.target.value);
               setPagina(1);
             }}
-            className="bg-metal text-claro border border-borde rounded px-3 py-1"
+            className="bg-card text-foreground border border-border rounded px-3 py-1"
           >
             <option value="">🖥️ Todas las plataformas</option>
             {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           {/* Selector personalizado para juegos por página */}
-          <div className="flex items-center gap-2">
-            <select
-              value={OPCIONES_POR_PAGINA.includes(porPagina) ? porPagina : ""}
-              onChange={cambiarPorPagina}
-              className="bg-metal text-claro border border-borde rounded px-3 py-1"
-            >
-              <option value="">Otro…</option>
-              {OPCIONES_POR_PAGINA.map((n) => (
-                <option key={n} value={n}>
-                  Mostrar {n}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              min={1}
-              max={500}
-              value={porPagina}
-              onChange={e => {
-                let val = parseInt(e.target.value, 10) || 1;
-                if (val > 500) val = 500;
-                if (val < 1) val = 1;
-                setPorPagina(val);
-                setPagina(1);
-              }}
-              className="w-20 bg-metal text-claro border border-borde rounded px-2 py-1 text-center"
-              title="Cantidad personalizada"
-            />
-            <span className="text-xs text-borde">/página</span>
-          </div>
+          <PerPageSelector
+            opciones={OPCIONES_POR_PAGINA}
+            valor={porPagina}
+            onCambiarPreset={cambiarPorPagina}
+            onCambiarPersonalizado={(e) => {
+              let val = parseInt(e.target.value, 10) || 1;
+              if (val > 500) val = 500;
+              if (val < 1) val = 1;
+              setPorPagina(val);
+              setPagina(1);
+            }}
+          />
         </div>
       </div>
 
       {/* Resultado y grid */}
       {!cargando && (
-        <div className="mb-4 text-claro">
+        <div className="mb-4 text-foreground">
           {totalResultados} resultado{totalResultados !== 1 && "s"}
         </div>
       )}
@@ -293,7 +282,7 @@ export default function Juegos() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-6">
           {juegos.map((j) => (
-            <GameCard key={j.id} juego={j} onClick={() => navigate(`/juego/${j.id}`)} />
+            <GameCard key={j.id} juego={j} onClick={irAJuego} />
           ))}
         </div>
       )}
@@ -302,24 +291,7 @@ export default function Juegos() {
       {paginasTotales > 1 && !cargando && (
         <div className="text-center mt-6">
           Página {pagina} de {paginasTotales}
-          <div className="flex justify-center mt-2 flex-wrap gap-2">
-            {generarPaginas().map((n, i) =>
-              n === "..." ? (
-                <span key={`dots-${i}`} className="px-2 text-gray-400">…</span>
-              ) : (
-                <button
-                  key={`pag-${n}`}
-                  onClick={() => setPagina(n)}
-                  className={`px-3 py-1 rounded ${pagina === n
-                    ? "bg-naranja text-black font-bold"
-                    : "bg-borde text-claro hover:bg-metal"
-                    }`}
-                >
-                  {n}
-                </button>
-              )
-            )}
-          </div>
+          <Pagination paginas={generarPaginas()} paginaActual={pagina} onCambiar={setPagina} />
         </div>
       )}
     </div>

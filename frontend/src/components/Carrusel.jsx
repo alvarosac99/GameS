@@ -37,35 +37,37 @@ export default function Carrusel({ juegos = [], onSelect = () => {} }) {
       {/* Flecha Izquierda */}
       <button
         onClick={retroceder}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 text-xl text-claro hover:text-naranja
-        outline-none focus:outline-none ring-0 border-none active:outline-none active:ring-0"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 text-xl text-foreground hover:text-primary
+        border-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         tabIndex={0}
         aria-label="Retroceder carrusel"
-        style={{ boxShadow: "none" }}
       >
         <FaChevronLeft />
       </button>
 
       {/* Carrusel */}
       <div
-        className="flex justify-center items-center gap-4 transition-all duration-300 px-16"
+        className="flex justify-center items-center gap-2 sm:gap-4 transition-all duration-300 px-10 sm:px-14 md:px-16"
         style={{ minHeight: "300px" }}
       >
         {visible.map((juego, i) => {
-          const isCenter = i === Math.floor(visible.length / 2);
-          if (!juego?.id) return <div key={i} style={{ width: 220 }} />;
+          const distancia = Math.abs(i - Math.floor(visible.length / 2));
+          const isCenter = distancia === 0;
+          // En mobile solo se ve la tarjeta central; en sm los vecinos inmediatos; el resto solo desde md.
+          const visibilidad =
+            distancia === 0 ? "" : distancia === 1 ? "hidden sm:block" : "hidden md:block";
+          const anchoTarjeta = "w-[150px] sm:w-[180px] md:w-[220px]";
+          if (!juego?.id) return <div key={i} className={`${anchoTarjeta} ${visibilidad} shrink-0`} />;
           return (
             <div
               key={juego.id}
-              className={`transition-transform duration-300 ease-in-out ${
+              className={`${anchoTarjeta} ${visibilidad} shrink-0 transition-transform duration-300 ease-in-out ${
                 isCenter
                   ? "scale-110 z-10 drop-shadow-2xl"
                   : "scale-90 opacity-60 z-0"
-              } cursor-pointer`}
-              style={{ flexShrink: 0 }}
-              onClick={() => onSelect(juego)}
+              }`}
             >
-              <GameCard juego={juego} />
+              <GameCard juego={juego} onClick={() => onSelect(juego)} />
             </div>
           );
         })}
@@ -74,11 +76,10 @@ export default function Carrusel({ juegos = [], onSelect = () => {} }) {
       {/* Flecha Derecha */}
       <button
         onClick={avanzar}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 text-xl text-claro hover:text-naranja
-        outline-none focus:outline-none ring-0 border-none active:outline-none active:ring-0"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 text-xl text-foreground hover:text-primary
+        border-none rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         tabIndex={0}
         aria-label="Avanzar carrusel"
-        style={{ boxShadow: "none" }}
       >
         <FaChevronRight />
       </button>

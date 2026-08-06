@@ -46,47 +46,59 @@ export default function ListaUsuarios() {
     }
 
     return (
-        <div className="flex flex-col w-full max-w-xl mx-auto bg-metal rounded-xl p-6 shadow-lg border border-borde">
-            <h2 className="text-2xl font-bold mb-4 text-naranja">Buscar personas</h2>
+        <div className="flex flex-col w-full max-w-xl mx-auto bg-card rounded-xl p-6 shadow-lg border border-border">
+            <h2 className="text-2xl font-bold mb-4 text-primary">Buscar personas</h2>
             <form onSubmit={handleSubmit} className="flex mb-6">
+                <label htmlFor="lista-usuarios-busqueda" className="sr-only">
+                    {t("searchUsersPlaceholder")}
+                </label>
                 <input
+                    id="lista-usuarios-busqueda"
                     type="text"
                     placeholder={t("searchUsersPlaceholder")}
-                    className="flex-1 px-3 py-2 rounded-l border border-borde bg-fondo text-claro focus:outline-none"
+                    className="flex-1 px-3 py-2 rounded-l border border-border bg-background text-foreground focus:outline-none"
                     value={busqueda}
                     onChange={e => setBusqueda(e.target.value)}
                 />
                 <button
                     type="submit"
-                    className="bg-naranja hover:bg-naranjaHover text-black font-semibold px-4 py-2 rounded-r"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-4 py-2 rounded-r"
                 >
                     Buscar
                 </button>
             </form>
 
-            {cargando && <div className="text-borde text-center py-6">Cargando...</div>}
+            {cargando && <div className="text-muted-foreground text-center py-6">Cargando...</div>}
 
-            {!cargando && error && <div className="text-red-500 text-center">{error}</div>}
+            {!cargando && error && <div className="text-destructive text-center">{error}</div>}
 
             {!cargando && !error && usuarios.length === 0 && busqueda.length >= 2 && (
-                <div className="text-gray-400 text-center">No se encontraron usuarios.</div>
+                <div className="text-muted-foreground text-center">No se encontraron usuarios.</div>
             )}
 
-            <ul className="divide-y divide-borde">
+            <ul className="divide-y divide-border">
                 {usuarios.map((usuario, i) => (
                     <li
                         key={usuario.username}
-                        className="flex items-center gap-4 py-4 hover:bg-naranja/10 cursor-pointer transition"
+                        role="button"
+                        tabIndex={0}
+                        className="flex items-center gap-4 py-4 hover:bg-primary/10 cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => navigate(`/perfil/${usuario.username}`)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                navigate(`/perfil/${usuario.username}`);
+                            }
+                        }}
                     >
                         <img
                             src={usuario.foto || "/media/avatares/default.png"}
                             alt=""
-                            className="w-14 h-14 rounded-full border-2 border-naranja object-cover"
+                            className="w-14 h-14 rounded-full border-2 border-primary object-cover"
                         />
                         <div>
-                            <div className="font-bold text-claro">{usuario.nombre}</div>
-                            <div className="text-borde text-sm">@{usuario.username}</div>
+                            <div className="font-bold text-foreground">{usuario.nombre}</div>
+                            <div className="text-muted-foreground text-sm">@{usuario.username}</div>
                         </div>
                     </li>
                 ))}

@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import Planificar from "./Planificar";
 import { FaTimes } from "react-icons/fa";
-import { apiFetch } from "../lib/api";
+import { apiFetch, fetchJuegosPorIds } from "../lib/api";
+import { formatHoras } from "@/lib/format";
 
 export default function Planificaciones() {
   const { fetchAuth } = useAuth();
@@ -26,17 +27,10 @@ export default function Planificaciones() {
       const dataComp = await resComp.json();
       const detallados = await Promise.all(
         dataPend.map(async (p) => {
-          const juegosDet = await Promise.all(
-            p.juegos.slice(0, 4).map(async (gid) => {
-              const j = await apiFetch(`/juegos/buscar_id/?id=${gid}`)
-                .then((r) => r.json())
-                .catch(() => null);
-              return j;
-            })
-          );
+          const juegosDet = await fetchJuegosPorIds(p.juegos.slice(0, 4));
           return {
             ...p,
-            juegos: juegosDet.filter(Boolean),
+            juegos: juegosDet,
             total: p.duracion_total,
             jugado: p.duracion_jugada,
             restante:
@@ -122,19 +116,19 @@ export default function Planificaciones() {
       <div className="flex gap-2">
         <button
           onClick={() => setVista("lista")}
-          className={`px-3 py-1 rounded ${vista === "lista" ? "bg-naranja text-black" : "bg-borde"}`}
+          className={`px-3 py-1 rounded ${vista === "lista" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
         >
           Ver planificaciones
         </button>
         <button
           onClick={() => setVista("manual")}
-          className={`px-3 py-1 rounded ${vista === "manual" ? "bg-naranja text-black" : "bg-borde"}`}
+          className={`px-3 py-1 rounded ${vista === "manual" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
         >
           Planificación propia
         </button>
         <button
           onClick={() => setVista("auto")}
-          className={`px-3 py-1 rounded ${vista === "auto" ? "bg-naranja text-black" : "bg-borde"}`}
+          className={`px-3 py-1 rounded ${vista === "auto" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
         >
           Automática
         </button>
@@ -154,27 +148,35 @@ export default function Planificaciones() {
                     <h2 className="text-xl font-semibold">Pendientes</h2>
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                       {pendientes.map((p) => (
-                        <div key={p.id} className="bg-metal/30 p-4 rounded relative">
+                        <div key={p.id} className="bg-card/30 p-4 rounded relative">
                           <button
                             onClick={() => eliminarPlan(p.id)}
-                            className="absolute top-2 right-2 bg-[#1f1f1f] text-red-400 text-xs rounded-md px-2 py-1 flex items-center gap-1 hover:bg-red-900/20 hover:text-red-500"
+                            className="absolute top-2 right-2 bg-card text-destructive text-xs rounded-md px-2 py-1 flex items-center gap-1 hover:bg-destructive/20 hover:text-destructive"
                           >
                             <FaTimes /> Eliminar
                           </button>
                           <h2 className="font-semibold mb-2">{p.nombre}</h2>
                           <div
-                            className="grid grid-cols-2 gap-2 cursor-pointer"
+                            role="button"
+                            tabIndex={0}
+                            className="grid grid-cols-2 gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             onClick={() => navigate(`/planificacion/${p.id}`)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                navigate(`/planificacion/${p.id}`);
+                              }
+                            }}
                           >
                             {p.juegos.slice(0, 4).map((j) => (
                               <GameCard key={j.id} juego={j} />
                             ))}
                           </div>
                           <div className="text-xs mt-2">
-                            <p>Total: {p.total ? (p.total / 3600).toFixed(1) + "h" : "N/A"}</p>
-                            <p>Jugado: {(p.jugado / 3600).toFixed(1)}h</p>
+                            <p>Total: {formatHoras(p.total)}</p>
+                            <p>Jugado: {formatHoras(p.jugado)}</p>
                             {p.restante != null && (
-                              <p>Restante: {(p.restante / 3600).toFixed(1)}h</p>
+                              <p>Restante: {formatHoras(p.restante)}</p>
                             )}
                           </div>
                         </div>
@@ -187,9 +189,9 @@ export default function Planificaciones() {
                     <h2 className="text-xl font-semibold mt-6">Completadas</h2>
                     <ul className="space-y-4">
                       {completadas.map((p) => (
-                        <li key={p.id} className="bg-metal/30 p-4 rounded">
+                        <li key={p.id} className="bg-card/30 p-4 rounded">
                           <h3 className="font-semibold mb-2">{p.nombre}</h3>
-                          <p>Total jugado: {(p.resumen.total_segundos / 3600).toFixed(1)}h</p>
+                          <p>Total jugado: {formatHoras(p.resumen.total_segundos)}</p>
                           <p>Completados: {p.resumen.completados}</p>
                           <p>Saltados: {p.resumen.saltados}</p>
                         </li>
@@ -214,13 +216,13 @@ export default function Planificaciones() {
           <>
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
               {autoPlan.map((j) => (
-                <div key={j.id} className="bg-metal/30 p-2 rounded">
+                <div key={j.id} className="bg-card/30 p-2 rounded">
                   <GameCard juego={j} />
                   <div className="text-xs mt-1 space-y-1">
-                    <p>Total: {j.total ? (j.total / 3600).toFixed(1) + "h" : "N/A"}</p>
-                    <p>Jugado: {(j.jugado / 3600).toFixed(1)}h</p>
+                    <p>Total: {formatHoras(j.total)}</p>
+                    <p>Jugado: {formatHoras(j.jugado)}</p>
                     {j.restante != null && (
-                      <p>Restante: {(j.restante / 3600).toFixed(1)}h</p>
+                      <p>Restante: {formatHoras(j.restante)}</p>
                     )}
                   </div>
                 </div>
@@ -228,7 +230,7 @@ export default function Planificaciones() {
             </div>
             <button
               onClick={guardarAuto}
-              className="mt-4 px-4 py-2 bg-naranja text-black rounded font-bold"
+              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded font-bold"
             >
               Guardar plan automático
             </button>

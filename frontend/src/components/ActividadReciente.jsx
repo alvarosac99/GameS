@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FaGamepad, FaStar, FaTrophy, FaComment, FaUserPlus } from "react-icons/fa"; // ⬅ nuevo ícono
 import { apiFetch } from "../lib/api";
+import Panel from "@/components/ui/Panel";
 
 function formatearFecha(iso) {
   const date = new Date(iso);
@@ -16,12 +17,12 @@ function formatearFecha(iso) {
 
 function obtenerIcono(tipo) {
   switch (tipo) {
-    case "juego_agregado": return <FaGamepad className="text-naranja" />;
-    case "juego_valorado": return <FaStar className="text-naranja" />;
-    case "logro": return <FaTrophy className="text-naranja" />;
-    case "comentario": return <FaComment className="text-naranja" />;
-    case "seguimiento": return <FaUserPlus className="text-naranja" />; // ⬅ nuevo tipo
-    default: return <FaGamepad className="text-naranja" />;
+    case "juego_agregado": return <FaGamepad className="text-primary" />;
+    case "juego_valorado": return <FaStar className="text-primary" />;
+    case "logro": return <FaTrophy className="text-primary" />;
+    case "comentario": return <FaComment className="text-primary" />;
+    case "seguimiento": return <FaUserPlus className="text-primary" />; // ⬅ nuevo tipo
+    default: return <FaGamepad className="text-primary" />;
   }
 }
 
@@ -60,20 +61,20 @@ export default function ActividadReciente({ actividades }) {
   if (!actividadesFinales.length) return null;
 
   return (
-    <div className="bg-white/70 text-gray-900 border border-gray-200 shadow-sm backdrop-blur-sm dark:bg-black/30 dark:text-claro dark:border-borde dark:shadow dark:backdrop-blur-md rounded-2xl px-6 py-5">
-      <h2 className="font-bold text-gray-900 dark:text-naranja text-lg mb-2">Actividad reciente</h2>
+    <Panel>
+      <h2 className="font-bold text-foreground dark:text-primary text-lg mb-2">Actividad reciente</h2>
       <ul className="flex flex-col gap-3">
         {actividadesFinales.map((act, i) => (
-          <li key={i} className="flex items-start gap-3 text-gray-900 dark:text-claro">
+          <li key={i} className="flex items-start gap-3 text-foreground">
             <span className="mt-1">{obtenerIcono(act.tipo)}</span>
             <div>
               <p className="text-sm">{formatearDescripcion(act.descripcion)}</p>
-              <p className="text-xs text-gray-500 dark:text-borde">{formatearFecha(act.fecha)}</p>
+              <p className="text-xs text-muted-foreground">{formatearFecha(act.fecha)}</p>
             </div>
           </li>
         ))}
       </ul>
-    </div>
+    </Panel>
   );
 }
 

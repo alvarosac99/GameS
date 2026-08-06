@@ -99,172 +99,15 @@ function AppContent() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [menuAbierto]);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    let rafId = null;
-
-    const updateCursor = (event) => {
-      if (rafId) return;
-      const { clientX, clientY } = event;
-      rafId = window.requestAnimationFrame(() => {
-        root.style.setProperty("--cursor-x", `${clientX}px`);
-        root.style.setProperty("--cursor-y", `${clientY}px`);
-        rafId = null;
-      });
-    };
-
-    window.addEventListener("pointermove", updateCursor, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", updateCursor);
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const beams = Array.from(document.querySelectorAll(".circuit-beam"));
-    if (!beams.length) {
-      return undefined;
-    }
-
-    const rand = (min, max) => Math.random() * (max - min) + min;
-    const snap = (value, step) => Math.round(value / step) * step;
-
-    const edgePoint = (width, height) => {
-      const side = Math.floor(Math.random() * 4);
-      if (side === 0) return { x: -40, y: snap(rand(60, height - 60), 40) };
-      if (side === 1) return { x: width + 40, y: snap(rand(60, height - 60), 40) };
-      if (side === 2) return { x: snap(rand(80, width - 80), 40), y: -40 };
-      return { x: snap(rand(80, width - 80), 40), y: height + 40 };
-    };
-
-    const buildPath = (width, height) => {
-      const start = edgePoint(width, height);
-      let end = edgePoint(width, height);
-      while (Math.abs(end.x - start.x) < 120 && Math.abs(end.y - start.y) < 120) {
-        end = edgePoint(width, height);
-      }
-
-      const bendX = snap(rand(120, width - 120), 40);
-      const bendY = snap(rand(120, height - 120), 40);
-      const useHorizontalFirst = Math.random() > 0.5;
-      const points = useHorizontalFirst
-        ? [start, { x: bendX, y: start.y }, { x: bendX, y: bendY }, { x: end.x, y: bendY }, end]
-        : [start, { x: start.x, y: bendY }, { x: bendX, y: bendY }, { x: bendX, y: end.y }, end];
-
-      return points.filter((point, index, arr) => {
-        if (index === 0) return true;
-        const prev = arr[index - 1];
-        return prev.x !== point.x || prev.y !== point.y;
-      });
-    };
-
-    const makeSegments = (points) => {
-      const segments = [];
-      let total = 0;
-      for (let i = 0; i < points.length - 1; i += 1) {
-        const from = points[i];
-        const to = points[i + 1];
-        const length = Math.hypot(to.x - from.x, to.y - from.y);
-        total += length;
-        segments.push({ from, to, length });
-      }
-      return { segments, total };
-    };
-
-    const createBeamState = (width, height) => {
-      const points = buildPath(width, height);
-      const { segments, total } = makeSegments(points);
-      const duration = rand(3.6, 4.4);
-      return {
-        segments,
-        total,
-        progress: rand(-0.4 * total, 0),
-        speed: total / duration,
-        size: rand(6, 9),
-        opacity: rand(0.65, 0.9),
-        angle: 0,
-      };
-    };
-
-    let states = [];
-    let last = performance.now();
-    let rafId = null;
-
-    const resize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      states = beams.map(() => createBeamState(width, height));
-    };
-
-    const step = (now) => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const delta = (now - last) / 1000;
-      last = now;
-
-      if (!document.documentElement.classList.contains("dark")) {
-        states.forEach((state, index) => {
-          const beam = beams[index];
-          state.progress += state.speed * delta;
-          if (state.progress > state.total) {
-            states[index] = createBeamState(width, height);
-            return;
-          }
-
-          let remaining = Math.max(0, state.progress);
-          let segment = state.segments[0];
-          for (let i = 0; i < state.segments.length; i += 1) {
-            if (remaining <= state.segments[i].length) {
-              segment = state.segments[i];
-              break;
-            }
-            remaining -= state.segments[i].length;
-          }
-
-          const t = segment.length === 0 ? 0 : remaining / segment.length;
-          const x = segment.from.x + (segment.to.x - segment.from.x) * t;
-          const y = segment.from.y + (segment.to.y - segment.from.y) * t;
-          const life = state.progress / state.total;
-          const fade = life < 0.1 ? life / 0.1 : life > 0.9 ? (1 - life) / 0.1 : 1;
-
-          beam.style.opacity = `${state.opacity * fade}`;
-          beam.style.setProperty("--beam-size", `${state.size}px`);
-          beam.style.transform = `translate(${x}px, ${y}px)`;
-        });
-      }
-
-      rafId = window.requestAnimationFrame(step);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-    rafId = window.requestAnimationFrame(step);
-
-    return () => {
-      window.removeEventListener("resize", resize);
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
-      }
-    };
-  }, []);
-
   return (
-    <div className="app-shell flex flex-col min-h-screen text-claro">
-      <div className="circuit-beams" aria-hidden="true">
-        <span className="circuit-beam"></span>
-        <span className="circuit-beam"></span>
-        <span className="circuit-beam"></span>
-        <span className="circuit-beam"></span>
-      </div>
+    <div className="app-shell flex flex-col min-h-screen text-foreground">
       {/* Botón flotante del menú */}
       {autenticado && (
         <button
           className={` 
-      fixed left-4 z-[100] transition-transform duration-300 rounded-full p-3
-      bg-metal/70 hover:bg-metal
-      ${menuAbierto ? "rotate-90 text-red-400" : "text-naranja"}
+      fixed left-4 z-max transition-transform duration-300 rounded-full p-3
+      bg-card/70 hover:bg-card
+      ${menuAbierto ? "rotate-90 text-destructive" : "text-primary"}
     `}
           style={{ top: `${botonTop}px` }}
           onClick={() => setMenuAbierto(!menuAbierto)}
@@ -278,7 +121,7 @@ function AppContent() {
       {/* HEADER */}
       <header
         ref={headerRef}
-        className="sticky top-0 z-50 bg-metal/60 dark:bg-metal/90 backdrop-blur-sm px-4 py-3 shadow-md border-b border-borde grid grid-cols-3 items-center"
+        className="sticky top-0 z-sticky bg-card/60 dark:bg-card/90 backdrop-blur-sm px-4 py-3 shadow-md border-b border-border grid grid-cols-3 items-center"
       >
         <div className="flex items-center">
           {autenticado && (
@@ -306,10 +149,10 @@ function AppContent() {
         <div className="flex justify-end gap-2">
           {!autenticado ? (
             <>
-              <Link to="/login" className="text-naranja underline">
+              <Link to="/login" className="text-primary underline">
                 {t("loginLink")}
               </Link>
-              <Link to="/register" className="text-naranja underline">
+              <Link to="/register" className="text-primary underline">
                 {t("registerLink")}
               </Link>
             </>
@@ -317,14 +160,14 @@ function AppContent() {
             <>
               <button
                 onClick={() => setMostrarBuscador(!mostrarBuscador)}
-                className={`xl:hidden text-xl p-3 rounded-full transition-transform duration-300 bg-metal/70 hover:bg-metal ${mostrarBuscador ? "rotate-90 text-red-400" : "text-naranja"}`}
+                className={`xl:hidden text-xl p-3 rounded-full transition-transform duration-300 bg-card/70 hover:bg-card ${mostrarBuscador ? "rotate-90 text-destructive" : "text-primary"}`}
                 aria-label={mostrarBuscador ? "Cerrar buscador" : "Mostrar buscador"}
               >
                 {mostrarBuscador ? <X /> : <Search />}
               </button>
               <button
                 onClick={() => setMostrarNotis(!mostrarNotis)}
-                className="text-xl p-3 rounded-full bg-metal/70 hover:bg-metal text-naranja relative"
+                className="text-xl p-3 rounded-full bg-card/70 hover:bg-card text-primary relative"
                 aria-label="Notificaciones"
               >
                 <Bell />
@@ -338,7 +181,7 @@ function AppContent() {
       {/* Buscador móvil debajo del header */}
       <div
         className={` 
-          fixed left-0 w-full px-4 py-2 bg-metal/70 dark:bg-metal/95 border-b border-borde z-40 shadow-md
+          fixed left-0 w-full px-4 py-2 bg-card/70 dark:bg-card/95 border-b border-border z-dropdown shadow-md
           transition-all duration-300 backdrop-blur-sm origin-top
           ${mostrarBuscador ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0 pointer-events-none"}
         `}
@@ -350,70 +193,70 @@ function AppContent() {
       {/* Overlay del menú */}
       {menuAbierto && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40"
+          className="fixed inset-0 bg-black bg-opacity-40 z-modal-backdrop"
           onClick={() => setMenuAbierto(false)}
         />
       )}
 
-      {mostrarNotis && <NotificacionesLista />}
+      {mostrarNotis && <NotificacionesLista onCerrar={() => setMostrarNotis(false)} />}
 
       {/* Menú lateral */}
       <aside
-        className={`fixed top-0 left-0 w-64 bg-metal shadow-lg border-r border-borde z-50 pt-24 transition-transform duration-300 ${menuAbierto ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 w-64 bg-card shadow-lg border-r border-border z-modal pt-24 transition-transform duration-300 ${menuAbierto ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         <nav className="flex flex-col p-6 space-y-4">
           <Link
             to="/jugar"
             ref={menuFirstLinkRef}
-            className="flex items-center gap-2 hover:text-naranja"
+            className="flex items-center gap-2 hover:text-primary"
           >
             <LayoutDashboard /> {t("menuPlay")}
           </Link>
-          <Link to="/juegos" className="flex items-center gap-2 hover:text-naranja">
+          <Link to="/juegos" className="flex items-center gap-2 hover:text-primary">
             <Gamepad /> {t("menuJuegos")}
           </Link>
-          <Link to="/nuestros-juegos" className="flex items-center gap-2 hover:text-naranja">
+          <Link to="/nuestros-juegos" className="flex items-center gap-2 hover:text-primary">
             <Gamepad /> {t("menuNuestrosJuegos")}
           </Link>
           {(usuario?.rol === "DEV" || usuario?.rol === "ADMIN") && (
-            <Link to="/nuevo-juego" className="flex items-center gap-2 hover:text-naranja">
+            <Link to="/nuevo-juego" className="flex items-center gap-2 hover:text-primary">
               <Gamepad /> {t("menuAnadeJuego")}
             </Link>
           )}
-          <Link to="/bienvenida" className="flex items-center gap-2 hover:text-naranja">
+          <Link to="/bienvenida" className="flex items-center gap-2 hover:text-primary">
             <LayoutDashboard /> {t("menuPanel")}
           </Link>
-          <Link to="/biblioteca" className="flex items-center gap-2 hover:text-naranja">
+          <Link to="/biblioteca" className="flex items-center gap-2 hover:text-primary">
             <BookOpenText /> {t("menuBiblioteca")}
           </Link>
-          <Link to="/diario" className="flex items-center gap-2 hover:text-naranja">
+          <Link to="/diario" className="flex items-center gap-2 hover:text-primary">
             <NotebookPen /> {t("menuDiario")}
           </Link>
-          <Link to="/planificaciones" className="flex items-center gap-2 hover:text-naranja">
+          <Link to="/planificaciones" className="flex items-center gap-2 hover:text-primary">
             <LayoutDashboard /> Planificaciones
           </Link>
-          <Link to="/ajustes" className="flex items-center gap-2 hover:text-naranja">
+          <Link to="/ajustes" className="flex items-center gap-2 hover:text-primary">
             <Settings /> {t("menuAjustes")}
           </Link>
-          <Link to={`/perfil/${usuario?.username}`} className="flex items-center gap-2 hover:text-naranja">
+          <Link to={`/perfil/${usuario?.username}`} className="flex items-center gap-2 hover:text-primary">
             <User /> {t("menuPerfil")}
           </Link>
           <button
-            className="flex items-center gap-2 text-red-400 hover:text-red-300"
+            className="flex items-center gap-2 text-destructive hover:text-destructive"
             onClick={() => logout().then(() => (window.location.href = "/"))}
           >
             <LogOut /> {t("menuLogout")}
           </button>
           {/* Enlaces adicionales en texto pequeño */}
-          <div className="mt-6 text-xs text-gray-400 space-y-1">
-            <Link to="/sobre-mi" className="hover:text-naranja">
+          <div className="mt-6 text-xs text-muted-foreground space-y-1">
+            <Link to="/sobre-mi" className="hover:text-primary">
               Sobre mí
             </Link>
-            <Link to="/manual" className="hover:text-naranja">
+            <Link to="/manual" className="hover:text-primary">
               Manual de uso
             </Link>
-            <Link to="/privacidad" className="hover:text-naranja">
+            <Link to="/privacidad" className="hover:text-primary">
               Privacidad
             </Link>
           </div>
@@ -445,8 +288,8 @@ function AppContent() {
         </Routes>
       </main>
 
-      <footer className="relative z-20 bg-[hsl(var(--color-metal))] py-2 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-borde shadow-[0_-10px_30px_rgba(0,0,0,0.25)]">
-        GameS © 2025 · <Link to="/privacidad" className="hover:text-naranja">Privacidad</Link>
+      <footer className="relative z-20 bg-card py-2 text-center text-sm text-muted-foreground dark:text-muted-foreground border-t border-border shadow-[0_-10px_30px_rgba(0,0,0,0.25)]">
+        GameS © 2025 · <Link to="/privacidad" className="hover:text-primary">Privacidad</Link>
       </footer>
     </div>
   );

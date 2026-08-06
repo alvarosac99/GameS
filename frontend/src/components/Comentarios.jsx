@@ -20,11 +20,11 @@ function renderEstrellas(valor) {
   const estrellas = [];
   for (let i = 1; i <= 5; i++) {
     if (valor >= i) {
-      estrellas.push(<FaStar key={i} className="text-naranja inline" />);
+      estrellas.push(<FaStar key={i} className="text-primary inline" />);
     } else if (valor >= i - 0.5) {
-      estrellas.push(<FaStarHalfAlt key={i} className="text-naranja inline" />);
+      estrellas.push(<FaStarHalfAlt key={i} className="text-primary inline" />);
     } else {
-      estrellas.push(<FaRegStar key={i} className="text-borde inline" />);
+      estrellas.push(<FaRegStar key={i} className="text-muted-foreground inline" />);
     }
   }
   return estrellas;
@@ -157,26 +157,34 @@ export default function Comentarios({ juegoId }) {
   function ComentarioBloque({ c }) {
     return (
       <div
+        role="button"
+        tabIndex={0}
         onClick={() => navigate(`/perfil/${c.user.username}`)}
-        className="bg-[#1f1f1f] hover:bg-[#262626] rounded-xl p-4 shadow-md border border-black/50 text-white transition-all duration-300 flex gap-4 cursor-pointer group"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            navigate(`/perfil/${c.user.username}`);
+          }
+        }}
+        className="bg-card hover:bg-card/80 rounded-xl p-4 shadow-md border border-border text-foreground transition-all duration-300 flex gap-4 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <img
           src={c.foto}
           alt="Avatar"
-          className="w-12 h-12 rounded-full object-cover border border-borde/60"
+          className="w-12 h-12 rounded-full object-cover border border-border/60"
         />
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-bold text-white group-hover:underline">{c.nombre}</span>
+            <span className="font-bold text-foreground group-hover:underline">{c.nombre}</span>
             {c.valoracion != null && (
               <span className="flex items-center ml-2">
                 {renderEstrellas(c.valoracion)}
-                <span className="ml-1 text-naranja font-semibold text-xs">
+                <span className="ml-1 text-primary font-semibold text-xs">
                   {Number(c.valoracion).toFixed(1)}
                 </span>
               </span>
             )}
-            <span className="text-xs text-gray-400">{fechaCorta(c.fecha)}</span>
+            <span className="text-xs text-muted-foreground">{fechaCorta(c.fecha)}</span>
             {autenticado &&
               (usuario?.username === c.user.username ||
                 usuario?.rol === "STAFF" ||
@@ -186,7 +194,7 @@ export default function Comentarios({ juegoId }) {
                   e.stopPropagation();
                   borrarComentario(c.id);
                 }}
-                className="ml-auto bg-metal text-red-400 text-xs rounded-md px-3 py-1 flex items-center gap-1 hover:bg-red-900/20 hover:text-red-500 cursor-pointer"
+                className="ml-auto bg-card text-destructive text-xs rounded-md px-3 py-1 flex items-center gap-1 hover:bg-destructive/20 hover:text-destructive cursor-pointer"
               >
                 <FaTimes /> Eliminar
               </button>
@@ -195,7 +203,7 @@ export default function Comentarios({ juegoId }) {
               <Reportar modelo="comentario" objectId={c.id} />
             )}
           </div>
-          <div className="text-white/90">{c.texto}</div>
+          <div className="text-foreground/90">{c.texto}</div>
         </div>
       </div>
     );
@@ -207,13 +215,13 @@ export default function Comentarios({ juegoId }) {
 
   if (!autenticado) {
     return (
-      <div className="mt-8 text-center text-white">
+      <div className="mt-8 text-center text-foreground">
         <p>
           <strong>Inicia sesión</strong> para ver y publicar comentarios.
         </p>
         <Link
           to="/login"
-          className="inline-block mt-2 px-4 py-2 bg-naranja text-black rounded-xl font-semibold hover:bg-naranja/90"
+          className="inline-block mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90"
         >
           Ir a Login
         </Link>
@@ -223,12 +231,13 @@ export default function Comentarios({ juegoId }) {
 
   return (
     <div className="mt-8" ref={comentariosRef}>
-      <h2 className="text-2xl font-bold mb-4 text-white">Comentarios</h2>
+      <h2 className="text-2xl font-bold mb-4 text-foreground">Comentarios</h2>
 
       <div className="flex items-center gap-4 mb-2">
-        <label className="text-xs text-gray-400 font-semibold">Ordenar por:</label>
+        <label htmlFor="comentarios-orden" className="text-xs text-muted-foreground font-semibold">Ordenar por:</label>
         <select
-          className="bg-[#1f1f1f] border border-borde/50 rounded-xl px-2 py-1 text-naranja font-bold"
+          id="comentarios-orden"
+          className="bg-card border border-border/50 rounded-xl px-2 py-1 text-primary font-bold"
           value={orden}
           onChange={(e) => {
             setOrden(e.target.value);
@@ -244,10 +253,13 @@ export default function Comentarios({ juegoId }) {
       </div>
 
       <form onSubmit={enviarComentario} className="mb-4 flex flex-col gap-2">
+        <label htmlFor="comentario-nuevo" className="sr-only">
+          {t("commentPlaceholder")}
+        </label>
         <textarea
           ref={textareaRef}
           id="comentario-nuevo"
-          className="rounded-xl border border-borde/60 px-4 py-3 bg-[#1f1f1f] text-white resize-none transition focus:outline-none focus:border-naranja"
+          className="rounded-xl border border-border/60 px-4 py-3 bg-card text-foreground resize-none transition focus:outline-none focus:border-primary"
           value={nuevo}
           onChange={(e) => setNuevo(e.target.value)}
           maxLength={1000}
@@ -259,23 +271,23 @@ export default function Comentarios({ juegoId }) {
         <div className="flex gap-2 items-center">
           <button
             type="submit"
-            className={`bg-naranja px-5 py-2.5 rounded-xl text-black font-semibold shadow-lg shadow-orange-500/20 transition ${
+            className={`bg-primary px-5 py-2.5 rounded-xl text-primary-foreground font-semibold shadow-lg shadow-orange-500/20 transition ${
               publicando ? "opacity-60 cursor-not-allowed" : ""
             }`}
             disabled={!nuevo.trim() || publicando}
           >
             {publicando ? "Publicando..." : "Publicar"}
           </button>
-          <span className="text-xs text-gray-400 ml-2">{nuevo.length}/1000</span>
+          <span className="text-xs text-muted-foreground ml-2">{nuevo.length}/1000</span>
         </div>
       </form>
 
-      {error && <div className="text-red-500 mb-2">{error}</div>}
+      {error && <div className="text-destructive mb-2">{error}</div>}
 
       {cargando ? (
-        <div className="text-gray-400">Cargando comentarios...</div>
+        <div className="text-muted-foreground">Cargando comentarios...</div>
       ) : comentarios.length === 0 ? (
-        <div className="text-gray-500">¡Sé el primero en comentar!</div>
+        <div className="text-muted-foreground">¡Sé el primero en comentar!</div>
       ) : (
         <>
           <div className="space-y-4">
@@ -286,17 +298,17 @@ export default function Comentarios({ juegoId }) {
           {paginas > 1 && (
             <div className="flex justify-center items-center gap-2 mt-6">
               <button
-                className="px-2 py-1 rounded bg-borde text-xs text-white/80"
+                className="px-2 py-1 rounded bg-muted text-xs text-foreground/80"
                 onClick={() => setPagina((p) => Math.max(1, p - 1))}
                 disabled={pagina === 1}
               >
                 Anterior
               </button>
-              <span className="font-mono text-xs text-white/70">
+              <span className="font-mono text-xs text-foreground/70">
                 Página {pagina} de {paginas}
               </span>
               <button
-                className="px-2 py-1 rounded bg-borde text-xs text-white/80"
+                className="px-2 py-1 rounded bg-muted text-xs text-foreground/80"
                 onClick={() => setPagina((p) => Math.min(paginas, p + 1))}
                 disabled={pagina === paginas}
               >

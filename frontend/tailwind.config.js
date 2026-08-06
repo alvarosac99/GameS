@@ -6,17 +6,18 @@ export default {
 		"./src/**/*.{js,ts,jsx,tsx}",
 	],
 	theme: {
+		screens: {
+			sm: "640px",
+			md: "768px",
+			lg: "1024px",
+			xl: "1280px",
+			"2xl": "1536px",
+			"3xl": "1920px",
+			"4xl": "2560px",
+		},
 		extend: {
 			colors: {
-				// Paleta personalizada
-                                fondo: "hsl(var(--color-fondo))",
-                                metal: "hsl(var(--color-metal))",
-                                borde: "hsl(var(--color-borde))",
-                                claro: "hsl(var(--color-claro))",
-				naranja: "hsl(var(--color-acento))",
-				naranjaHover: "hsl(var(--color-acento-hover))",
-
-				// Paleta dinámica de ShadCN
+				// Paleta semántica (ShadCN + estados)
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				card: {
@@ -47,6 +48,18 @@ export default {
 					DEFAULT: 'hsl(var(--destructive))',
 					foreground: 'hsl(var(--destructive-foreground))'
 				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--warning))',
+					foreground: 'hsl(var(--warning-foreground))'
+				},
+				info: {
+					DEFAULT: 'hsl(var(--info))',
+					foreground: 'hsl(var(--info-foreground))'
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -62,6 +75,15 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			zIndex: {
+				dropdown: '20',
+				sticky: '30',
+				'modal-backdrop': '40',
+				modal: '50',
+				toast: '60',
+				tooltip: '70',
+				max: '100',
 			}
 		}
 	},

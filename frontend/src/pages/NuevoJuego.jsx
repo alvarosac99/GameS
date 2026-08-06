@@ -33,26 +33,34 @@ export default function NuevoJuego() {
   return (
     <div className="p-4 space-y-4">
       <h1 className="text-3xl font-bold">Añadir juego</h1>
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
       <form onSubmit={crear} className="space-y-4 max-w-xl">
+        <label htmlFor="nuevo-juego-nombre" className="sr-only">
+          {t("newGameNamePlaceholder")}
+        </label>
         <input
+          id="nuevo-juego-nombre"
           type="text"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="w-full p-2 rounded bg-metal border border-borde"
+          className="w-full p-2 rounded bg-card border border-border"
           placeholder={t("newGameNamePlaceholder")}
           required
         />
+        <label htmlFor="nuevo-juego-descripcion" className="sr-only">
+          {t("newGameDescriptionPlaceholder")}
+        </label>
         <textarea
+          id="nuevo-juego-descripcion"
           value={descripcion}
           onChange={(e) => setDescripcion(e.target.value)}
-          className="w-full p-2 rounded bg-metal border border-borde"
+          className="w-full p-2 rounded bg-card border border-border"
           rows={5}
           placeholder={t("newGameDescriptionPlaceholder")}
         />
         <button
           type="submit"
-          className="bg-naranja text-black px-4 py-2 rounded font-semibold"
+          className="bg-primary text-primary-foreground px-4 py-2 rounded font-semibold"
         >
           Crear
         </button>

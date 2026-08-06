@@ -30,7 +30,7 @@ export default function Register() {
       .then(data => {
         if (data.authenticated) navigate("/bienvenida");
       });
-  }, []);
+  }, [navigate]);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -60,49 +60,65 @@ export default function Register() {
   };
 
   return (
-    <div className="max-w-sm mx-auto mt-12 p-6 bg-metal shadow-lg rounded text-claro">
+    <div className="max-w-sm mx-auto mt-12 p-6 bg-card shadow-lg rounded text-foreground">
       <h2 className="text-2xl font-bold mb-4 text-center">{t("registerTitle")}</h2>
       <form onSubmit={handleRegister}>
+        <label htmlFor="register-username" className="sr-only">
+          {t("registerUsername")}
+        </label>
         <input
+          id="register-username"
           type="text"
           placeholder={t("registerUsername")}
-          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-card text-foreground rounded placeholder:text-muted-foreground"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
         />
+        <label htmlFor="register-email" className="sr-only">
+          {t("registerEmail")}
+        </label>
         <input
+          id="register-email"
           type="email"
           placeholder={t("registerEmail")}
-          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-card text-foreground rounded placeholder:text-muted-foreground"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
+        <label htmlFor="register-password" className="sr-only">
+          {t("registerPassword")}
+        </label>
         <input
+          id="register-password"
           type="password"
           placeholder={t("registerPassword")}
-          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-card text-foreground rounded placeholder:text-muted-foreground"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+        <label htmlFor="register-confirm-password" className="sr-only">
+          {t("registerConfirmPassword")}
+        </label>
         <input
+          id="register-confirm-password"
           type="password"
           placeholder={t("registerConfirmPassword")}
-          className="mb-3 p-2 w-full bg-metal text-claro rounded placeholder:text-gray-400"
+          className="mb-3 p-2 w-full bg-card text-foreground rounded placeholder:text-muted-foreground"
           value={confirmarPassword}
           onChange={(e) => setConfirmarPassword(e.target.value)}
           required
         />
-        <button type="submit" className="bg-naranja hover:bg-naranjaHover text-white p-2 rounded w-full font-medium">
+        <button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded w-full font-medium">
           {t("registerButton")}
         </button>
       </form>
-      {mensaje && <p className="mt-3 text-sm text-red-400 text-center">{mensaje}</p>}
+      {mensaje && <p className="mt-3 text-sm text-destructive text-center">{mensaje}</p>}
       <p className="mt-4 text-sm text-center">
         {t("registerHasAccount")} {" "}
-        <Link to="/login" className="text-naranja hover:underline">{t("registerLoginHere")}</Link>
+        <Link to="/login" className="text-primary hover:underline">{t("registerLoginHere")}</Link>
       </p>
     </div>
   );

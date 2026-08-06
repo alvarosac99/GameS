@@ -246,31 +246,30 @@ export default function JuegoUnico() {
     const texto = juego.summary_es || juego.summary || "";
     if (!texto) {
       setDescripcion(t("noDescription"));
-      return;
+      return undefined;
     }
-    if (lang === "en") {
-      if (juego.summary && !juego.summary_es) {
-        setDescripcion(juego.summary);
-        return;
-      }
-      fetch(
-        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(texto)}`
-      )
-        .then((r) => r.json())
-        .then((d) => setDescripcion(d[0].map((x) => x[0]).join("")))
-        .catch(() => setDescripcion(texto));
-    } else {
-      if (juego.summary_es) {
-        setDescripcion(juego.summary_es);
-        return;
-      }
-      fetch(
-        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=es&dt=t&q=${encodeURIComponent(texto)}`
-      )
-        .then((r) => r.json())
-        .then((d) => setDescripcion(d[0].map((x) => x[0]).join("")))
-        .catch(() => setDescripcion(texto));
+    if (lang === "en" && juego.summary && !juego.summary_es) {
+      setDescripcion(juego.summary);
+      return undefined;
     }
+    if (lang !== "en" && juego.summary_es) {
+      setDescripcion(juego.summary_es);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const tl = lang === "en" ? "en" : "es";
+    fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(texto)}`,
+      { signal: controller.signal }
+    )
+      .then((r) => r.json())
+      .then((d) => setDescripcion(d[0].map((x) => x[0]).join("")))
+      .catch((e) => {
+        if (e.name !== "AbortError") setDescripcion(texto);
+      });
+
+    return () => controller.abort();
   }, [juego, lang, t]);
 
   useEffect(() => {
@@ -407,6 +406,20 @@ export default function JuegoUnico() {
   // Cambia estado visual wishlist (sin backend aún)
   function handleWishlist() {
     setInWishlist((prev) => !prev);
+  }
+
+  // Cambia el estado de biblioteca con rollback si falla el PATCH
+  function handleEstadoChange(nuevo) {
+    const anterior = estado;
+    setEstado(nuevo);
+    fetchAuth(`/juegos/biblioteca/${entryId}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ estado: nuevo }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al actualizar estado");
+      })
+      .catch(() => setEstado(anterior));
   }
 
   if (cargando) return <DropLoader />;
@@ -600,7 +613,7 @@ export default function JuegoUnico() {
   }
 
   return (
-    <div className="relative w-full min-h-screen bg-transparent text-claro overflow-hidden">
+    <div className="relative w-full min-h-screen bg-transparent text-foreground overflow-hidden">
       <style>{`
         @keyframes gameFadeUp {
           from { opacity: 0; transform: translateY(18px); }
@@ -685,7 +698,7 @@ export default function JuegoUnico() {
               <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 hero-rise">
                 {heroCover && (
                   <div className="w-36 sm:w-44 md:w-56 shrink-0">
-                    <div className="bg-black/55 border border-black/60 rounded-2xl p-2 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+                    <div className="bg-card/55 border border-border rounded-2xl p-2 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm">
                       <img
                         src={heroCover}
                         alt="Portada"
@@ -695,7 +708,7 @@ export default function JuegoUnico() {
                   </div>
                 )}
                 <div className="max-w-3xl">
-                  <p className="text-xs uppercase tracking-[0.35em] text-gray-300/90">
+                  <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground/90">
                     {juego.first_release_date
                       ? `${t("gameReleasedOn")} ${new Date(
                         juego.first_release_date * 1000
@@ -703,7 +716,7 @@ export default function JuegoUnico() {
                       : t("gameReleaseUnknown")}
                   </p>
                   <h1
-                    className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mt-2"
+                    className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mt-2"
                     style={{ textShadow: "0 16px 40px rgba(0,0,0,0.55)" }}
                   >
                     {juego.name}
@@ -713,21 +726,21 @@ export default function JuegoUnico() {
                       <>
                         {inLibrary ? (
                           <button
-                            className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-full shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
+                            className="inline-flex items-center justify-center gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold px-6 py-3 rounded-full shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
                             onClick={handleRemove}
                           >
                             <FaMinus /> {t("gameRemoveLibrary")}
                           </button>
                         ) : (
                           <button
-                            className="inline-flex items-center justify-center gap-2 bg-naranja hover:bg-naranjaHover text-black font-bold px-6 py-3 rounded-full shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
+                            className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-full shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
                             onClick={handleAdd}
                           >
                             <FaPlus /> {t("gameAddLibrary")}
                           </button>
                         )}
                         <button
-                          className="inline-flex items-center justify-center gap-2 bg-black/50 hover:bg-black/70 text-naranja font-bold px-6 py-3 rounded-full border border-borde/60 backdrop-blur-sm"
+                          className="inline-flex items-center justify-center gap-2 bg-card/50 hover:bg-card/70 text-primary font-bold px-6 py-3 rounded-full border border-border/60 backdrop-blur-sm"
                           onClick={handleWishlist}
                         >
                           {inWishlist ? <FaBookmark /> : <FaRegBookmark />}
@@ -737,7 +750,7 @@ export default function JuegoUnico() {
                     ) : (
                       <Link
                         to="/login"
-                        className="inline-flex items-center justify-center bg-black/60 hover:bg-black/75 text-naranja font-bold px-6 py-3 rounded-full border border-borde/60 backdrop-blur-sm"
+                        className="inline-flex items-center justify-center bg-card/60 hover:bg-card/75 text-primary font-bold px-6 py-3 rounded-full border border-border/60 backdrop-blur-sm"
                       >
                         {t("gameLoginManage")}
                       </Link>
@@ -750,17 +763,14 @@ export default function JuegoUnico() {
                       </div>
                       {inLibrary && (
                         <div className="w-full">
+                          <label htmlFor="estado-biblioteca-mobile" className="sr-only">
+                            Estado
+                          </label>
                           <select
+                            id="estado-biblioteca-mobile"
                             value={estado}
-                            onChange={(e) => {
-                              const nuevo = e.target.value;
-                              setEstado(nuevo);
-                              fetchAuth(`/juegos/biblioteca/${entryId}/`, {
-                                method: "PATCH",
-                                body: JSON.stringify({ estado: nuevo }),
-                              });
-                            }}
-                            className="w-full mt-1 p-2 rounded bg-[#181818] border border-borde/50"
+                            onChange={(e) => handleEstadoChange(e.target.value)}
+                            className="w-full mt-1 p-2 rounded bg-muted border border-border/50"
                           >
                             <option value="jugando">{t("statusPlaying")}</option>
                             <option value="completado">{t("statusCompleted")}</option>
@@ -776,17 +786,17 @@ export default function JuegoUnico() {
             </div>
           </div>
         </div>
-        <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-black/50 game-enter">
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-10 border border-border game-enter">
           <div className="grid grid-cols-1 xl:grid-cols-[320px,minmax(0,1fr),320px] gap-8 items-start">
             {/* Columna izquierda */}
             <div className="flex flex-col items-center xl:items-stretch game-enter game-delay-1 order-3 xl:order-1">
-              <div className="w-full bg-black/50 border border-black/40 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
+              <div className="w-full bg-card/50 border border-border rounded-2xl p-4 shadow-lg backdrop-blur-sm">
                 {tiempo?.main && (
-                  <div className="w-full rounded-lg bg-[#1b1b1b]/80 border border-borde/60 px-3 py-2 text-sm text-gray-200">
-                    <div className="text-[11px] uppercase tracking-widest text-gray-400">
+                  <div className="w-full rounded-lg bg-muted/80 border border-border/60 px-3 py-2 text-sm text-muted-foreground">
+                    <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
                       {t("gameDuration")}
                     </div>
-                    <div className="text-lg font-semibold text-white">
+                    <div className="text-lg font-semibold text-foreground">
                       {tiempo.main}h
                     </div>
                   </div>
@@ -799,17 +809,14 @@ export default function JuegoUnico() {
                     </div>
                     {inLibrary && (
                       <div className="hidden md:block w-full">
+                        <label htmlFor="estado-biblioteca-desktop" className="sr-only">
+                          Estado
+                        </label>
                         <select
+                          id="estado-biblioteca-desktop"
                           value={estado}
-                          onChange={(e) => {
-                            const nuevo = e.target.value;
-                            setEstado(nuevo);
-                            fetchAuth(`/juegos/biblioteca/${entryId}/`, {
-                              method: "PATCH",
-                              body: JSON.stringify({ estado: nuevo }),
-                            });
-                          }}
-                          className="w-full mt-2 p-2 rounded bg-[#181818] border border-borde/50"
+                          onChange={(e) => handleEstadoChange(e.target.value)}
+                          className="w-full mt-2 p-2 rounded bg-muted border border-border/50"
                         >
                           <option value="jugando">{t("statusPlaying")}</option>
                           <option value="completado">{t("statusCompleted")}</option>
@@ -826,9 +833,9 @@ export default function JuegoUnico() {
                 )}
               </div>
               {similarGames.length > 0 && (
-                <div className="mt-6 bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm game-enter game-delay-2">
+                <div className="mt-6 bg-card/50 border border-border rounded-xl p-4 backdrop-blur-sm game-enter game-delay-2">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm uppercase tracking-widest text-gray-400">
+                    <h3 className="text-sm uppercase tracking-widest text-muted-foreground">
                       {t("gameSimilar")}
                     </h3>
                     {similarGames.length > 1 && (
@@ -840,7 +847,7 @@ export default function JuegoUnico() {
                               prev === 0 ? similarGames.length - 1 : prev - 1
                             )
                           }
-                          className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                          className="w-11 h-11 rounded-full bg-card/60 hover:bg-card/80 text-foreground flex items-center justify-center"
                           aria-label="Anterior"
                         >
                           <span aria-hidden="true">&lt;</span>
@@ -852,7 +859,7 @@ export default function JuegoUnico() {
                               prev === similarGames.length - 1 ? 0 : prev + 1
                             )
                           }
-                          className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                          className="w-11 h-11 rounded-full bg-card/60 hover:bg-card/80 text-foreground flex items-center justify-center"
                           aria-label="Siguiente"
                         >
                           <span aria-hidden="true">&gt;</span>
@@ -875,14 +882,14 @@ export default function JuegoUnico() {
               <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr),320px] gap-6">
                 <div className="game-enter game-delay-4">
                   <h2 className="text-xl font-semibold mb-1">{t("gameDescription")}</h2>
-                  <p className="text-gray-200 leading-relaxed">{descripcion}</p>
+                  <p className="text-muted-foreground leading-relaxed">{descripcion}</p>
                   {descripcionImages.length > 0 && (
                     <div className="mt-5">
                       <div className="relative">
                         <button
                           type="button"
                           onClick={handleDescripcionPrev}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-10 h-10 flex items-center justify-center"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 z-10 bg-card/60 hover:bg-card/80 text-foreground rounded-full w-11 h-11 flex items-center justify-center"
                           aria-label="Anterior"
                         >
                           ‹
@@ -890,12 +897,12 @@ export default function JuegoUnico() {
                         <button
                           type="button"
                           onClick={handleDescripcionNext}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-10 h-10 flex items-center justify-center"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 bg-card/60 hover:bg-card/80 text-foreground rounded-full w-11 h-11 flex items-center justify-center"
                           aria-label="Siguiente"
                         >
                           ›
                         </button>
-                        <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-black/50 bg-[#1f1f1f]">
+                        <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-muted">
                           {descripcionNextIndex === null ? (
                             <img
                               src={descripcionImages[descripcionImgIndex]}
@@ -954,7 +961,7 @@ export default function JuegoUnico() {
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 text-xs text-gray-400">
+                      <div className="mt-2 text-xs text-muted-foreground">
                         {descripcionImgIndex + 1}/{descripcionImages.length}
                       </div>
                     </div>
@@ -972,7 +979,7 @@ export default function JuegoUnico() {
                                   prev === 0 ? igdbVideos.length - 1 : prev - 1
                                 )
                               }
-                              className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                              className="w-11 h-11 rounded-full bg-card/60 hover:bg-card/80 text-foreground flex items-center justify-center"
                               aria-label="Anterior"
                             >
                               <span aria-hidden="true">&lt;</span>
@@ -984,7 +991,7 @@ export default function JuegoUnico() {
                                   prev === igdbVideos.length - 1 ? 0 : prev + 1
                                 )
                               }
-                              className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center"
+                              className="w-11 h-11 rounded-full bg-card/60 hover:bg-card/80 text-foreground flex items-center justify-center"
                               aria-label="Siguiente"
                             >
                               <span aria-hidden="true">&gt;</span>
@@ -992,7 +999,7 @@ export default function JuegoUnico() {
                           </div>
                         )}
                       </div>
-                      <div className="aspect-video rounded-2xl overflow-hidden border border-black/50 bg-[#1f1f1f]">
+                      <div className="aspect-video rounded-2xl overflow-hidden border border-border bg-muted">
                         <iframe
                           src={igdbVideos[videoIndex].embed}
                           className="w-full h-full"
@@ -1001,15 +1008,15 @@ export default function JuegoUnico() {
                         />
                       </div>
                       {igdbVideos[videoIndex].name && (
-                        <p className="mt-2 text-xs text-gray-400">
+                        <p className="mt-2 text-xs text-muted-foreground">
                           {igdbVideos[videoIndex].name}
                         </p>
                       )}
                     </div>
                   )}
                 </div>
-                <div className="bg-black/45 border border-black/50 rounded-xl p-4 h-fit backdrop-blur-sm game-enter game-delay-5">
-                  <h3 className="text-sm uppercase tracking-widest text-gray-400 mb-3">
+                <div className="bg-card/45 border border-border rounded-xl p-4 h-fit backdrop-blur-sm game-enter game-delay-5">
+                  <h3 className="text-sm uppercase tracking-widest text-muted-foreground mb-3">
                     {t("gameTechSheet")}
                   </h3>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -1017,7 +1024,7 @@ export default function JuegoUnico() {
                       <Link
                         key={p.id}
                         to={`/juegos?plataforma=${p.id}`}
-                        className="bg-[#232323] hover:bg-[#2a2a2a] text-xs px-3 py-1 rounded-full text-gray-200"
+                        className="bg-muted hover:bg-muted/70 text-xs px-3 py-1 rounded-full text-muted-foreground"
                       >
                         {p.name}
                       </Link>
@@ -1026,13 +1033,13 @@ export default function JuegoUnico() {
                       <Link
                         key={g.id}
                         to={`/juegos?genero=${g.id}`}
-                        className="bg-[#2a2a2a] hover:bg-[#333333] text-xs px-3 py-1 rounded-full text-gray-200"
+                        className="bg-muted hover:bg-muted/70 text-xs px-3 py-1 rounded-full text-muted-foreground"
                       >
                         {g.name}
                       </Link>
                     ))}
                   </div>
-                  <div className="grid grid-cols-1 gap-3 text-sm text-gray-300">
+                  <div className="grid grid-cols-1 gap-3 text-sm text-muted-foreground">
                     <div className="space-y-2">
                       <p>
                         <strong>{t("gameDevelopers")}:</strong>{" "}
@@ -1041,7 +1048,7 @@ export default function JuegoUnico() {
                             <Link
                               key={d.id}
                               to={`/juegos?desarrolladora=${d.id}`}
-                              className="text-naranja hover:underline mr-2"
+                              className="text-primary hover:underline mr-2"
                             >
                               {d.name}
                               {i < desarrolladoras.length - 1 && ","}
@@ -1078,7 +1085,7 @@ export default function JuegoUnico() {
                             <Link
                               key={m.id}
                               to={`/juegos?modo=${m.id}`}
-                              className="text-naranja hover:underline mr-2"
+                              className="text-primary hover:underline mr-2"
                             >
                               {m.name}
                             </Link>
@@ -1119,7 +1126,7 @@ export default function JuegoUnico() {
             {/* Columna derecha */}
             <div className="flex flex-col gap-6 game-enter game-delay-3 order-3 xl:order-3">
               {enlacesTiendas.length > 0 && (
-                <div className="w-full bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm">
+                <div className="w-full bg-card/50 border border-border rounded-xl p-4 backdrop-blur-sm">
                   <h2 className="text-lg font-semibold mb-2">{t("gameWhereBuy")}</h2>
                   <div className="grid grid-cols-2 gap-3">
                     {enlacesTiendas.map((ti) => (
@@ -1128,7 +1135,7 @@ export default function JuegoUnico() {
                         href={ti.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex flex-col items-center bg-metal hover:bg-naranja px-4 py-3 rounded-lg"
+                        className="flex flex-col items-center bg-card hover:bg-primary px-4 py-3 rounded-lg"
                       >
                         <ti.Icon size={28} />
                         <span className="mt-1 text-sm font-bold">{ti.name}</span>
@@ -1138,17 +1145,17 @@ export default function JuegoUnico() {
                 </div>
               )}
               {plataformasPrecios.length > 0 && (
-                <div className="w-full bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm">
+                <div className="w-full bg-card/50 border border-border rounded-xl p-4 backdrop-blur-sm">
                   <button
                     onClick={() => setMostrarCompra(true)}
-                    className="w-full bg-naranja hover:bg-naranjaHover text-black font-bold py-2 rounded"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 rounded"
                   >
                     {t("openPriceComparator")}
                   </button>
                 </div>
               )}
               {(enlacesUtilesConIcono.length > 0 || enlacesUtilesOtros.length > 0) && (
-                <div className="w-full bg-black/50 border border-black/40 rounded-xl p-4 backdrop-blur-sm">
+                <div className="w-full bg-card/50 border border-border rounded-xl p-4 backdrop-blur-sm">
                   <h2 className="text-xl font-semibold mt-3">{t("gameUsefulLinks")}</h2>
                   {enlacesUtilesConIcono.length > 0 && (
                     <div className="mt-3 grid grid-cols-3 gap-3">
@@ -1158,7 +1165,7 @@ export default function JuegoUnico() {
                           href={link.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex flex-col items-center gap-1 bg-[#232323] hover:bg-[#2a2a2a] border border-borde/60 rounded-lg px-3 py-2 text-xs text-center"
+                          className="flex flex-col items-center gap-1 bg-muted hover:bg-muted/70 border border-border/60 rounded-lg px-3 py-2 text-xs text-center"
                         >
                           <link.Icon size={22} />
                           <span className="font-semibold">{link.name}</span>
@@ -1167,12 +1174,12 @@ export default function JuegoUnico() {
                     </div>
                   )}
                   {enlacesUtilesOtros.length > 0 && (
-                    <ul className="list-disc ml-6 text-sm text-gray-300 mt-3">
+                    <ul className="list-disc ml-6 text-sm text-muted-foreground mt-3">
                       {enlacesUtilesOtros.map((u) => (
                         <li key={u} className="break-words">
                           <a
                             href={u}
-                            className="text-naranja hover:underline break-all"
+                            className="text-primary hover:underline break-all"
                             target="_blank"
                             rel="noreferrer"
                           >
@@ -1191,23 +1198,24 @@ export default function JuegoUnico() {
 
         {/* Comentarios */}
         <div className="w-full my-10 game-enter game-delay-5">
-          <div className="bg-black/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-black/50">
+          <div className="bg-card/60 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-border">
             <Comentarios juegoId={juego.id} isAuth={autenticado} />
           </div>
         </div>
       </div>
       {mostrarCompra && (
-        <div className="fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-modal flex">
           <div
-            className="flex-1 bg-black/60"
+            className="flex-1 bg-card/60"
             onClick={() => setMostrarCompra(false)}
           />
-          <div className="w-full sm:w-96 bg-metal shadow-xl transform transition-transform animate-in slide-in-from-right">
-            <div className="flex justify-between items-center p-4 border-b border-borde">
+          <div className="w-full sm:w-96 bg-card shadow-xl transform transition-transform animate-in slide-in-from-right">
+            <div className="flex justify-between items-center p-4 border-b border-border">
               <h2 className="text-lg font-semibold">{t("openPriceComparator")}</h2>
               <button
                 onClick={() => setMostrarCompra(false)}
-                className="text-2xl leading-none"
+                aria-label="Cerrar comparador de precios"
+                className="text-2xl leading-none w-11 h-11 flex items-center justify-center"
               >
                 &times;
               </button>

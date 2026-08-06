@@ -178,3 +178,18 @@ export function clearCacheForEndpoint(endpoint) {
   etagCache.delete(cacheKey);
   responseCache.delete(cacheKey);
 }
+
+/**
+ * Resuelve una lista de IDs de juego a sus objetos completos,
+ * consultando /juegos/buscar_id/ en paralelo.
+ */
+export async function fetchJuegosPorIds(ids = []) {
+  const juegos = await Promise.all(
+    ids.map((id) =>
+      apiFetch(`/juegos/buscar_id/?id=${id}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)
+    )
+  );
+  return juegos.filter(Boolean);
+}

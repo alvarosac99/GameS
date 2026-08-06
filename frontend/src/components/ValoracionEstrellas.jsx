@@ -75,22 +75,22 @@ export default function ValoracionEstrellas({ juegoId }) {
             title={`Puntuar con ${i} estrellas`}
           >
             {tipo === "full" ? (
-              <FaStar size={28} className="text-naranja drop-shadow" />
+              <FaStar size={28} className="text-primary drop-shadow" />
             ) : tipo === "half" ? (
-              <FaStarHalfAlt size={28} className="text-naranja drop-shadow" />
+              <FaStarHalfAlt size={28} className="text-primary drop-shadow" />
             ) : (
-              <FaRegStar size={28} className="text-borde" />
+              <FaRegStar size={28} className="text-muted-foreground" />
             )}
           </span>
         );
       } else {
         estrella =
           tipo === "full" ? (
-            <FaStar key={i} size={24} className="text-naranja" />
+            <FaStar key={i} size={24} className="text-primary" />
           ) : tipo === "half" ? (
-            <FaStarHalfAlt key={i} size={24} className="text-naranja" />
+            <FaStarHalfAlt key={i} size={24} className="text-primary" />
           ) : (
-            <FaRegStar key={i} size={24} className="text-borde" />
+            <FaRegStar key={i} size={24} className="text-muted-foreground" />
           );
       }
       estrellas.push(estrella);
@@ -99,7 +99,7 @@ export default function ValoracionEstrellas({ juegoId }) {
   }
 
   return (
-    <div className="bg-[#22282f] border border-[#292e36] rounded-xl p-4 mt-4 w-fit min-w-[220px] shadow flex flex-col gap-1 items-center">
+    <div className="bg-card border border-border rounded-xl p-4 mt-4 w-fit min-w-[220px] shadow flex flex-col gap-1 items-center">
       {/* Solo estrellas para la puntuación propia */}
       <div className="flex items-center gap-2">
         {renderEstrellas({
@@ -113,19 +113,19 @@ export default function ValoracionEstrellas({ juegoId }) {
           },
           onStarLeave: () => setHover(null),
         })}
-        <span className="ml-2 text-naranja text-sm font-semibold">
+        <span className="ml-2 text-primary text-sm font-semibold">
           {miValoracion ? `Mi puntuación: ${miValoracion}` : ""}
         </span>
-        {cargando && <span className="text-borde ml-2">Cargando...</span>}
+        {cargando && <span className="text-muted-foreground ml-2">Cargando...</span>}
       </div>
       {/* Solo el número para la media, destacado */}
       <div className="flex items-center gap-2 text-lg mt-1">
-        <span className="ml-1 text-naranja font-bold">{media ? media.toFixed(2) : "--"}</span>
-        <span className="text-xs text-borde">
+        <span className="ml-1 text-primary font-bold">{media ? media.toFixed(2) : "--"}</span>
+        <span className="text-xs text-muted-foreground">
           {total} valoración{total !== 1 ? "es" : ""}
         </span>
       </div>
-      {mensaje && <div className="text-xs text-naranja mt-1">{mensaje}</div>}
+      {mensaje && <div className="text-xs text-primary mt-1">{mensaje}</div>}
     </div>
   );
 }

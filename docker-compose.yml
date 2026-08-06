@@ -1,7 +1,16 @@
 services:
   db:
     image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password
+    # binlog_expire_logs_seconds: sin el, los binlogs crecen sin limite
+    # (llegaron a 30GB para una BD de 255MB). Sin replicas, 1 dia sobra.
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --binlog_expire_logs_seconds=86400
+      --max_binlog_size=100M
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
@@ -23,6 +32,11 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru --save ""
+    deploy:
+      resources:
+        limits:
+          memory: 96M
     volumes:
       - redis_data:/data
     expose:

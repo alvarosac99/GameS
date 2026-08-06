@@ -23,10 +23,10 @@ export default function NuestrosJuegos() {
       ) : (
         <div className="space-y-4">
           {juegos.map((j) => (
-            <div key={j.id} className="bg-metal/30 p-4 rounded">
+            <div key={j.id} className="bg-card/30 p-4 rounded">
               <h2 className="text-xl font-semibold">{j.nombre}</h2>
               {j.descripcion && (
-                <p className="text-sm text-gray-300">{j.descripcion}</p>
+                <p className="text-sm text-muted-foreground">{j.descripcion}</p>
               )}
             </div>
           ))}

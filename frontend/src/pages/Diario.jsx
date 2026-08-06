@@ -6,7 +6,7 @@ import ListaEntradasDiario from "@/components/ListaEntradasDiario";
 import AñadirEntrada from "@/components/AñadirEntrada";
 import { Link } from "react-router-dom";
 import { useLang } from "../context/LangContext";
-import { apiFetch } from "../lib/api";
+import { fetchJuegosPorIds } from "../lib/api";
 
 export default function Diario() {
   const { fetchAuth } = useAuth();
@@ -21,13 +21,7 @@ export default function Diario() {
       const data = await res.json();
       if (Array.isArray(data)) {
         const ids = [...new Set(data.map((e) => e.juego))];
-        const detalles = await Promise.all(
-          ids.map((id) =>
-          apiFetch(`/juegos/buscar_id/?id=${id}`)
-              .then((r) => r.json())
-              .catch(() => null)
-          )
-        );
+        const detalles = await fetchJuegosPorIds(ids);
         const mapaDetalles = {};
         detalles.forEach((d) => {
           if (d && d.id) {
@@ -65,7 +59,7 @@ export default function Diario() {
         <h1 className="text-3xl font-bold">🎮 {t("myGameDiary")}</h1>
         <Link
           to="/jugar"
-          className="px-4 py-2 rounded bg-naranja text-white hover:bg-opacity-80"
+          className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-opacity-80"
         >
           {t("menuPlay")}
         </Link>

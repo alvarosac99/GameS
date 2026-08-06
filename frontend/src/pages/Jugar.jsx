@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import { useLang } from "@/context/LangContext";
 import { apiFetch } from "../lib/api";
+import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 
 export default function Jugar() {
   const { fetchAuth } = useAuth();
@@ -12,7 +13,6 @@ export default function Jugar() {
   const { t } = useLang();
 
   const [busqueda, setBusqueda] = useState("");
-  const [sugerencias, setSugerencias] = useState([]);
   const [seleccionado, setSeleccionado] = useState(null);
   const [inicio, setInicio] = useState(null);
   const [sesionId, setSesionId] = useState(null);
@@ -65,24 +65,14 @@ export default function Jugar() {
   }, [enCurso, sesionId, inicio]);
 
   // Buscar en la biblioteca del usuario
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      if (!busqueda || seleccionado) {
-        setSugerencias([]);
-        return;
-      }
-      fetchAuth(
-        `/juegos/buscar_en_biblioteca/?q=${encodeURIComponent(busqueda)}`
-      )
+  const { resultados: sugerencias } = useDebouncedSearch(
+    busqueda,
+    (q) =>
+      fetchAuth(`/juegos/buscar_en_biblioteca/?q=${encodeURIComponent(q)}`)
         .then((r) => r.json())
-        .then((data) => {
-          if (Array.isArray(data)) setSugerencias(data);
-          else setSugerencias([]);
-        })
-        .catch(() => setSugerencias([]));
-    }, 300);
-    return () => clearTimeout(delay);
-  }, [busqueda, seleccionado]);
+        .then((data) => (Array.isArray(data) ? data : [])),
+    { delay: 300, minLength: 1, enabled: !seleccionado }
+  );
 
   useEffect(() => {
     let intervalo = null;
@@ -123,7 +113,11 @@ export default function Jugar() {
       <h1 className="text-3xl font-bold">🎮 JUGAR!</h1>
 
       <div className="relative">
+        <label htmlFor="jugar-busqueda" className="sr-only">
+          {t("searchGameInLibraryPlaceholder")}
+        </label>
         <input
+          id="jugar-busqueda"
           type="text"
           placeholder={t("searchGameInLibraryPlaceholder")}
           value={busqueda}
@@ -132,17 +126,26 @@ export default function Jugar() {
             setSeleccionado(null);
           }}
           disabled={enCurso}
-          className="w-full p-2 rounded bg-fondo border border-borde"
+          className="w-full p-2 rounded bg-background border border-border"
         />
         {busqueda.length >= 2 && sugerencias.length > 0 && !seleccionado && (
-          <ul className="absolute z-20 bg-metal border border-borde rounded w-full max-h-60 overflow-y-auto overscroll-contain mt-1 divide-y divide-borde">
+          <ul className="absolute z-dropdown bg-card border border-border rounded w-full max-h-60 overflow-y-auto overscroll-contain mt-1 divide-y divide-border">
             {sugerencias.map((j) => (
               <li
                 key={j.id}
-                className="p-2 hover:bg-borde cursor-pointer flex items-center gap-2"
+                role="button"
+                tabIndex={0}
+                className="p-2 hover:bg-muted cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => {
                   setSeleccionado(j);
                   setBusqueda(j.name);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSeleccionado(j);
+                    setBusqueda(j.name);
+                  }
                 }}
               >
                 {j.cover && (
@@ -161,14 +164,14 @@ export default function Jugar() {
 
       {seleccionado && (
         <div className="flex items-center gap-2 mt-4">
-          <div className="w-16" onClick={() => navigate(`/juego/${seleccionado.id}`)}>
-            <GameCard juego={seleccionado} />
+          <div className="w-16">
+            <GameCard juego={seleccionado} onClick={() => navigate(`/juego/${seleccionado.id}`)} />
           </div>
-          {enCurso && <span className="text-green-400 font-semibold">JUGANDO</span>}
+          {enCurso && <span className="text-success font-semibold">JUGANDO</span>}
         </div>
       )}
 
-      <div className="text-5xl text-center font-mono bg-metal p-4 rounded shadow">
+      <div className="text-5xl text-center font-mono bg-card p-4 rounded shadow">
         {tiempoActual}
       </div>
 
@@ -176,28 +179,32 @@ export default function Jugar() {
         <button
           onClick={comenzar}
           disabled={!seleccionado}
-          className="w-full p-4 text-xl rounded bg-naranja text-white hover:bg-opacity-90"
+          className="w-full p-4 text-xl rounded bg-primary text-primary-foreground hover:bg-opacity-90"
         >
           Iniciar sesión
         </button>
       ) : (
         <button
           onClick={terminar}
-          className="w-full p-4 text-xl rounded bg-green-600 text-white hover:bg-opacity-90"
+          className="w-full p-4 text-xl rounded bg-success text-white hover:bg-opacity-90"
         >
           Terminar sesión
         </button>
       )}
 
       {mostrarNota && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-metal p-6 rounded-xl space-y-4 w-11/12 max-w-md">
-            <h2 className="text-xl font-semibold text-center">Añade una nota</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-modal">
+          <div className="bg-card p-6 rounded-xl space-y-4 w-11/12 max-w-md">
+            <h2 id="nota-sesion-titulo" className="text-xl font-semibold text-center">Añade una nota</h2>
+            <label htmlFor="nota-sesion" className="sr-only">
+              Nota de la sesión
+            </label>
             <textarea
+              id="nota-sesion"
               rows={3}
               defaultValue="ME LO PASE GENIAL!"
               ref={notaRef}
-              className="w-full p-2 rounded bg-fondo border border-borde"
+              className="w-full p-2 rounded bg-background border border-border"
             />
             <div className="flex justify-end gap-2">
               <button
@@ -215,22 +222,26 @@ export default function Jugar() {
                   setTiempoActual("00:00:00");
                   navigate("/diario");
                 }}
-                className="px-4 py-2 rounded bg-naranja text-white hover:bg-opacity-90"
+                className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-opacity-90"
               >
                 Guardar
               </button>
               <button
-                onClick={() => {
-                  fetchAuth("/sesiones/finalizar/", {
-                    method: "POST",
-                    body: JSON.stringify({ sesion: sesionId, guardar: false }),
-                  });
+                onClick={async () => {
+                  try {
+                    await fetchAuth("/sesiones/finalizar/", {
+                      method: "POST",
+                      body: JSON.stringify({ sesion: sesionId, guardar: false }),
+                    });
+                  } catch {
+                    // la sesión se limpia igualmente en local; el backend puede quedar con la sesión abierta
+                  }
                   setMostrarNota(false);
                   setEnCurso(false);
                   setSesionId(null);
                   setTiempoActual("00:00:00");
                 }}
-                className="px-4 py-2 rounded bg-borde text-claro hover:bg-metal"
+                className="px-4 py-2 rounded bg-muted text-foreground hover:bg-card"
               >
                 Descartar
               </button>

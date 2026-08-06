@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import GameCard from "@/components/GameCard";
-import { apiFetch } from "../lib/api";
+import { fetchJuegosPorIds } from "../lib/api";
+import { formatHoras } from "@/lib/format";
 
 export default function PlanificacionDetalle() {
   const { id } = useParams();
@@ -24,15 +25,7 @@ export default function PlanificacionDetalle() {
           setCargando(false);
           return;
         }
-        const juegosDet = await Promise.all(
-          data.juegos.map(async (gid) => {
-            const j = await apiFetch(`/juegos/buscar_id/?id=${gid}`)
-              .then((r) => r.json())
-              .catch(() => null);
-            return j;
-          })
-        );
-        const juegosFinal = juegosDet.filter(Boolean);
+        const juegosFinal = await fetchJuegosPorIds(data.juegos);
         setPlan({
           ...data,
           juegos: juegosFinal,
@@ -80,10 +73,10 @@ export default function PlanificacionDetalle() {
     <div className="p-4 space-y-6">
       <h1 className="text-3xl font-bold">{plan.nombre}</h1>
       <div className="text-sm">
-        <p>Total: {plan.total ? (plan.total / 3600).toFixed(1) + "h" : "N/A"}</p>
-        <p>Jugado: {(plan.jugado / 3600).toFixed(1)}h</p>
+        <p>Total: {formatHoras(plan.total)}</p>
+        <p>Jugado: {formatHoras(plan.jugado)}</p>
         {plan.restante != null && (
-          <p>Restante: {(plan.restante / 3600).toFixed(1)}h</p>
+          <p>Restante: {formatHoras(plan.restante)}</p>
         )}
       </div>
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
@@ -101,13 +94,13 @@ export default function PlanificacionDetalle() {
                   }
                   setEstatus((e) => ({ ...e, [j.id]: "completado" }));
                 }}
-                className={`px-2 py-1 rounded ${estatus[j.id] === "completado" ? "bg-green-600" : "bg-borde"}`}
+                className={`px-2 py-1 rounded ${estatus[j.id] === "completado" ? "bg-success" : "bg-muted"}`}
               >
                 Completar
               </button>
               <button
                 onClick={() => setEstatus((e) => ({ ...e, [j.id]: "saltado" }))}
-                className={`px-2 py-1 rounded ${estatus[j.id] === "saltado" ? "bg-yellow-600" : "bg-borde"}`}
+                className={`px-2 py-1 rounded ${estatus[j.id] === "saltado" ? "bg-warning" : "bg-muted"}`}
               >
                 Saltar
               </button>
@@ -119,7 +112,7 @@ export default function PlanificacionDetalle() {
                     return rest;
                   });
                 }}
-                className="px-2 py-1 rounded bg-red-600"
+                className="px-2 py-1 rounded bg-destructive"
               >
                 Eliminar
               </button>
@@ -140,15 +133,15 @@ export default function PlanificacionDetalle() {
               setPlan((p) => ({ ...p, juegos: [] }));
             }
           }}
-          className="mt-4 px-4 py-2 bg-naranja text-black rounded font-bold"
+          className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded font-bold"
         >
           Completar plan
         </button>
       )}
       {resumen && (
-        <div className="space-y-2 bg-metal/30 p-4 rounded">
+        <div className="space-y-2 bg-card/30 p-4 rounded">
           <h2 className="text-xl font-semibold">Resumen</h2>
-          <p>Total: {(resumen.total_segundos / 3600).toFixed(1)}h</p>
+          <p>Total: {formatHoras(resumen.total_segundos)}</p>
           <p>Completados: {resumen.completados}</p>
           <p>Saltados: {resumen.saltados}</p>
         </div>

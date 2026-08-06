@@ -99,7 +99,7 @@ export default function Precios({ nombre }) {
         </p>
         <button
           onClick={obtener}
-          className="px-4 py-2 bg-naranja text-black rounded"
+          className="px-4 py-2 bg-primary text-primary-foreground rounded"
         >
           Reintentar
         </button>
@@ -124,7 +124,7 @@ export default function Precios({ nombre }) {
               onClick={() =>
                 setAbiertas((prev) => ({ ...prev, [p]: !prev[p] }))
               }
-              className="w-full text-left px-3 py-2 rounded-md bg-naranja text-black font-semibold"
+              className="w-full text-left px-3 py-2 rounded-md bg-primary text-primary-foreground font-semibold"
             >
               {p}
             </button>
@@ -137,13 +137,13 @@ export default function Precios({ nombre }) {
                       href={o.link}
                       target="_blank"
                       rel="noreferrer"
-                      className="block bg-metal/40 hover:bg-metal p-3 rounded border border-borde"
+                      className="block bg-card/40 hover:bg-card p-3 rounded border border-border"
                     >
                       <div className="flex justify-between items-center">
                         <span className="font-bold">{o.merchant}</span>
                         <span>{limpiarPrecio(o.price)}</span>
                       </div>
-                      <div className="text-sm text-gray-300 flex justify-between items-center mt-1">
+                      <div className="text-sm text-muted-foreground flex justify-between items-center mt-1">
                         <span>
                           {o.region} - {o.edition}
                         </span>
@@ -154,7 +154,7 @@ export default function Precios({ nombre }) {
                               const text = typeof o.coupon === "string" ? o.coupon : o.coupon.code;
                               navigator.clipboard.writeText(text);
                             }}
-                            className="ml-2 px-2 py-0.5 bg-naranja text-black rounded text-xs"
+                            className="ml-2 px-2 py-0.5 bg-primary text-primary-foreground rounded text-xs"
                           >
                             Copiar {typeof o.coupon === "string" ? o.coupon : o.coupon.code}
                           </button>
